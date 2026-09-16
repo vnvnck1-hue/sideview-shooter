@@ -20,6 +20,8 @@ const SIDE_DOOR_OPEN_TEX := CONNECTOR_DIR + "sidewall_shutter_open_frame_game_sc
 ## 프랍 top-left 좌표는 Validation JSON 의 캔버스 좌표에서 roomOrigin(96,184)을 뺀 값이다.
 ## 단, 캐비넷(+18)·소파(+12)는 이미지 하단 투명 여백만큼 내려 바닥선(486)에 실제 픽셀이 닿게 보정했다.
 ## 정면문은 (1120-96, 364-184) = (1024, 180).
+## "fx": 환경 연출. beacon(회전 비상등, 벽 좌표) · leak(새는 수도관: pos=균열, dir=분사 방향) ·
+##       wire(끊긴 전선: pos=천장 앵커, length) · fire(불: pos=바닥 중심, size). 수도관은 wall_a 의 가로 파이프(y≈96) 위.
 const ROOMS := {
 	"workshop": {
 		"title": "작업실 (Workshop)",
@@ -38,6 +40,11 @@ const ROOMS := {
 		],
 		"left_door": {"open": false},
 		"right_door": {"open": true, "target": "corridor"},
+		"fx": [
+			{"type": "beacon", "pos": Vector2(1370, 118)},
+			{"type": "leak", "pos": Vector2(462, 100), "dir": Vector2(0.42, 1.0), "pressure": 1.0},
+			{"type": "wire", "pos": Vector2(1230, 42), "length": 210.0},
+		],
 	},
 	"corridor": {
 		"title": "연결 복도 (Corridor)",
@@ -49,6 +56,11 @@ const ROOMS := {
 		"front_doors": [],
 		"left_door": {"open": true, "target": "workshop"},
 		"right_door": {"open": true, "target": "storage"},
+		"fx": [
+			{"type": "beacon", "pos": Vector2(600, 112)},
+			{"type": "wire", "pos": Vector2(880, 42), "length": 240.0},
+			{"type": "fire", "pos": Vector2(330, 486), "size": Vector2(150.0, 190.0)},
+		],
 	},
 	"storage": {
 		"title": "창고 (Storage)",
@@ -65,6 +77,10 @@ const ROOMS := {
 		],
 		"left_door": {"open": true, "target": "corridor"},
 		"right_door": {"open": true, "target": "hangar"},
+		"fx": [
+			{"type": "leak", "pos": Vector2(606, 100), "dir": Vector2(0.35, 1.0), "pressure": 0.9},
+			{"type": "wire", "pos": Vector2(1100, 42), "length": 190.0},
+		],
 	},
 	"hangar": {
 		# 화면(월드 3200px)보다 훨씬 긴 방 - 카메라 스크롤 확인용. 폭 4416px
@@ -88,6 +104,15 @@ const ROOMS := {
 		"front_doors": [],
 		"left_door": {"open": true, "target": "storage"},
 		"right_door": {"open": false},
+		"fx": [
+			{"type": "beacon", "pos": Vector2(1560, 118)},
+			{"type": "beacon", "pos": Vector2(3300, 118)},
+			{"type": "fire", "pos": Vector2(2560, 486), "size": Vector2(210.0, 260.0)},
+			{"type": "leak", "pos": Vector2(1636, 100), "dir": Vector2(0.5, 1.0), "pressure": 1.1},
+			{"type": "leak", "pos": Vector2(3934, 100), "dir": Vector2(-0.25, 1.0), "pressure": 0.8},
+			{"type": "wire", "pos": Vector2(700, 42), "length": 230.0},
+			{"type": "wire", "pos": Vector2(2980, 42), "length": 200.0},
+		],
 	},
 	"quarters": {
 		"title": "숙소 (Crew Quarters)",
@@ -104,6 +129,11 @@ const ROOMS := {
 		],
 		"left_door": {"open": false},
 		"right_door": {"open": false},
+		"fx": [
+			{"type": "leak", "pos": Vector2(1054, 100), "dir": Vector2(-0.4, 1.0), "pressure": 0.85},
+			{"type": "wire", "pos": Vector2(1200, 42), "length": 200.0},
+			{"type": "beacon", "pos": Vector2(760, 112)},
+		],
 	},
 }
 

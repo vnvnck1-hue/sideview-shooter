@@ -91,6 +91,7 @@ func _ready() -> void:
 	body.centered = false
 	body.offset = Vector2(-FRAME_SIZE * 0.5, -FRAME_SIZE + BODY_CENTER_Y)   # 발 밑이 Player 원점
 	body.sprite_frames = _build_frames()
+	body.material = Lighting.lit_material()            # 노멀맵 라이팅 + 림라이트
 	body_pivot.add_child(body)
 	body.animation_finished.connect(_on_animation_finished)
 	body.play("idle")
@@ -106,7 +107,8 @@ func _ready() -> void:
 	arm = Sprite2D.new()
 	arm.name = "Arm"
 	arm.centered = false
-	arm.texture = load(SPLIT_DIR + "arm_gun.png")
+	arm.texture = Lighting.textured(SPLIT_DIR + "arm_gun.png")
+	arm.material = Lighting.lit_material()
 	arm.offset = Vector2(-sh[0], -sh[1])          # 어깨가 원점
 	arm_pivot.add_child(arm)
 
@@ -121,7 +123,7 @@ func _ready() -> void:
 	flash.centered = true
 	flash.position = muzzle.position + Vector2(flash.texture.get_width() * 0.5 - 6, 0)
 	flash.visible = false
-	flash.modulate = Lighting.EMISSIVE_SOFT          # HDR 발광 → 글로우
+	flash.modulate = Lighting.RED_EMISSIVE_SOFT      # 붉은 발광 → 글로우
 	arm_pivot.add_child(flash)
 
 	# 총구 화염 라이트 - 발사 순간만 켜진다
@@ -129,7 +131,7 @@ func _ready() -> void:
 	muzzle_light.name = "MuzzleLight"
 	muzzle_light.texture = Lighting.radial_texture()
 	muzzle_light.texture_scale = 2.2
-	muzzle_light.color = Color(1.0, 0.8, 0.45)
+	muzzle_light.color = Lighting.GUN_LIGHT
 	muzzle_light.energy = 1.8
 	muzzle_light.height = Lighting.FLASH_HEIGHT
 	muzzle_light.position = muzzle.position
@@ -162,7 +164,7 @@ func _build_frames() -> SpriteFrames:
 		sf.set_animation_speed(clip_name, cfg["fps"])
 		sf.set_animation_loop(clip_name, cfg["loop"])
 		for i in range(1, cfg["frames"] + 1):
-			sf.add_frame(clip_name, load("%sbody/%s/%s_%02d.png" % [SPLIT_DIR, clip_name, clip_name, i]))
+			sf.add_frame(clip_name, Lighting.textured("%sbody/%s/%s_%02d.png" % [SPLIT_DIR, clip_name, clip_name, i]))
 	return sf
 
 

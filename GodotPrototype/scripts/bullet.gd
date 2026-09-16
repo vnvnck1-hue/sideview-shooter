@@ -2,7 +2,7 @@ class_name Bullet
 extends Node2D
 ## 고속 탄환. 총구에서 목표점(마우스 포인터)까지 직선으로 날아가 정확히 그 지점에 탄착한다.
 ## 시각: 총구부터 탄두까지 이어지는 한 줄 궤적이 찍히고 탄착 직후 사라진다.
-## 탄착: 플래시 + 불꽃 스파크 + 중력을 받는 벽 파편 + 짧은 라이트 (타격감).
+## 탄착: 플래시 + 불꽃 스파크 + 중력을 받는 벽 파편 + 짧은 라이트 (타격감). 궤적·플래시·스파크·라이트는 붉은 팔레트(Lighting.RED_*).
 
 const SPEED := 10400.0
 const TRAIL_W := 7.0
@@ -46,29 +46,29 @@ func setup(from: Vector2, to: Vector2) -> void:
 func _ready() -> void:
 	_trail = Line2D.new()
 	_trail.width = TRAIL_W
-	_trail.default_color = Color(1.0, 0.8, 0.3, 0.9)
+	_trail.default_color = Lighting.TRACER
 	_trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	_trail.end_cap_mode = Line2D.LINE_CAP_ROUND
 	var grad := Gradient.new()
-	grad.set_color(0, Color(1.0, 0.7, 0.25, 0.0))
-	grad.set_color(1, Color(1.0, 0.85, 0.4, 1.0))
+	grad.set_color(0, Color(Lighting.TRACER, 0.0))
+	grad.set_color(1, Color(1.0, 0.5, 0.35, 1.0))
 	_trail.gradient = grad
-	_trail.modulate = Lighting.EMISSIVE_SOFT      # HDR → 글로우
+	_trail.modulate = Lighting.RED_EMISSIVE_SOFT      # 붉은 발광 → 글로우
 	add_child(_trail)
 
 	_core = Line2D.new()
 	_core.width = 2.5
-	_core.default_color = Color(1.0, 1.0, 0.95, 1.0)
+	_core.default_color = Lighting.TRACER_CORE
 	_core.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	_core.end_cap_mode = Line2D.LINE_CAP_ROUND
-	_core.modulate = Lighting.EMISSIVE
+	_core.modulate = Lighting.RED_EMISSIVE
 	add_child(_core)
 
 	_head = ColorRect.new()
-	_head.color = Color(1.0, 1.0, 0.9)
+	_head.color = Color(1.0, 0.88, 0.82)
 	_head.size = Vector2(12, 12)
 	_head.pivot_offset = _head.size * 0.5
-	_head.modulate = Lighting.EMISSIVE
+	_head.modulate = Lighting.RED_EMISSIVE
 	add_child(_head)
 
 	_update_trail(start)
@@ -147,23 +147,23 @@ func _impact() -> void:
 
 	# 플래시 (밝은 코어)
 	_flash = ColorRect.new()
-	_flash.color = Color(1.0, 0.97, 0.85)
+	_flash.color = Color(1.0, 0.70, 0.60)
 	_flash.size = Vector2(24, 24)
 	_flash.pivot_offset = _flash.size * 0.5
 	_flash.position = target - _flash.size * 0.5
 	_flash.rotation = randf_range(0.0, TAU)
-	_flash.modulate = Lighting.EMISSIVE
+	_flash.modulate = Lighting.RED_EMISSIVE
 	add_child(_flash)
 
 	# 충격 링 (얇은 사각 테두리 4개)
 	_ring = Node2D.new()
 	_ring.position = target
-	_ring.modulate = Lighting.EMISSIVE_SOFT
+	_ring.modulate = Lighting.RED_EMISSIVE_SOFT
 	add_child(_ring)
 	var half := 17.0
 	for side in range(4):
 		var r := ColorRect.new()
-		r.color = Color(1.0, 0.85, 0.5, 0.9)
+		r.color = Color(1.0, 0.45, 0.32, 0.9)
 		if side < 2:
 			r.size = Vector2(half * 2.0, 3.0)
 			r.position = Vector2(-half, (-half if side == 0 else half) - 1.5)
@@ -176,7 +176,7 @@ func _impact() -> void:
 	_light = PointLight2D.new()
 	_light.texture = Lighting.radial_texture()
 	_light.texture_scale = Lighting.scale_for_radius(260.0)
-	_light.color = Color(1.0, 0.85, 0.55)
+	_light.color = Lighting.IMPACT_LIGHT
 	_light.energy = 2.2
 	_light.height = Lighting.FLASH_HEIGHT          # 주변 노멀맵이 섬광에 반응
 	_light.position = target
@@ -197,11 +197,11 @@ func _impact() -> void:
 		var len := randf_range(13.0, 25.0)
 		s.size = Vector2(len, 4.0)
 		s.pivot_offset = s.size * 0.5
-		s.color = Color(1.0, randf_range(0.7, 0.95), randf_range(0.25, 0.5))
+		s.color = Color(1.0, randf_range(0.30, 0.58), randf_range(0.12, 0.30))
 		var v := back.rotated(randf_range(-1.1, 1.1)) * randf_range(560.0, 1150.0)
 		s.position = target - s.size * 0.5
 		s.rotation = v.angle()
-		s.modulate = Lighting.EMISSIVE
+		s.modulate = Lighting.RED_EMISSIVE
 		add_child(s)
 		_debris.append({"node": s, "vel": v, "spin": 0.0, "gravity": GRAVITY * 0.35,
 			"life": randf_range(0.18, 0.32)})

@@ -1,6 +1,8 @@
 shader_type canvas_item;
 // 천장 램프 스프라이트(타일에서 잘라낸 아틀라스). 전구 픽셀을 HDR 로 발광시키고,
 // 깨질 때 가로 찢김 + 스캔라인 노이즈로 지직거린다.
+// 라이팅은 타일과 같은 lit_common(light) 을 써서 아틀라스 경계가 티나지 않게 한다.
+#include "res://shaders/lit_common.gdshaderinc"
 
 uniform float emit : hint_range(0.0, 12.0) = 6.0;      // 전구 발광 배율 (CanvasModulate 로 어두워진 만큼 보정)
 uniform float glitch : hint_range(0.0, 1.0) = 0.0;     // 지직거림 세기
@@ -34,4 +36,10 @@ void fragment() {
 		col += vec3(1.0, 0.9, 0.7) * bulb * glitch * step(0.7, hash(floor(t * 1.3))) * 3.0;
 	}
 	COLOR = vec4(col, c.a);
+	v_edge = 0.0;
+	v_edge_dir = vec2(0.0);
+}
+
+void light() {
+	LIGHT = lit_light(NORMAL, LIGHT_DIRECTION, LIGHT_COLOR, LIGHT_ENERGY, COLOR.rgb);
 }

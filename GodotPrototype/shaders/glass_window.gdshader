@@ -1,5 +1,7 @@
 shader_type canvas_item;
 // 창문 유리: 비스듬한 하이라이트가 천천히 스치고, 맞으면 탄착점에서 방사형 균열이 퍼진다.
+// 라이팅은 타일과 같은 lit_common(light) — 아틀라스 경계가 티나지 않게.
+#include "res://shaders/lit_common.gdshaderinc"
 
 uniform float crack : hint_range(0.0, 1.0) = 0.0;
 uniform vec2 crack_uv = vec2(0.5, 0.5);
@@ -50,4 +52,10 @@ void fragment() {
 		col *= 1.0 - 0.15 * crack * (1.0 - smoothstep(0.0, 0.4, dist));
 	}
 	COLOR = vec4(col, c.a);
+	v_edge = 0.0;
+	v_edge_dir = vec2(0.0);
+}
+
+void light() {
+	LIGHT = lit_light(NORMAL, LIGHT_DIRECTION, LIGHT_COLOR, LIGHT_ENERGY, COLOR.rgb);
 }

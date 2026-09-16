@@ -12,11 +12,13 @@ from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1] / "GodotPrototype" / "assets"
 GROUPS = {
-    # 종류: (강도, 베벨 폭 px, 밝기 블러)
+    # 종류: (강도, 베벨 폭 px, 밝기 블러)  — 하위 폴더까지 재귀 탐색 (character/Split/body/<clip>/*.png)
     "tiles": (2.4, 0, 1.0),
     "props": (3.2, 6, 0.8),
     "connectors": (3.0, 5, 0.8),
+    "character/Split": (2.8, 4, 0.6),     # 게임이 쓰는 분리 프레임(몸통·팔)만
 }
+EXCLUDE = {"muzzle_flash.png"}            # 발광 스프라이트는 노멀 불필요
 
 
 def height_map(img: Image.Image, bevel: int, blur: float) -> np.ndarray:
@@ -66,7 +68,10 @@ def main() -> None:
         src_dir = ROOT / group
         out_dir = ROOT / "normals" / group
         out_dir.mkdir(parents=True, exist_ok=True)
-        for png in sorted(src_dir.glob("*.png")):
+        for png in sorted(src_dir.rglob("*.png")):
+            if png.name in EXCLUDE:
+                continue
+            rel = png.relative_to(src_dir)
             img = Image.open(png)
             h, alpha = height_map(img, bevel, blur)
             n = normal_from_height(h, strength)
@@ -76,8 +81,10 @@ def main() -> None:
             flat = a < 8
             rgb[flat] = (128, 128, 255)
             out = np.dstack([rgb, np.full_like(a, 255)])
-            Image.fromarray(out, "RGBA").save(out_dir / png.name)
-            print(f"{group}/{png.name} -> {out_dir.relative_to(ROOT.parent)}/{png.name}")
+            dst = out_dir / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            Image.fromarray(out, "RGBA").save(dst)
+            print(f"{group}/{rel} -> {dst.relative_to(ROOT.parent)}")
 
 
 if __name__ == "__main__":

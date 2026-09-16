@@ -29,6 +29,8 @@ var _next_flicker := 0.0
 var _flicker_left := 0.0
 var _flicker_seed := 0.0
 var _break_t := 0.0
+var _spark_drizzle := 0.0        # 깨진 직후 잔불이 흘러내리는 시간
+var _spark_node: SparkBurst
 
 
 func _ready() -> void:
@@ -109,6 +111,15 @@ func break_lamp() -> void:
 	_break_t = 0.0
 	if _cover:
 		_cover.visible = true
+	# 전구가 터지며 뜨거운 불꽃이 바닥으로 흩뿌려진다 (즉시 한 뭉치 + 잠깐 흘러내리는 잔불)
+	var sb := SparkBurst.spawn(get_parent(), float(RoomData.FLOOR_Y))
+	var origin := bulb_rect.get_center() + Vector2(0, 4)
+	sb.burst(origin, 30, Vector2(0, 1), 1.35, Vector2(140, 640),
+		Color(1.0, 0.95, 0.8), Color(1.0, 0.28, 0.08), Vector2(0.45, 1.2), 2100.0, 3.0)
+	sb.burst(origin, 10, Vector2(0, 1), 0.5, Vector2(60, 220),
+		Color(1.0, 0.9, 0.75), Color(1.0, 0.35, 0.1), Vector2(0.8, 1.6), 1600.0, 2.2, false)
+	_spark_drizzle = 0.5
+	_spark_node = sb
 
 
 ## 전구 발광 배율. CanvasModulate(AMBIENT)는 셰이더 출력 뒤에 곱해지므로 그 역수만큼 키워야
@@ -134,6 +145,11 @@ func _process(delta: float) -> void:
 	_t += delta
 	if broken:
 		_break_t += delta
+		if _spark_drizzle > 0.0 and is_instance_valid(_spark_node):
+			_spark_drizzle -= delta
+			if randf() < 0.6:
+				_spark_node.burst(bulb_rect.get_center() + Vector2(randf_range(-6, 6), 4), 1, Vector2(0, 1), 0.7,
+					Vector2(40, 260), Color(1.0, 0.9, 0.75), Color(1.0, 0.3, 0.1), Vector2(0.5, 1.1), 1900.0, 2.4, false)
 		var k := _break_t / BREAK_TIME
 		if k >= 1.0:
 			energy = 0.0

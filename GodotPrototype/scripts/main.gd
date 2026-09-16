@@ -86,6 +86,8 @@ func _process(_delta: float) -> void:
 	# 사격 색수차: 흔들림과 같은 리듬으로 빠르게 빠진다
 	_aberration = maxf(_aberration - ABERRATION_DECAY * _delta * maxf(_aberration, 0.4), 0.0)
 	_post_mat.set_shader_parameter("aberration", _aberration)
+	# 피격 열 잔광이 식는다 (벽·문·프랍 표면)
+	HeatSurface.tick_all(_delta)
 
 	if transitioning:
 		return
@@ -108,10 +110,12 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 		current_room.queue_free()
 	for b in bullets.get_children():
 		b.queue_free()
+	HeatSurface.clear_all()
 
 	current_room = Room.new()
 	current_room.name = "Room_" + id
 	current_room.build(id)
+	current_room.player = player
 	add_child(current_room)
 	move_child(current_room, 0)
 
@@ -186,13 +190,19 @@ func _on_player_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 	var b := Bullet.new()
 	b.setup(muzzle_pos, target_pos)
 	b.floor_y = player.position.y
-	# 무엇을 맞췃나: 램프는 깨지고(유리 파편), 프랍은 살짝 흔들린다
+	# 무엇을 맞췃나: 램프·비상등은 깨지고(유리 파편·스파크), 프랍은 흔들리며 조각나고, 벽은 붉게 달아오른다
 	var hit := current_room.hit_at(target_pos)
 	match hit["kind"]:
 		"lamp":
 			hit["node"].break_lamp()
 			b.impact_kind = Bullet.Impact.GLASS
 			_shake = minf(_shake + 3.0, 10.0)
+		"beacon":
+			hit["node"].break_light()
+			b.impact_kind = Bullet.Impact.GLASS
+			_shake = minf(_shake + 2.5, 10.0)
+		"wall":
+			current_room.heat_wall(hit["node"], target_pos)
 		"glass":
 			hit["node"].crack(target_pos)
 			b.impact_kind = Bullet.Impact.GLASS
@@ -201,6 +211,7 @@ func _on_player_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 			hit["node"].hit(signf(target_pos.x - muzzle_pos.x), target_pos.y, target_pos)
 			b.impact_kind = Bullet.Impact.PROP
 	bullets.add_child(b)
+	current_room.notify_shot(muzzle_pos, target_pos)      # 전선 등 물리 반응
 	_shake = minf(_shake + SHAKE_PER_SHOT, 10.0)
 	_aberration = minf(_aberration + ABERRATION_PER_SHOT, 6.0)
 	crosshair.kick()
