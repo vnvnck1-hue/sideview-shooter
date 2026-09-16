@@ -6,7 +6,7 @@ const START_X := 1840.0 - 96.0 + 120.0      # 검증 이미지의 캐릭터 위�
 const WALL_MARGIN := 110.0                   # 캡 타일 안쪽 벽까지의 여유
 const DOOR_PASS_MARGIN := 60.0              # 열린 측벽문으로 들어갈 때 허용되는 초과 거리
 const SIDE_PAD := 180.0                      # 카메라가 방 밖 어두운 여백을 보여주는 폭
-const FADE_TIME := 0.22
+const FADE_TIME := 0.11
 const CAMERA_ZOOM := 0.5                     # 원본 픽셀의 1/2 크기로 표시 (정수 배율 축소)
 
 var current_room: Room
@@ -17,17 +17,28 @@ var fade: ColorRect
 var title_label: Label
 var hint_label: Label
 var prompt_label: Label
+var crosshair: Node2D
 var transitioning := false
+var _shake := 0.0
+var _post_mat: ShaderMaterial
+var _aberration := 0.0
+
+const SHAKE_PER_SHOT := 3.5
+const SHAKE_DECAY := 14.0
+const ABERRATION_PER_SHOT := 2.2      # 사격 시 색수차 (화면 px)
+const ABERRATION_DECAY := 18.0
 
 
 func _ready() -> void:
 	_setup_input_map()
+	_setup_environment()
 	_setup_ui()
 
 	player = Player.new()
 	player.name = "Player"
 	player.z_index = 5
 	player.shoot_fired.connect(_on_player_shoot)
+	player.shell_ejected.connect(_on_shell_ejected)
 	player.request_front_door.connect(_on_front_door_requested)
 
 	bullets = Node2D.new()
@@ -37,11 +48,17 @@ func _ready() -> void:
 	camera = Camera2D.new()
 	camera.name = "Camera"
 	camera.position_smoothing_enabled = true
-	camera.position_smoothing_speed = 8.0
+	camera.position_smoothing_speed = 16.0
 	camera.zoom = Vector2(CAMERA_ZOOM, CAMERA_ZOOM)
+
+	crosshair = Crosshair.new()
+	crosshair.name = "Crosshair"
+	crosshair.z_index = 20
+	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 
 	add_child(player)
 	add_child(bullets)
+	add_child(crosshair)
 	add_child(camera)
 	_load_room(START_ROOM, START_X, 1)
 	camera.make_current()
@@ -56,8 +73,19 @@ func _process(_delta: float) -> void:
 	if current_room == null:
 		return
 
-	# 카메라: 플레이어 X 추적, 방 범위로 제한
+	# 조준: 마우스 포인터의 월드 좌표가 곧 탄착 지점
+	var mouse_world := get_global_mouse_position()
+	crosshair.position = mouse_world
+	if not transitioning:
+		player.aim_target = mouse_world
+
+	# 카메라: 플레이어 X 추적, 방 범위로 제한 (+ 사격 흔들림)
 	camera.position = Vector2(player.position.x, RoomData.TILE_HEIGHT * 0.5)
+	_shake = maxf(_shake - SHAKE_DECAY * _delta * maxf(_shake, 0.5), 0.0)
+	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _shake
+	# 사격 색수차: 흔들림과 같은 리듬으로 빠르게 빠진다
+	_aberration = maxf(_aberration - ABERRATION_DECAY * _delta * maxf(_aberration, 0.4), 0.0)
+	_post_mat.set_shader_parameter("aberration", _aberration)
 
 	if transitioning:
 		return
@@ -154,12 +182,71 @@ func _transition(target: String, spawn_x: float, face_dir: int) -> void:
 	)
 
 
-func _on_player_shoot(muzzle_pos: Vector2, dir: int) -> void:
+func _on_player_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 	var b := Bullet.new()
-	b.dir = dir
-	b.room_width = current_room.width
-	b.position = muzzle_pos
+	b.setup(muzzle_pos, target_pos)
+	b.floor_y = player.position.y
+	# 무엇을 맞췃나: 램프는 깨지고(유리 파편), 프랍은 살짝 흔들린다
+	var hit := current_room.hit_at(target_pos)
+	match hit["kind"]:
+		"lamp":
+			hit["node"].break_lamp()
+			b.impact_kind = Bullet.Impact.GLASS
+			_shake = minf(_shake + 3.0, 10.0)
+		"glass":
+			hit["node"].crack(target_pos)
+			b.impact_kind = Bullet.Impact.GLASS
+			_shake = minf(_shake + 1.5, 10.0)
+		"prop":
+			hit["node"].hit(signf(target_pos.x - muzzle_pos.x), target_pos.y, target_pos)
+			b.impact_kind = Bullet.Impact.PROP
 	bullets.add_child(b)
+	_shake = minf(_shake + SHAKE_PER_SHOT, 10.0)
+	_aberration = minf(_aberration + ABERRATION_PER_SHOT, 6.0)
+	crosshair.kick()
+
+
+func _on_shell_ejected(pos: Vector2, dir: int) -> void:
+	var sc := ShellCasing.new()
+	sc.setup(pos, dir, player.position.y)
+	bullets.add_child(sc)
+
+
+## 글로우(WorldEnvironment) + 풀스크린 후처리(색수차·비네트). 2D 는 project.godot 의 hdr_2d 가 켜져야 글로우가 잡힌다.
+func _setup_environment() -> void:
+	var env := Environment.new()
+	env.background_mode = Environment.BG_CANVAS
+	env.glow_enabled = true
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
+	env.glow_intensity = 0.8
+	env.glow_strength = 1.0
+	env.glow_bloom = 0.0
+	env.glow_hdr_threshold = 0.85      # LDR 2D: 거의 흰 픽셀(전구·총구·스파크)만 번진다
+	env.glow_hdr_scale = 2.0
+	env.glow_hdr_luminance_cap = 2.0        # 총구처럼 아주 밝은 곳이 거대한 광구로 번지지 않게 상한
+	# 픽셀이 뭉개지지 않게 작은 레벨은 끄고 중간~큰 번짐만
+	for i in range(7):
+		env.set_glow_level(i, 0.0)
+	env.set_glow_level(1, 0.6)
+	env.set_glow_level(2, 1.0)
+	env.set_glow_level(3, 0.7)
+	env.set_glow_level(4, 0.35)
+	var we := WorldEnvironment.new()
+	we.name = "Environment"
+	we.environment = env
+	add_child(we)
+
+	var post_layer := CanvasLayer.new()
+	post_layer.name = "PostFX"
+	post_layer.layer = 9
+	add_child(post_layer)
+	var post := ColorRect.new()
+	post.name = "PostRect"
+	post.set_anchors_preset(Control.PRESET_FULL_RECT)
+	post.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_post_mat = Lighting.shader_material("post_fx")
+	post.material = _post_mat
+	post_layer.add_child(post)
 
 
 func _setup_ui() -> void:
@@ -179,7 +266,7 @@ func _setup_ui() -> void:
 	layer.add_child(title_label)
 
 	hint_label = Label.new()
-	hint_label.text = "A/D ←/→ 이동    S/↓ 숙이기    J / Space 사격    W/↑ 정면문 진입    F11 전체화면    열린 측벽문은 걸어서 통과"
+	hint_label.text = "A/D ←/→ 이동    마우스 조준 · 좌클릭 사격(홀드 연사)    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입    F11 전체화면"
 	hint_label.position = Vector2(24, 860)
 	hint_label.add_theme_font_override("font", font)
 	hint_label.add_theme_font_size_override("font_size", 20)
@@ -207,9 +294,19 @@ func _setup_input_map() -> void:
 	_add_action("move_left", [KEY_A, KEY_LEFT])
 	_add_action("move_right", [KEY_D, KEY_RIGHT])
 	_add_action("interact", [KEY_W, KEY_UP])
-	_add_action("crouch", [KEY_S, KEY_DOWN])
-	_add_action("shoot", [KEY_J, KEY_SPACE, KEY_Z])
+	_add_action("crouch", [KEY_CTRL, KEY_S, KEY_DOWN])
+	_add_action("shoot", [KEY_J])
+	_add_mouse_action("shoot", MOUSE_BUTTON_LEFT)
+	_add_action("roll", [KEY_SPACE])
 	_add_action("toggle_fullscreen", [KEY_F11])
+
+
+func _add_mouse_action(action: String, button: MouseButton) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	var ev := InputEventMouseButton.new()
+	ev.button_index = button
+	InputMap.action_add_event(action, ev)
 
 
 func _add_action(action: String, keys: Array) -> void:

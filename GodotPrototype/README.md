@@ -12,11 +12,46 @@
 
 | 키 | 동작 |
 |---|---|
-| A / D, ← / → | 좌우 이동 (Walk 8 FPS) |
-| S / ↓ (홀드) | 숙이기 — 마지막 프레임 유지, 놓으면 역재생 |
-| J / Space / Z | 사격 — 10 FPS 1회 재생, 3번째 프레임에 투사체 생성 |
+| A / D, ← / → | 좌우 이동 최고 840px/s. 가속 5200·감속 3600 px/s² 이징(출발·정지가 부드럽고 살짝 미끄러짐). 걷기 애니 속도는 실제 속도에 비례, 조준 반대로 걸으면 뒷걸음 역재생 |
+| 마우스 | 조준 — 팔+총이 실시간으로 포인터를 가리킨다. 바라보는 방향도 포인터가 결정 |
+| 좌클릭 (J) | 사격 — 클릭마다 한 발(단발, 최소 간격 0.09초). **포인터 위치가 곧 탄착점**. 총구→탄착점 한 줄 궤적이 찍히고 0.05초 안에 사라진다. 탄피가 뒤·위로 튀어 바닥에서 튕긴다 |
+| Space | 구르기 — 이동 중이면 그 방향, 아니면 바라보는 방향. 0.18초 · 3150px/s, 구르는 동안 사격 불가 |
+| Ctrl (S / ↓) | 앉기 (홀드) — 앉은 채로 조준·사격 가능 |
 | W / ↑ | 정면문 앞에서 다른 방으로 진입 |
 | F11 | 전체화면 토글 |
+
+사격 연출: 총구 화염(shoot_03 에서 추출)·총구 라이트 + 팔 반동(뒤로 14px·위로 0.14rad) + 카메라 미세 흔들림 + 조준점 벌어짐 + 탄착(플래시·충격 링·불꽃 스파크 8·중력 받는 파편 8·라이트 — 벽/유리/프랍별 색과 양이 다름).
+Idle/앉기 중에는 발을 고정한 채 몸 스케일이 2.6초 주기로 잔잔하게 숨쉰다.
+
+## 라이팅
+
+방마다 `CanvasModulate`(0.26, 0.28, 0.40) 로 어둡게 깔고, 타일 속 천장 램프 위치(`RoomData.TILE_LAMPS`: wall_b, wall_repeat)에 `LampLight`(PointLight2D, 반지름 560, energy 1.0, height 140) 를 단다. 램프는 미세하게 흔들리고 3~9초마다 0.2~0.55초 깜빡인다. 총구·탄착에도 짧은 PointLight2D 가 붙는다. 배경 밖은 완전한 검정.
+
+램프는 **총으로 깨진다**: 전구 60px 안에 탄착하면 0.22초 글리치 셰이더로 지직거리며 꺼지고(그 뒤 0.35초 잔상), 전구 픽셀 위에 어두운 커버가 덮이며 유리 파편이 쏟아진다(`LampLight.break_lamp`).
+
+## 비주얼 셰이더 (`shaders/`)
+
+글로우는 `WorldEnvironment` 를 **LDR(HDR 2D 꺼짐)** 상태에서 임계값 0.85 로 잡는다 — 거의 흰 픽셀(전구·총구·스파크·피격 플래시 중심)만 번진다.
+HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 채널이 눌려 기존 조명 톤이 깨져 되돌렸다. 덕분에 `CanvasModulate`·energy 수치는 이전과 같은 체감 밝기다.
+라이트에는 `height`(램프 140, 총구·탄착 90) 를 줘서 노멀맵이 각도에 반응한다. height 가 있으면 램프 바로 밑이 더 밝아지므로 램프 energy 는 1.7 → 1.0 으로 낮춰 같은 밝기를 유지했다.
+튜닝 환경변수: `VFX_AMB=r,g,b` `VFX_LAMP=에너지` `VFX_H=높이` (`Lighting` 의 static var 기본값을 덮는다).
+
+| 효과 | 구현 | 위치 |
+|---|---|---|
+| 노멀맵 라이팅 | 타일·문·프랍을 `CanvasTexture`(diffuse + normal) 로 그린다. 노멀맵은 `assets/normals/<종류>/<이름>.png`, `python Tools/build_normal_maps.py` 로 재생성(밝기+알파 베벨 → Sobel, OpenGL Y+) | `Lighting.textured()` |
+| 글로우 | `Environment.glow` (additive, 레벨 1~4, 임계 0.85, 세기 0.8). 발광체는 `modulate` 를 `Lighting.EMISSIVE(4.5)` / `EMISSIVE_SOFT(2.6)` 로 올려 CanvasModulate 를 이기고 흰색에 닿게 한다: 총구 화염, 탄 궤적·코어·탄두, 탄착 플래시·링·스파크 | `main.gd _setup_environment` |
+| 전구 발광 + 글리치 | 타일에서 램프 영역을 `AtlasTexture` 로 잘라 같은 자리에 올린 `LampSprite`. 전구 픽셀만 `emit` 배율로 발광(CanvasModulate 역수 보정, 목표 휘도 1.7), 깜빡일 때 약하게·깨질 때 강하게 가로 찢김+스캔라인 | `lamp_glitch.gdshader` |
+| 볼류메트릭 빛 기둥 | 전구 아래 → 바닥까지 사다리꼴 `Polygon2D`, 가산 블렌드. 노이즈가 천천히 흘러 먼지 낀 공기, 빛살 줄무늬. 램프 밝기(깜빡임·깨짐)에 연동. 사다리꼴은 UV 가 어파인 왜곡되므로 VERTEX 로 좌표를 직접 계산 | `light_cone.gdshader` |
+| 부유 먼지 | 방 전체 `DustLayer`(Polygon2D). 3 층의 셀 그리드 먼지가 떠다니고 램프 불빛 아래에서만 보인다(램프 위치·밝기 uniform 배열) | `dust.gdshader` |
+| 피격 플래시 | `HitProp` 이 맞으면 **탄착점 반경 70px 만** 0.11초 흰색으로 번쩍 (거리 감쇠, 프랍 전체가 반짝이지 않음). 탄착 PointLight2D(반지름 260, height 90)가 주변 노멀을 비춘다 | `hit_flash.gdshader` |
+| 창문 유리 + 균열 | `RoomData.TILE_WINDOWS`(wall_d, wall_d_mirror 의 환기창) 영역을 `GlassWindow` 로 올린다. 사선 하이라이트가 천천히 스치고, 맞으면 탄착점에서 방사형 금 9개+동심 고리가 퍼진다(발수록 누적). 탄착은 GLASS 파편 | `glass_window.gdshader` |
+| 사격 색수차 + 비네트 | `CanvasLayer 9` 풀스크린 `ColorRect`. 사격마다 색수차 +2.2px(최대 6) 후 빠르게 감쇠, 정수 픽셀 스냅으로 픽셀이 뭉개지지 않음. 비네트 0.35 상시 | `post_fx.gdshader` |
+
+레이어(z): 타일 0 → 램프 스프라이트·창문(Lights, 0) → 뒷벽 문 1 → 프랍 2 → 빛 기둥·먼지(Air, 4) → 캐릭터 5 → 탄 6 → 조준점 20. 후처리는 CanvasLayer 9, UI 는 10.
+
+## 프랍 피격 반응
+
+프랍은 `HitProp`. 축은 몸 중앙이 아니라 **총이 날아온 반대편 바닥 모서리**다. 맞으면 맞은 쪽이 딱 들리고(각속도 1.15rad/s, 각중력 22rad/s², 최대 0.085rad) 중력으로 떨어져 바닥에 '탁' 닿으며 작게 한 번 튕긴다. 반대편은 접지 마찰로 붙어 있고, 한 발마다 탄 방향으로 1.6px 씩 밀린다(접촉 그림자도 함께). 위쪽을 맞을수록 더 들린다. 캐비넷(+18px)·소파(+12px)는 이미지 하단 투명 여백만큼 내려 바닥선에 붙였다.
 
 열린 측벽문(초록등)은 걸어서 그대로 통과한다. 닫힌 측벽문(주황등)은 벽으로 막힌다.
 
@@ -26,8 +61,8 @@
                  [숙소 Quarters]
                  정면문0      정면문1
                    ↕            ↕
-[작업실 Workshop] ⇄ [복도 Corridor] ⇄ [창고 Storage]
-   (측벽문)             (측벽문)
+[작업실 Workshop] ⇄ [복도 Corridor] ⇄ [창고 Storage] ⇄ [격납고 Hangar]
+   (측벽문)             (측벽문)             (측벽문)   폭 4416 — 카메라 스크롤
 ```
 
 ## 구조
@@ -36,9 +71,16 @@
 |---|---|
 | `scripts/room_data.gd` | 방 정의 데이터(타일 순서, 프랍 좌표, 문 연결). 새 방은 여기에 항목만 추가 |
 | `scripts/room.gd` | 데이터로 타일·문·프랍을 조립. 레이어 순서: 타일 → 뒷벽 문 → 프랍 → 캐릭터 → 투사체 |
-| `scripts/player.gd` | 캐릭터 상태 머신 (Shoot > Crouch > Walk > Idle), Bottom Center 피벗, X 뒤집기 |
-| `scripts/bullet.gd` | 단순 투사체 |
-| `scripts/main.gd` | 방 로딩·페이드 전환·카메라 제한·HUD·입력 맵 |
+| `scripts/player.gd` | 캐릭터. `BodyPivot/Body`(몸통 애니) + `ArmPivot/Arm·Muzzle·Flash`(어깨 기준 회전하는 팔+총). 상태 Roll > Crouch > Walk > Idle |
+| `scripts/bullet.gd` | 고속 탄환(10400px/s) — 총구→목표점 Line2D 궤적, 목표점에 정확히 탄착 후 스파크·궤적 페이드 |
+| `scripts/lighting.gd` | 라이트 공용 값·원형 감쇠 텍스처·노멀맵 `CanvasTexture`/셰이더 로더·발광 배율 |
+| `scripts/lamp_light.gd` | 천장 램프 PointLight2D — 미세 흔들림 + 랜덤 깜빡임, 램프 스프라이트(발광·글리치)·빛 기둥 관리 |
+| `scripts/glass_window.gd` | 타일 속 창문 유리 — 하이라이트, 피격 균열 |
+| `scripts/dust_layer.gd` | 방 전체 부유 먼지 레이어 (램프 불빛 아래만 보임) |
+| `scripts/hit_prop.gd` | 피격 시 살짝 흔들리는 프랍 (스프링) + 흰색 피격 플래시 |
+| `scripts/shell_casing.gd` | 탄피 — 중력·바닥 튕김·회전, 1.6초 후 페이드 |
+| `scripts/crosshair.gd` | 마우스 위치의 조준점 (사격 시 벌어짐) |
+| `scripts/main.gd` | 방 로딩·페이드 전환·카메라 제한/흔들림·HUD·입력 맵·마우스 → 월드 조준점·글로우 환경·후처리 |
 | `scripts/auto_test.gd` | 개발용 자동 테스트. `AutoTest.tscn` 을 실행하면 입력을 시뮬레이션하고 `user://shots/` 에 스크린샷 저장 |
 
 ## 가이드 적용 사항
@@ -46,5 +88,20 @@
 - 리소스는 원본 픽셀 1:1 (뷰포트 1600×900), Nearest 필터, 밉맵 없음
 - 타일: Bottom Left 피벗, 같은 Y, `X += 폭` 누적, 캡은 방 끝에만
 - 바닥선: 타일 상단 기준 Y = 486 — 캐릭터·프랍 접지 기준
-- 캐릭터: 320×320 Full Rect 프레임, offset (-160, -320) 으로 Bottom Center 피벗, `flip_h` 로 왼쪽 방향
+- 캐릭터: 320×320 Full Rect 프레임, 발 밑이 원점(Bottom Center), `flip_h` 로 왼쪽 방향
+
+## 캐릭터 팔·총 분리 리소스 (`assets/character/Split/`)
+
+`Tools/build_hooded_mechanic_split.py` 가 원본 프레임에서 자동 생성한다 (`python Tools/build_hooded_mechanic_split.py`).
+
+| 파일 | 내용 |
+|---|---|
+| `arm_gun.png` | shoot_01 의 어깨 오른쪽 영역(팔+총). 어깨가 회전 원점, 총구 좌표는 `split_meta.json` |
+| `muzzle_flash.png` | shoot_03 의 총구 화염만 색으로 추출 |
+| `body/idle/idle_01.png` | shoot_01 에서 팔을 지운 조준 자세 몸통 (1프레임) |
+| `body/walk/walk_0N.png` | 위 조준 몸통(상체, y<236) + 원본 walk 다리(하체) 합성. 걷기 상하 흔들림만큼 상체를 따라 올림 |
+| `body/crouch/crouch_0N.png` | 원본 그대로. 팔은 오버레이 |
+| `split_meta.json` | 프레임별 어깨 앵커(`shoulder_from_pivot`, 발 밑 기준·오른쪽 방향). 왼쪽은 X 부호 반전 |
+
+왼쪽 조준 시 `ArmPivot.scale.y = -1` 로 팔 축 기준 상하 반전해 총이 뒤집히지 않는다. 원본 `Frames/` 는 레퍼런스로 남겨 두었다.
 - 프랍 좌표는 `Validation/workshop_long_room_tile_prop_validation.json` 의 캔버스 좌표에서 roomOrigin(96,184) 을 뺀 값

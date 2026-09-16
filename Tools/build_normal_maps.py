@@ -1,0 +1,84 @@
+"""GameReady 타일·프랍·문 PNG 에서 2D 라이팅용 노멀맵을 자동 생성한다.
+
+높이 = 밝기(블러) + 알파 실루엣 베벨(프랍·문). Sobel 기울기 → 노멀.
+Godot 는 OpenGL(Y+ 위) 규약이므로 화면 위쪽을 향한 면이 G>0.5 가 된다.
+
+실행: python Tools/build_normal_maps.py   (저장소 루트에서)
+출력: GodotPrototype/assets/normals/<종류>/<이름>.png  (원본과 같은 크기)
+"""
+from pathlib import Path
+import numpy as np
+from PIL import Image, ImageFilter
+
+ROOT = Path(__file__).resolve().parents[1] / "GodotPrototype" / "assets"
+GROUPS = {
+    # 종류: (강도, 베벨 폭 px, 밝기 블러)
+    "tiles": (2.4, 0, 1.0),
+    "props": (3.2, 6, 0.8),
+    "connectors": (3.0, 5, 0.8),
+}
+
+
+def height_map(img: Image.Image, bevel: int, blur: float) -> np.ndarray:
+    rgba = np.asarray(img.convert("RGBA")).astype(np.float32) / 255.0
+    lum = rgba[..., 0] * 0.299 + rgba[..., 1] * 0.587 + rgba[..., 2] * 0.114
+    alpha = rgba[..., 3]
+    if blur > 0:
+        lum = np.asarray(Image.fromarray((lum * 255).astype(np.uint8)).filter(
+            ImageFilter.GaussianBlur(blur))).astype(np.float32) / 255.0
+    h = lum * alpha
+    if bevel > 0:
+        # 실루엣 안쪽으로 들어갈수록 높아지는 둥근 베벨 (알파 침식 누적)
+        mask = (alpha > 0.5).astype(np.float32)
+        acc = np.zeros_like(mask)
+        cur = mask.copy()
+        for _ in range(bevel):
+            er = cur.copy()
+            er[1:, :] *= cur[:-1, :]
+            er[:-1, :] *= cur[1:, :]
+            er[:, 1:] *= cur[:, :-1]
+            er[:, :-1] *= cur[:, 1:]
+            acc += er
+            cur = er
+        bev = acc / bevel
+        bev = np.sqrt(np.clip(bev, 0, 1))          # 둥글게
+        h = 0.55 * h + 0.45 * bev * mask
+    return h, alpha
+
+
+def normal_from_height(h: np.ndarray, strength: float) -> np.ndarray:
+    p = np.pad(h, 1, mode="edge")
+    # Sobel
+    dx = (p[:-2, 2:] + 2 * p[1:-1, 2:] + p[2:, 2:]) - (p[:-2, :-2] + 2 * p[1:-1, :-2] + p[2:, :-2])
+    dy = (p[2:, :-2] + 2 * p[2:, 1:-1] + p[2:, 2:]) - (p[:-2, :-2] + 2 * p[:-2, 1:-1] + p[:-2, 2:])
+    dx *= strength / 8.0
+    dy *= strength / 8.0
+    nx = -dx
+    ny = dy          # 이미지 y-아래 → OpenGL y-위 변환
+    nz = np.ones_like(h)
+    n = np.stack([nx, ny, nz], -1)
+    n /= np.linalg.norm(n, axis=-1, keepdims=True)
+    return n
+
+
+def main() -> None:
+    for group, (strength, bevel, blur) in GROUPS.items():
+        src_dir = ROOT / group
+        out_dir = ROOT / "normals" / group
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for png in sorted(src_dir.glob("*.png")):
+            img = Image.open(png)
+            h, alpha = height_map(img, bevel, blur)
+            n = normal_from_height(h, strength)
+            rgb = ((n * 0.5 + 0.5) * 255.0).round().clip(0, 255).astype(np.uint8)
+            a = (np.clip(alpha, 0, 1) * 255).round().astype(np.uint8)
+            # 투명 픽셀은 평평한 노멀 (0.5,0.5,1)
+            flat = a < 8
+            rgb[flat] = (128, 128, 255)
+            out = np.dstack([rgb, np.full_like(a, 255)])
+            Image.fromarray(out, "RGBA").save(out_dir / png.name)
+            print(f"{group}/{png.name} -> {out_dir.relative_to(ROOT.parent)}/{png.name}")
+
+
+if __name__ == "__main__":
+    main()

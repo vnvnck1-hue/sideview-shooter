@@ -1,0 +1,129 @@
+{
+  "cell": 320,
+  "pivot": {
+    "x": 160,
+    "y": 320
+  },
+  "frames": {
+    "aim_01": {
+      "shoulder": [
+        199,
+        178
+      ],
+      "shoulder_from_pivot": [
+        39,
+        -142
+      ]
+    },
+    "idle_01": {
+      "shoulder": [
+        199,
+        178
+      ],
+      "shoulder_from_pivot": [
+        39,
+        -142
+      ]
+    },
+    "walk_01": {
+      "shoulder": [
+        193,
+        178
+      ],
+      "shoulder_from_pivot": [
+        33,
+        -142
+      ]
+    },
+    "walk_02": {
+      "shoulder": [
+        193,
+        181
+      ],
+      "shoulder_from_pivot": [
+        33,
+        -139
+      ]
+    },
+    "walk_03": {
+      "shoulder": [
+        193,
+        179
+      ],
+      "shoulder_from_pivot": [
+        33,
+        -141
+      ]
+    },
+    "walk_04": {
+      "shoulder": [
+        193,
+        174
+      ],
+      "shoulder_from_pivot": [
+        33,
+        -146
+      ]
+    },
+    "crouch_01": {
+      "shoulder": [
+        168,
+        178
+      ],
+      "shoulder_from_pivot": [
+        8,
+        -142
+      ]
+    },
+    "crouch_02": {
+      "shoulder": [
+        168,
+        209
+      ],
+      "shoulder_from_pivot": [
+        8,
+        -111
+      ]
+    },
+    "crouch_03": {
+      "shoulder": [
+        168,
+        250
+      ],
+      "shoulder_from_pivot": [
+        8,
+        -70
+      ]
+    },
+    "crouch_04": {
+      "shoulder": [
+        168,
+        244
+      ],
+      "shoulder_from_pivot": [
+        8,
+        -76
+      ]
+    }
+  },
+  "arm_gun": {
+    "size": [
+      87,
+      72
+    ],
+    "shoulder_local": [
+      0,
+      40
+    ],
+    "muzzle_local": [
+      83,
+      22
+    ]
+  },
+  "muzzle_flash": {
+    "size": [
+      52,
+      61
+    ]
+  }
+}

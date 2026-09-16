@@ -23,4 +23,6 @@ window/vsync/vsync_mode=1
 
 ; 청키 픽셀 유지 — Nearest 필터, 밉맵 없음
 textures/canvas_textures/default_texture_filter=0
-environment/defaults/default_clear_color=Color(0.0784, 0.0863, 0.1333, 1)
+; HDR 2D 는 끈다 — 선형 블렌딩이 어두운 채널을 눌러 기존 sRGB 조명 톤이 깨진다. 글로우는 LDR 임계값(0.85)으로 잡는다.
+viewport/hdr_2d=false
+environment/defaults/default_clear_color=Color(0, 0, 0, 1)
