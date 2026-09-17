@@ -6,6 +6,7 @@ extends SceneTree
 ##     터레인 세트 0 "배경 채움" — 소스 0: 채움 6종. 피어링 비트 없음(어떤 이웃이든 채워짐) + 같은 확률 → 랜덤 무늬
 ##     터레인 세트 1 "프레임"    — 소스 1: 외곽 8조각(안쪽 방향 비트) + 투명 내부 1칸(8방향 비트)
 ##     소스 2 "안쪽 모서리" 4종 — 터레인 없음. Tiles 탭에서 수동 배치 (Unity RuleTile 규칙 JSON 기준이라 Godot 이웃 패턴 대응은 미정)
+##     소스 3 "L-벤드" 4종     — 터레인 없음. 낮은 천장(바닥)이 높은 벽과 만나는 오목 코너용. make_frame_bend_tiles.py 로 합성
 ##     ※ 아트에 없는 형태(1칸 폭 기둥·1칸 높이 복도·외딴 1칸)는 맞는 조각이 없어 빈 셀로 남는다. 방은 2×2 셀 이상으로.
 ##   res://scenes/rooms/workshop.tscn            — 16×4 셀 예시 방 (없을 때만 새로 만든다. 이미 있으면 건너뜀)
 ## TileSet 은 다시 실행하면 덮어쓴다. 방 씬은 사용자가 편집하는 파일이므로 보존한다.
@@ -14,6 +15,7 @@ const CELL := 128
 const BG_SHEET := "res://assets/tiles/workshop_modular/workshop_modular_background_sheet_3x2.png"
 const FRAME_SHEET := "res://assets/tiles/workshop_modular/workshop_modular_frame_terrain_3x3.png"
 const INNER_SHEET := "res://assets/tiles/workshop_modular/workshop_modular_frame_inner_corners_sheet_4x1.png"
+const BEND_SHEET := "res://assets/tiles/workshop_modular/workshop_modular_frame_bend_sheet_4x1.png"
 const TILESET_PATH := "res://tiles/workshop_modular_tileset.tres"
 const EXAMPLE_ROOM := "res://scenes/rooms/workshop.tscn"
 
@@ -108,6 +110,16 @@ func _build_tileset() -> TileSet:
 	for i in range(4):
 		inner.create_tile(Vector2i(i, 0))
 	ts.add_source(inner, 2)
+
+	# 소스 3: L-벤드(안쪽으로 꺾이는 코너) 4종 — tools/make_frame_bend_tiles.py 가 벽×천장(바닥) 띠의 교차 사각형만 남겨 합성.
+	#         낮은 천장이 높은 벽과 만나는 셀에 놓으면 벽이 천장 높이에서 멈추고 옆으로 꺾인다 (InnerCorners 는 벽이 아래로 이어지는 T자).
+	var bend := TileSetAtlasSource.new()
+	bend.resource_name = "Frame L-벤드 4종 (수동 배치: top_left, top_right, bottom_left, bottom_right)"
+	bend.texture = load(BEND_SHEET)
+	bend.texture_region_size = Vector2i(CELL, CELL)
+	for i in range(4):
+		bend.create_tile(Vector2i(i, 0))
+	ts.add_source(bend, 3)
 	return ts
 
 

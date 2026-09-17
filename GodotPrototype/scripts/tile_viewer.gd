@@ -77,8 +77,7 @@ func _build_legacy() -> void:
 
 
 func _frame_camera() -> void:
-	var w := float(RoomData.room_width(room_id))
-	_camera.position = Vector2(w * 0.5, RoomData.TILE_HEIGHT * 0.5)
+	_camera.position = RoomData.room_rect(room_id).get_center()
 
 
 # ----------------------------------------------------------------------------- 입력
@@ -147,7 +146,7 @@ func _draw() -> void:
 	var view := Rect2(_camera.get_screen_center_position() - vp * 0.5, vp).grow(CELL)
 	var px := 1.0 / _camera.zoom.x
 	# 방 영역(RoomData 기준)과 바닥선
-	draw_rect(Rect2(0, 0, RoomData.room_width(room_id), RoomData.TILE_HEIGHT), Color(0.3, 0.8, 1.0, 0.45), false, 2.0 * px)
+	draw_rect(RoomData.room_rect(room_id), Color(0.3, 0.8, 1.0, 0.45), false, 2.0 * px)
 	draw_line(Vector2(view.position.x, RoomData.FLOOR_Y), Vector2(view.end.x, RoomData.FLOOR_Y), Color(1.0, 0.85, 0.3, 0.7), 2.0 * px)
 	if not show_grid:
 		return

@@ -10,10 +10,13 @@ var _sources: Array = []          # light_info() 를 가진 노드들
 var _mat: ShaderMaterial
 
 
-func setup(room_w: float, room_h: float, lamps: Array, sources: Array = []) -> void:
+## room_rect: 방 세로 범위 포함(층고가 높은 방은 천장 y 가 음수)
+func setup(room_rect: Rect2, lamps: Array, sources: Array = []) -> void:
 	_lamps = lamps
 	_sources = sources
-	polygon = PackedVector2Array([Vector2(0, 0), Vector2(room_w, 0), Vector2(room_w, room_h), Vector2(0, room_h)])
+	var tl := room_rect.position
+	var br := room_rect.end
+	polygon = PackedVector2Array([tl, Vector2(br.x, tl.y), br, Vector2(tl.x, br.y)])
 	texture = Lighting.white_texture()
 	uv = PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)])
 	_mat = Lighting.shader_material("dust")

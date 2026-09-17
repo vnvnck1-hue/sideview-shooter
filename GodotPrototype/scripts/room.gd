@@ -153,7 +153,7 @@ func build(id: String) -> void:
 	for lamp in lamps:
 		lamp.attach_cone(air, RoomData.FLOOR_Y)
 
-	var room_rect := Rect2(0, 0, width, RoomData.TILE_HEIGHT)
+	var room_rect := RoomData.room_rect(id)            # 층고가 높은 방은 천장이 0 위로 올라간다
 	var sources: Array = []
 	for fx in data.get("fx", []):
 		match fx["type"]:
@@ -203,7 +203,7 @@ func build(id: String) -> void:
 
 	var dust := DustLayer.new()
 	dust.name = "Dust"
-	dust.setup(float(width), float(RoomData.TILE_HEIGHT), lamps, sources)
+	dust.setup(room_rect, lamps, sources)
 	dust.z_index = 2
 	air.add_child(dust)
 
@@ -327,11 +327,34 @@ func hit_at(point: Vector2) -> Dictionary:
 	for t in _tiles:
 		if t["rect"].has_point(point):
 			return {"kind": "wall", "node": t}
+	# 옛 스트립 밖(층고가 높은 방의 위쪽 벽)이라도 모듈러 타일맵이 깔린 곳은 벽이다. 열 잔광은 없다(타일맵 UV 는 셀 단위).
+	if room_tiles and _tilemap_rect().has_point(point):
+		return {"kind": "wall", "node": {}}
 	return {"kind": "none"}
 
 
-## 벽·문 표면에 열 잔광을 남긴다 (hit_at 이 돌려준 "wall" 항목)
+## 모듈러 타일맵이 찍힌 영역(월드 px)
+func _tilemap_rect() -> Rect2:
+	var used: Rect2i
+	var cell := Vector2(128, 128)
+	var first := true
+	for child in room_tiles.get_children():
+		if child is TileMapLayer and child.tile_set:
+			var r: Rect2i = child.get_used_rect()
+			if r.size == Vector2i.ZERO:
+				continue
+			cell = Vector2(child.tile_set.tile_size)
+			used = r if first else used.merge(r)
+			first = false
+	if first:
+		return Rect2()
+	return Rect2(room_tiles.position + Vector2(used.position) * cell, Vector2(used.size) * cell)
+
+
+## 벽·문 표면에 열 잔광을 남긴다 (hit_at 이 돌려준 "wall" 항목). 타일맵 벽(빈 항목)은 잔광 없음.
 func heat_wall(entry: Dictionary, point: Vector2) -> void:
+	if not entry.has("heat"):
+		return
 	var r: Rect2 = entry["rect"]
 	var uv := ((point - r.position) / r.size).clamp(Vector2.ZERO, Vector2.ONE)
 	var s: Sprite2D = entry["sprite"]

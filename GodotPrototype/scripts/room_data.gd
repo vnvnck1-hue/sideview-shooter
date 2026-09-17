@@ -24,6 +24,8 @@ const SIDE_DOOR_OPEN_TEX := CONNECTOR_DIR + "sidewall_shutter_open_frame_game_sc
 ##       wire(끊긴 전선: pos=천장 앵커, length) · fire(불: pos=바닥 중심, size). 수도관은 wall_a 의 가로 파이프(y≈96) 위.
 ## "monsters": 시작 배치. {"type": "crawler", "x": 발 밑 X, "facing": 1|-1}
 ## "spawn": 지속 스폰 {"max": 살아 있는 최대 수, "interval": [최소, 최대 초]}. 없으면 Room.SPAWN_DEFAULT(6마리, 1.8~3.5초). 긴 격납고는 더 많이, 복도는 적게.
+## "width"(선택): 방 폭 px. 모듈러 타일맵(scenes/rooms/<id>.tscn)으로 그리는 방은 옛 스트립 합계 대신 이 값을 쓴다.
+## "ceiling_y"(선택): 천장 y px(기본 0). 층고가 높은 방은 음수(예: 8행 방 = -488). 카메라 중심·비상등·먼지 범위가 따라간다.
 const ROOMS := {
 	"workshop": {
 		"title": "작업실 (Workshop)",
@@ -116,7 +118,7 @@ const ROOMS := {
 		],
 		"front_doors": [],
 		"left_door": {"open": true, "target": "storage"},
-		"right_door": {"open": false},
+		"right_door": {"open": true, "target": "hall"},
 		"fx": [
 			{"type": "beacon", "pos": Vector2(1560, 118)},
 			{"type": "beacon", "pos": Vector2(3300, 118)},
@@ -162,6 +164,50 @@ const ROOMS := {
 		],
 		"spawn": {"max": 6, "interval": [1.8, 3.5]},
 	},
+	"hall": {
+		# 모듈러 타일맵(Workshop_Modular v2)으로만 그리는 첫 방. 폭 24셀(3072) · 중앙 고층부 8행(1024), 양 날개 5행.
+		# 격자 원점 (0, -488): 바닥 행(7행)의 밟는 띠 윗선이 바닥선 486 에 온다. 생성기: tools/build_hall_room.gd
+		# 옛 스트립 "tiles" 는 숨겨지고 램프 위치(wall_b·wall_repeat)만 빌려 쓴다. 창문 타일(wall_d)은 넣지 않는다.
+		"title": "대형 정비 홀 (Assembly Hall)",
+		"width": 3072,
+		"ceiling_y": -488,
+		"tiles": [
+			"workshop_cap_left",
+			"workshop_wall_repeat", "workshop_wall_a", "workshop_wall_b", "workshop_wall_c",
+			"workshop_wall_c_mirror", "workshop_wall_repeat", "workshop_wall_c",
+			"workshop_wall_c_mirror", "workshop_wall_b", "workshop_wall_a", "workshop_wall_repeat",
+			"workshop_cap_right",
+		],
+		"props": [
+			{"tex": "workshop_locker_game_scale", "pos": Vector2(210, 192)},
+			{"tex": "workshop_workbench_game_scale", "pos": Vector2(900, 254)},
+			{"tex": "workshop_armchair_game_scale", "pos": Vector2(1560, 261)},
+			{"tex": "workshop_workbench_game_scale", "pos": Vector2(2020, 254)},
+			{"tex": "workshop_locker_game_scale", "pos": Vector2(2700, 192)},
+		],
+		"front_doors": [],
+		"left_door": {"open": true, "target": "hangar"},
+		"right_door": {"open": false},
+		"fx": [
+			# 비상등 두 개 — 날개 천장(-104) 바로 아래 높이에 둔다. 더 높이 올리면(고층부 x 640~2432 밖) 스윕 광선이
+			# 날개 위 빈 공간(방 밖)으로 새어 나간다. 이 높이면 방 전체 폭을 붉게 훑는다.
+			{"type": "beacon", "pos": Vector2(700, -30)},
+			{"type": "beacon", "pos": Vector2(2370, -30)},
+			# 높은 천장에서 길게 늘어진 끊긴 전선
+			{"type": "wire", "pos": Vector2(1180, -440), "length": 520.0},
+			{"type": "wire", "pos": Vector2(1900, -440), "length": 460.0},
+			# 날개 천장(-104) 아래 짧은 전선과 벽 균열 누수
+			{"type": "wire", "pos": Vector2(2860, -60), "length": 190.0},
+			{"type": "leak", "pos": Vector2(420, 60), "dir": Vector2(0.45, 1.0), "pressure": 1.0},
+			{"type": "fire", "pos": Vector2(1380, 486), "size": Vector2(190.0, 240.0)},
+		],
+		"monsters": [
+			{"type": "crawler", "x": 1100, "facing": 1},
+			{"type": "crawler", "x": 1800, "facing": -1},
+			{"type": "crawler", "x": 2550, "facing": -1},
+		],
+		"spawn": {"max": 9, "interval": [1.5, 3.0]},
+	},
 }
 
 
@@ -184,11 +230,26 @@ static func get_room(id: String) -> Dictionary:
 	return ROOMS[id]
 
 
+## 방 폭(px). "width" 가 있으면 그 값(모듈러 타일맵 폭), 없으면 옛 스트립 타일 폭의 합.
 static func room_width(id: String) -> int:
+	var data: Dictionary = ROOMS[id]
+	if data.has("width"):
+		return int(data["width"])
 	var w := 0
-	for t in ROOMS[id]["tiles"]:
+	for t in data["tiles"]:
 		w += tile_width(t)
 	return w
+
+
+## 방 천장 y(px). 기본 0(옛 560 스트립 상단). 층고가 높은 모듈러 방은 "ceiling_y" 로 음수 값을 준다.
+static func room_ceiling(id: String) -> int:
+	return int(ROOMS[id].get("ceiling_y", 0))
+
+
+## 방의 세로 범위 사각형 (천장 ~ 스트립 하단 560). 카메라 중심·비상등 스윕·먼지 레이어 범위에 쓴다.
+static func room_rect(id: String) -> Rect2:
+	var top := room_ceiling(id)
+	return Rect2(0, top, room_width(id), TILE_HEIGHT - top)
 
 
 static func tile_width(tile_name: String) -> int:

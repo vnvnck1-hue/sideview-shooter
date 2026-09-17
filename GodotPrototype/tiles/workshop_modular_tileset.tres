@@ -1,12 +1,13 @@
 [gd_resource type="TileSet" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/tiles/workshop_modular/workshop_modular_background_sheet_3x2.png" id="1_vavjq"]
-[ext_resource type="Texture2D" path="res://assets/tiles/workshop_modular/workshop_modular_frame_terrain_3x3.png" id="2_je5ke"]
-[ext_resource type="Texture2D" path="res://assets/tiles/workshop_modular/workshop_modular_frame_inner_corners_sheet_4x1.png" id="3_mh86h"]
+[ext_resource type="Texture2D" path="res://assets/tiles/workshop_modular/workshop_modular_background_sheet_3x2.png" id="1_je5ke"]
+[ext_resource type="Texture2D" path="res://assets/tiles/workshop_modular/workshop_modular_frame_terrain_3x3.png" id="2_mh86h"]
+[ext_resource type="Texture2D" path="res://assets/tiles/workshop_modular/workshop_modular_frame_inner_corners_sheet_4x1.png" id="3_t3p1o"]
+[ext_resource type="Texture2D" path="res://assets/tiles/workshop_modular/workshop_modular_frame_bend_sheet_4x1.png" id="4_32y0p"]
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_t3p1o"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7rgyx"]
 resource_name = "Background 채움 a~f"
-texture = ExtResource("1_vavjq")
+texture = ExtResource("1_je5ke")
 texture_region_size = Vector2i(128, 128)
 0:0/0 = 0
 0:0/0/terrain_set = 0
@@ -33,9 +34,9 @@ metadata/tile_0_1 = "bg_fill_d"
 metadata/tile_1_1 = "bg_fill_e"
 metadata/tile_2_1 = "bg_fill_f"
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32y0p"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3vug4"]
 resource_name = "Frame 외곽선 8조각 + 투명 내부"
-texture = ExtResource("2_je5ke")
+texture = ExtResource("2_mh86h")
 texture_region_size = Vector2i(128, 128)
 0:0/0 = 0
 0:0/0/terrain_set = 1
@@ -105,9 +106,18 @@ texture_region_size = Vector2i(128, 128)
 2:2/0/terrains_peering_bit/top_side = 0
 2:2/0/terrains_peering_bit/top_right_corner = 0
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7rgyx"]
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3p2b1"]
 resource_name = "Frame 안쪽 모서리 4종 (수동 배치)"
-texture = ExtResource("3_mh86h")
+texture = ExtResource("3_t3p1o")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_85kim"]
+resource_name = "Frame L-벤드 4종 (수동 배치: top_left, top_right, bottom_left, bottom_right)"
+texture = ExtResource("4_32y0p")
 texture_region_size = Vector2i(128, 128)
 0:0/0 = 0
 1:0/0 = 0
@@ -122,6 +132,7 @@ terrain_set_0/terrain_0/color = Color(0.35, 0.55, 0.95, 1)
 terrain_set_1/mode = 0
 terrain_set_1/terrain_0/name = "프레임 (외곽선 자동)"
 terrain_set_1/terrain_0/color = Color(1, 0.75, 0.25, 1)
-sources/0 = SubResource("TileSetAtlasSource_t3p1o")
-sources/1 = SubResource("TileSetAtlasSource_32y0p")
-sources/2 = SubResource("TileSetAtlasSource_7rgyx")
+sources/0 = SubResource("TileSetAtlasSource_7rgyx")
+sources/1 = SubResource("TileSetAtlasSource_3vug4")
+sources/2 = SubResource("TileSetAtlasSource_3p2b1")
+sources/3 = SubResource("TileSetAtlasSource_85kim")
