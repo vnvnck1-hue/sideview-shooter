@@ -44,11 +44,19 @@ Godot 에디터의 **TileMap 터레인(Terrains) 브러시**로 찍는다. 별�
 - TileSet: `tiles/workshop_modular_tileset.tres` — `tools/build_workshop_tileset.gd` 가 생성(재실행하면 덮어씀)
   - 터레인 세트 0 **배경 채움**: 소스 0, 채움 a~f. 피어링 비트 없음 + 같은 확률 → 찍을 때마다 무늬가 랜덤으로 섞인다
   - 터레인 세트 1 **프레임**: 소스 1, `workshop_modular_frame_terrain_3x3.png`(외곽 8조각 + 투명 내부 1칸). 빈 이웃 방향에 맞는 모서리·변이 자동으로 붙는다
-  - 소스 2 **안쪽 모서리** 4종(`InnerCorners/`): 터레인 없이 **Tiles** 탭에서 수동 배치. 함께 들어온 `workshop_modular_ruletile_rules_v2.json` 은 Unity RuleTile 규격이라 Godot 터레인 이웃 패턴 대응은 정해지면 `build_workshop_tileset.gd` 에 비트만 추가하면 된다
+  - 소스 2 **안쪽 모서리** 4종(`InnerCorners/`): 터레인 없이 **Tiles** 탭에서 수동 배치. 함께 들어온 `workshop_modular_ruletile_rules_v2.json` 은 Unity RuleTile 규격이라 Godot 터레인 이웃 패턴 대응은 정해지면 `build_workshop_tileset.gd` 에 비트만 추가하면 된다.
+    단, 이 조각은 **벽 띠가 천장 띠를 지나 아래로 이어지는 T자** 모양이라 낮은 천장이 높은 벽과 만나는 곳에 놓으면 벽이 한 칸 튀어나와 보인다.
+  - 소스 3 **L-벤드** 4종(`workshop_modular_frame_bend_sheet_4x1.png`): 오목 코너용. 벽 띠 × 천장(바닥) 띠가 겹치는 56×48 사각형만 남긴 조각으로, 위 셀의 벽이 천장 높이에서 멈추고 옆 셀의 천장으로 꺾인다.
+    `tools/make_frame_bend_tiles.py`(Pillow) 가 프레임 3×3 시트에서 합성한다. 순서: top_left · top_right · bottom_left · bottom_right = 띠가 남는 사각형 위치. 검증 목업은 `Assets/GameReady/Validation/workshop_modular_bend_*_preview.png`
 - 방 씬: `scenes/rooms/<방 id>.tscn` — 루트 `RoomTiles`(`scripts/room_tiles.gd`) 아래 `Background`·`Frame` TileMapLayer 두 개.
   `Room.build` 가 방 id 와 같은 이름의 씬이 있으면 인스턴스해서 옛 스트립 타일 위에 올린다. 예시로 `workshop.tscn`(16×4 셀)이 들어 있다.
 - 루트 `position` 이 격자 원점. 기본 `(0, 24)`: 4행이 방 높이(560) 안에 들고 3번째 행 바닥 프레임의 밟는 띠 윗선이 바닥선(486)에 온다.
-- `RoomTiles.hide_legacy_tiles`(인스펙터 체크박스): 옛 560px 스트립을 숨기고 타일맵만 배경으로 쓴다. 방 폭·바닥선·문 등 게임 판정은 아직 `RoomData` 기준이다.
+  층고를 높이려면 바닥 행은 그대로 두고 위로 행을 늘린다 — 원점 y = 408 − 128 × (행 수 − 1). 8행이면 `(0, -488)`.
+- `RoomTiles.hide_legacy_tiles`(인스펙터 체크박스): 옛 560px 스트립을 숨기고 타일맵만 배경으로 쓴다. 바닥선·문·프랍 좌표는 `RoomData` 기준이고,
+  방 폭은 `"width"`, 천장은 `"ceiling_y"` 키로 타일맵에 맞춰 준다(카메라 세로 중심·비상등 스윕·먼지 범위가 따라간다). 숨긴 스트립의 램프 위치는 그대로 쓰인다.
+- **대형 정비 홀 `hall.tscn`** — 모듈러 타일맵만으로 그린 첫 방. 24×8 셀(3072×1024), 중앙 고층부 14×8 + 양 날개 5×5 의 성당형 실루엣.
+  `tools/build_hall_room.gd` 가 만든다(`SHAPE` 사각형 합집합 → Frame 조각을 이웃 판정으로 직접 고르고, 날개 천장이 고층부 벽과 만나는 오목 코너 2곳에 소스 2 안쪽 모서리를 놓는다).
+  다시 돌리면 덮어쓰므로 에디터에서 손본 뒤에는 실행하지 않는다. 격납고 오른쪽 측벽문으로 이어진다.
 
 ### 찍는 순서 (Godot 에디터)
 
@@ -181,8 +189,8 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
                  [숙소 Quarters]
                  정면문0      정면문1
                    ↕            ↕
-[작업실 Workshop] ⇄ [복도 Corridor] ⇄ [창고 Storage] ⇄ [격납고 Hangar]
-   (측벽문)             (측벽문)             (측벽문)   폭 4416 — 카메라 스크롤
+[작업실 Workshop] ⇄ [복도 Corridor] ⇄ [창고 Storage] ⇄ [격납고 Hangar] ⇄ [대형 정비 홀 Hall]
+   (측벽문)             (측벽문)             (측벽문)   폭 4416 — 카메라 스크롤   (측벽문)  3072×1024 — 모듈러 타일맵·높은 층고
 ```
 
 ## 구조
@@ -215,12 +223,19 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 | `scripts/light_mood.gd` | 배경 라이팅 무드 프리셋 3종 (`PRESETS`, preload 로 사용) — 앰비언트 색 + 방 전체 보조 광원(채광 필 라이트 / LED 스트립·표시등·창문 외광). `Room.apply_mood` 가 얹는다 |
 | `scripts/lobby.gd` / `scripts/app_flow.gd` / `scripts/tile_viewer.gd` | 로비 UI(마우스 버튼) / 씬 흐름·시작 방 전달 / 타일 씬 뷰어 |
 | `scripts/room_tiles.gd` / `tools/build_workshop_tileset.gd` | 방 타일맵 씬 루트(라이팅 머티리얼·옛 스트립 숨김) / TileSet(터레인) 생성기 |
+| `tools/build_hall_room.gd` / `tools/room_shot.gd` | 대형 정비 홀 타일맵 씬 생성기(실루엣 → Frame 조각·오목 코너 자동 선택) / 방 한 장 스크린샷 도구 (`--script res://tools/room_shot.gd -- <방 id> [main\|viewer] [프레임]`) |
 | `scripts/main.gd` | 방 로딩·페이드 전환·카메라 프리셋 키 처리·HUD·입력 맵·마우스 → 월드 조준점·글로우 환경·후처리 |
 | `scripts/auto_test.gd` | 개발용 자동 테스트. `AutoTest.tscn` 을 실행하면 입력을 시뮬레이션하고 `user://shots/` 에 스크린샷 저장 |
 
 ## 가이드 적용 사항
 
-- 리소스는 원본 픽셀 1:1 (뷰포트 1600×900), Nearest 필터, 밉맵 없음
+- **저해상도 픽셀아트 렌더링 (2026-09-17 전환)**: 월드는 `Main._setup_view` 가 만드는 534×300 `SubViewport`(Nearest · `snap_2d_transforms_to_pixel`) 에 그리고 `SubViewportContainer`(stretch_shrink 3, Nearest) 로 **정수 3배** 확대해 1600×900 창에 띄운다(1602×900, 좌우 1px 잘림). 카메라 zoom 0.25 → 가시 월드 2136×1200. **원본 4×4 픽셀 블록 = 뷰 1px = 화면 3px.** HUD(`UI` CanvasLayer)와 페이드는 바깥 풀해상도. 글로우 환경과 `PostFX` 는 SubViewport 안. `window/stretch/scale_mode=integer`. 이력: 800×450 ×2 → 534×300 ×3(4px 블록). 2026-09-18 에 8px 블록 ×6 "방식 B" 를 기존 그림의 수식 축소로 시험했다가 롤백 — 가는 요소가 뭉개져서, B 는 **네이티브 규격으로 직접 그린 자산**으로 간다(`Docs/ART_GUIDE.md` §10 규격·크기표).
+  - **자산은 `Tools/bake_pixel_grid.py` 로 굽는다**: 각 4×4 블록(크롤러는 10×10 — scale 0.4)을 단색 하나(불투명 픽셀 평균에 가장 가까운 실제 색)로 채우고 알파를 다수결(50%)로 잘라 AA·잡티를 없앤다. 크기는 원본과 같아 타일셋·좌표는 그대로. 프랍·캐릭터는 블록 안 색 분산이 최소인 격자 오프셋을 찾고, 타일은 128px 이음새 때문에 오프셋 0. 멱등. **자산 파이프라인 순서**: `build_hooded_mechanic_split.py` → `build_hooded_mechanic_head_split.py` / `build_crawler_frames.py` → **`bake_pixel_grid.py`** → `build_normal_maps.py` → `godot --headless --import`.
+  - 조명은 `Lighting.radial_texture` 가 CONSTANT 그라데이션 5단계 고리(ART_GUIDE "단계적 픽셀 클러스터"). 램프 풀·총구·탄착 라이트가 모두 공유한다.
+  - 화면 px 상수는 **뷰 px(1/3)** 인지 **창 px** 인지 구분한다: 색수차(`ABERRATION_*`)·`post_fx` 는 뷰 px, 마우스 반동(`MouseRecoil.KICK_PX`)·카메라 `deadzone` 프리셋은 창 px(카메라가 `view_scale` 로 나눈다). 월드 px 로 그리는 것(조준점 `Crosshair`, 파편, 탄피)은 **4 의 배수**로 두어야 뷰 픽셀 한 칸에 맞는다.
+  - 월드 → 창 좌표는 `Main.world_to_screen()` (AutoTest 마우스 워프가 쓴다). AutoTest 는 `user://shots/lo/` 에 534×300 원본도 저장한다. 카메라가 2배 시절보다 1.5배 가까워져 작업실도 살짝 스크롤하며, AutoTest 의 첫 `aimm` 사격(0.9초)은 크롤러가 화면 밖이라 빗나간다(이후 처치는 정상).
+  - 아직 안 한 것: HUD 픽셀 폰트(안에 넣기), 크롤러 `crawler_meta.json` 발밑 줄 재측정(알파 컷으로 최대 10px 달라질 수 있음). 방식 B 전환 시: `VIEW_SIZE` 267×150 · `VIEW_SCALE` 6 · `CAMERA_ZOOM` 0.125 · `Crosshair` 상수 ×2 · 불 `pixel_step` ×2 · 색수차 절반 · bake 블록 8/20 (2026-09-18 시험에서 확인한 변경 목록).
+- 리소스는 원본 픽셀 기준(타일 128px, 월드 좌표 = 원본 px), Nearest 필터, 밉맵 없음
 - 타일: Bottom Left 피벗, 같은 Y, `X += 폭` 누적, 캡은 방 끝에만
 - 바닥선: 타일 상단 기준 Y = 486 — 캐릭터·프랍 접지 기준
 - 캐릭터: 320×320 Full Rect 프레임, 발 밑이 원점(Bottom Center), `flip_h` 로 왼쪽 방향

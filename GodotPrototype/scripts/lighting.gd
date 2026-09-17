@@ -91,14 +91,18 @@ static var _smoke_tex: CanvasTexture
 static var _beam: ImageTexture
 
 
-## 부드러운 원형 감쇠 텍스처 (모든 PointLight2D 가 공유)
+## 원형 감쇠 텍스처 (모든 PointLight2D 가 공유). ART_GUIDE "빛은 부드러운 그라데이션 대신 단계적인 픽셀 클러스터" —
+## 계단형(CONSTANT) 그라데이션으로 5단계 고리. 고리 경계는 저해상도 뷰포트가 픽셀로 잘라 준다.
 static func radial_texture() -> GradientTexture2D:
 	if _radial == null:
 		var g := Gradient.new()
+		g.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
 		g.set_color(0, Color(1, 1, 1, 1))
 		g.set_color(1, Color(1, 1, 1, 0))
-		g.add_point(0.30, Color(1, 1, 1, 0.6))
-		g.add_point(0.65, Color(1, 1, 1, 0.18))
+		g.add_point(0.22, Color(1, 1, 1, 0.66))
+		g.add_point(0.42, Color(1, 1, 1, 0.40))
+		g.add_point(0.62, Color(1, 1, 1, 0.20))
+		g.add_point(0.82, Color(1, 1, 1, 0.08))
 		var t := GradientTexture2D.new()
 		t.gradient = g
 		t.width = TEX_SIZE

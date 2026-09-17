@@ -141,13 +141,11 @@ func _do(cmd: String) -> void:
 		"release":
 			Input.action_release(parts[1])
 		"aimw":
-			var screen_w: Vector2 = get_viewport().get_canvas_transform() * Vector2(float(parts[1]), float(parts[2]))
-			Input.warp_mouse(screen_w)
+			Input.warp_mouse(main.world_to_screen(Vector2(float(parts[1]), float(parts[2]))))
 		"aim":
 			# 플레이어 기준 상대 오프셋으로 마우스를 옮긴다 (월드 → 화면)
 			var world: Vector2 = main.player.position + Vector2(float(parts[1]), -float(parts[2]))
-			var screen: Vector2 = get_viewport().get_canvas_transform() * world
-			Input.warp_mouse(screen)
+			Input.warp_mouse(main.world_to_screen(world))
 		"fire":
 			main.set_fire_style(int(parts[1]))
 		"mood":
@@ -160,7 +158,7 @@ func _do(cmd: String) -> void:
 			# 첫 살아 있는 몬스터의 히트 박스 중심을 조준
 			for m in main.current_room.monsters:
 				if is_instance_valid(m) and not m.is_dead():
-					Input.warp_mouse(get_viewport().get_canvas_transform() * m.hit_center())
+					Input.warp_mouse(main.world_to_screen(m.hit_center()))
 					break
 		"mattack":
 			for m in main.current_room.monsters:
@@ -184,6 +182,13 @@ func _do(cmd: String) -> void:
 				img.linear_to_srgb()
 			var path := out_dir + parts[1] + ".png"
 			img.save_png(path)
+			# 저해상도 월드 원본(800×450)도 같이 저장 — 픽셀 격자 검증용
+			var lo: Image = main.world_vp.get_texture().get_image()
+			if main.world_vp.use_hdr_2d:
+				lo.convert(Image.FORMAT_RGBA8)
+				lo.linear_to_srgb()
+			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out_dir + "lo"))
+			lo.save_png(out_dir + "lo/" + parts[1] + ".png")
 			var room: String = main.current_room.room_id if main.current_room else "?"
 			var mon := ""
 			for m in main.current_room.monsters:

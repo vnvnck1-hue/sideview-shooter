@@ -10,8 +10,16 @@ const WALL_MARGIN := 110.0                   # 캡 타일 안쪽 벽까지의 �
 const DOOR_PASS_MARGIN := 60.0              # 열린 측벽문으로 들어갈 때 허용되는 초과 거리
 const SIDE_PAD := 180.0                      # 카메라가 방 밖 어두운 여백을 보여주는 폭
 const FADE_TIME := 0.11
-const CAMERA_ZOOM := 0.5                     # 원본 픽셀의 1/2 크기로 표시 (정수 배율 축소)
+## 저해상도 렌더링: 월드는 534×300 SubViewport 에 그리고 Nearest 로 정수 3배 확대해 1600×900 창에 띄운다
+## (534×3 = 1602 → 좌우 1px 씩 창 밖으로 잘린다). 라이트·파티클·셰이더·스프라이트가 모두 같은 3px 격자에 스냅된다.
+## HUD 는 바깥(풀해상도). 카메라 zoom 0.25 → 원본 4×4 픽셀 블록(Tools/bake_pixel_grid.py 가 단색으로 굽는다) = 뷰 1px = 화면 3px.
+## 가시 월드 2136×1200. (8px 블록 ×6 "방식 B" 는 267×150 / zoom 0.125 — 네이티브 자산이 준비되면 전환. ART_GUIDE §10)
+const VIEW_SIZE := Vector2i(534, 300)
+const VIEW_SCALE := 3
+const CAMERA_ZOOM := 0.25
 
+var world_vp: SubViewport                  # 저해상도 월드 뷰포트
+var world: Node2D                          # 방·플레이어·탄 등 월드 노드의 부모 (world_vp 안)
 var current_room: Room
 var player: Player
 var camera: GameCamera
@@ -30,12 +38,15 @@ var _recoil := MouseRecoil.new()          # 사격 반동 → 실제 마우스 �
 
 const SHAKE_PER_SHOT := 3.5
 const PLAYER_HIT_KNOCKBACK := 480.0   # 독액에 맞았을 때 밀리는 속도 (px/s)
-const ABERRATION_PER_SHOT := 2.2      # 사격 시 색수차 (화면 px)
+const ABERRATION_PER_SHOT := 1.1      # 사격 시 색수차 (저해상도 뷰 px — 화면으로는 ×VIEW_SCALE)
+const ABERRATION_CAP := 3.0
+const ABERRATION_PLAYER_HIT := 1.75
 const ABERRATION_DECAY := 18.0
 
 
 func _ready() -> void:
 	_setup_input_map()
+	_setup_view()
 	_setup_environment()
 	_setup_ui()
 
@@ -56,16 +67,17 @@ func _ready() -> void:
 	camera.zoom = Vector2(CAMERA_ZOOM, CAMERA_ZOOM)
 	camera.target = player
 	camera.base_y = RoomData.TILE_HEIGHT * 0.5
+	camera.view_scale = float(VIEW_SCALE)
 
 	crosshair = Crosshair.new()
 	crosshair.name = "Crosshair"
 	crosshair.z_index = 20
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 
-	add_child(player)
-	add_child(bullets)
-	add_child(crosshair)
-	add_child(camera)
+	world.add_child(player)
+	world.add_child(bullets)
+	world.add_child(crosshair)
+	world.add_child(camera)
 	var room_id := AppFlow.start_room if RoomData.ROOMS.has(AppFlow.start_room) else START_ROOM
 	var spawn_x := START_X if room_id == START_ROOM else RoomData.room_width(room_id) * 0.5
 	_load_room(room_id, spawn_x, 1)
@@ -91,11 +103,11 @@ func _process(_delta: float) -> void:
 	if current_room == null:
 		return
 
-	# 사격 반동: 포인터를 실제로 밀어 올린다 (조준점 읽기 전에 적용)
+	# 사격 반동: 포인터를 실제로 밀어 올린다 (창 좌표 기준 — 루트 뷰포트)
 	_recoil.tick(get_viewport(), _delta)
 
-	# 조준: 마우스 포인터의 월드 좌표가 곧 탄착 지점
-	var mouse_world := get_global_mouse_position()
+	# 조준: 마우스 포인터의 월드 좌표가 곧 탄착 지점 (SubViewportContainer 가 좌표를 1/VIEW_SCALE 로 넘겨준다)
+	var mouse_world := world.get_global_mouse_position()
 	crosshair.position = mouse_world
 	crosshair.heat = player.spread_ratio()
 	if not transitioning:
@@ -136,8 +148,8 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	current_room.build(id)
 	current_room.player = player
 	current_room.player_hit.connect(_on_player_hit)
-	add_child(current_room)
-	move_child(current_room, 0)
+	world.add_child(current_room)
+	world.move_child(current_room, 0)
 
 	# 이동 한계: 닫힌 쪽은 벽 앞에서 멈추고, 열린 쪽은 문을 지나갈 수 있게 조금 더 허용
 	var left_limit := -DOOR_PASS_MARGIN if current_room.left_door_open else WALL_MARGIN
@@ -151,6 +163,8 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 
 
 func _apply_camera_limits() -> void:
+	# 세로 중심은 방의 실제 세로 범위(천장~560) 가운데 — 층고가 높은 방은 위로 올라간다
+	camera.base_y = RoomData.room_rect(current_room.room_id).get_center().y
 	camera.set_room(float(current_room.width), SIDE_PAD)
 
 
@@ -223,7 +237,7 @@ func _on_player_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 	bullets.add_child(b)
 	current_room.notify_shot(muzzle_pos, target_pos)      # 전선 등 물리 반응
 	camera.add_shake(SHAKE_PER_SHOT)
-	_aberration = minf(_aberration + ABERRATION_PER_SHOT, 6.0)
+	_aberration = minf(_aberration + ABERRATION_PER_SHOT, ABERRATION_CAP)
 	crosshair.kick()
 	_recoil.kick(float(player.facing))
 
@@ -241,7 +255,7 @@ func _on_ammo_changed(ammo: int, mag: int, reloading: bool) -> void:
 ## 몬스터 독액에 맞음: 카메라 흔들림 + 색수차 + 플레이어 밀림 (체력은 아직 없음)
 func _on_player_hit(_point: Vector2, dir: float) -> void:
 	camera.add_shake(7.0)
-	_aberration = minf(_aberration + 3.5, 6.0)
+	_aberration = minf(_aberration + ABERRATION_PLAYER_HIT, ABERRATION_CAP)
 	player.knockback(dir * PLAYER_HIT_KNOCKBACK)
 
 
@@ -271,7 +285,42 @@ func _on_shell_ejected(pos: Vector2, dir: int) -> void:
 	bullets.add_child(sc)
 
 
-## 글로우(WorldEnvironment) + 풀스크린 후처리(색수차·비네트). 2D 는 project.godot 의 hdr_2d 가 켜져야 글로우가 잡힌다.
+## 저해상도 월드 뷰포트. SubViewportContainer(1602×900, stretch_shrink 3) 안의 SubViewport(534×300).
+## 컨테이너가 마우스 이벤트를 1/3 좌표로 넘겨주므로 world 안의 노드는 get_global_mouse_position() 을 그대로 쓴다.
+func _setup_view() -> void:
+	var container := SubViewportContainer.new()
+	container.name = "View"
+	container.stretch = true
+	container.stretch_shrink = VIEW_SCALE
+	container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST     # 정수 확대 시 픽셀 선명하게
+	var win := Vector2(1600, 900)
+	container.size = Vector2(VIEW_SIZE * VIEW_SCALE)
+	container.position = ((win - container.size) * 0.5).floor()      # 1602×900 → x = -1 (가운데 정렬, 넘치는 1px 은 잘림)
+	add_child(container)
+
+	world_vp = SubViewport.new()
+	world_vp.name = "World"
+	world_vp.size = VIEW_SIZE
+	world_vp.disable_3d = true
+	world_vp.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
+	world_vp.snap_2d_transforms_to_pixel = true                        # 카메라 보간·서브픽셀 이동을 뷰 픽셀에 스냅
+	world_vp.use_hdr_2d = ProjectSettings.get_setting("rendering/viewport/hdr_2d", false)
+	world_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	container.add_child(world_vp)
+
+	world = Node2D.new()
+	world.name = "Stage"
+	world_vp.add_child(world)
+
+
+## 월드 좌표 → 창(루트 뷰포트) 좌표. AutoTest 의 마우스 워프 등에 쓴다.
+func world_to_screen(p: Vector2) -> Vector2:
+	var container := world_vp.get_parent() as Control
+	return Vector2(world_vp.get_canvas_transform() * p) * float(VIEW_SCALE) + container.position
+
+
+## 글로우(WorldEnvironment) + 풀스크린 후처리(색수차·비네트). 둘 다 저해상도 월드 뷰포트 안에 둔다.
+## 2D 는 project.godot 의 hdr_2d 가 켜져야 글로우가 잡힌다.
 func _setup_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_CANVAS
@@ -293,12 +342,12 @@ func _setup_environment() -> void:
 	var we := WorldEnvironment.new()
 	we.name = "Environment"
 	we.environment = env
-	add_child(we)
+	world_vp.add_child(we)
 
 	var post_layer := CanvasLayer.new()
 	post_layer.name = "PostFX"
 	post_layer.layer = 9
-	add_child(post_layer)
+	world_vp.add_child(post_layer)
 	var post := ColorRect.new()
 	post.name = "PostRect"
 	post.set_anchors_preset(Control.PRESET_FULL_RECT)

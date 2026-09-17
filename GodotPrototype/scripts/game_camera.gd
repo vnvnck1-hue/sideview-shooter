@@ -18,7 +18,7 @@ signal preset_changed(index: int, preset: Dictionary)
 ##   facing_lead   : 캐릭터가 바라보는 쪽으로 항상 밀어두는 거리
 ##   follow_speed  : 플레이어 추적 보간 속도 (클수록 즉각적)
 ##   look_speed    : 리드(마우스·시선) 보간 속도
-##   deadzone      : 화면 중심 근처에서 마우스 리드를 무시하는 반경 (화면 px)
+##   deadzone      : 화면 중심 근처에서 마우스 리드를 무시하는 반경 (창 px, 1600×900 기준 — view_scale 로 뷰 px 변환)
 const PRESETS := [
 	{
 		"id": "steady", "name": "안정형",
@@ -44,6 +44,7 @@ const SHAKE_DECAY := 14.0
 
 var target: Node2D                      # Player (position.x 와 facing 사용)
 var base_y := 0.0                       # 방의 세로 중심
+var view_scale := 1.0                   # 창 px / 이 카메라 뷰포트 px (저해상도 SubViewport 면 2)
 var preset_index := DEFAULT_PRESET
 var preset: Dictionary = PRESETS[DEFAULT_PRESET]
 
@@ -145,7 +146,7 @@ func _desired_lead() -> Vector2:
 	var vp := get_viewport_rect().size
 	var mouse_screen := get_viewport().get_mouse_position()
 	var rel := mouse_screen - vp * 0.5                       # 화면 중심 기준 포인터 오프셋 (화면 px)
-	var dz := float(preset["deadzone"])
+	var dz := float(preset["deadzone"]) / view_scale
 	var len := rel.length()
 	if len <= dz:
 		rel = Vector2.ZERO
