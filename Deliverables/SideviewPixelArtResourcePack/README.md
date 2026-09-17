@@ -13,9 +13,15 @@
 - `04_Props/Initial/`: 최초 생성한 가구 3종과 캐릭터
 - `04_Props/Canonical/`: 기준 이미지 투영을 반영한 캐비넷·소파와 교정된 책상
 - `04_Props/GameReady/`: 공통 장면 스케일과 투명 배경으로 가공한 실제 배치용 프랍
+- `04_Props/Hydroponics/`: 수경재배실의 투명 프랍 6종
+- `04_Props/CrewQuarters/`: 승무원 숙소의 투명 프랍 6종
+- `04_Props/RoomPropSheets/`: 두 방의 생성 원본 및 알파 변환 프랍 시트
 - `04_Characters/HoodedMechanic/`: 아이들·걷기·사격·숙이기 시트, 개별 프레임과 메타데이터
 - `04_Characters/Source/`: 캐릭터 애니메이션 생성 원본 시트
 - `05_Tiles/Workshop/`: 긴 작업실을 조립하는 세로 매크로 배경 타일
+- `05_Tiles/Corridor/`: 빈 연결 복도 타일
+- `05_Tiles/Hydroponics/`: 수경재배실 빈 배경 타일
+- `05_Tiles/CrewQuarters/`: 승무원 숙소 빈 배경 타일
 - `06_Connectors/Source/`: 정면문·측벽문의 생성 원본
 - `06_Connectors/GameReady/`: 장면 스케일로 가공한 실제 배치용 문
 - `07_Validation/`: 배경 타일 조립본, 프랍 배치 검증본과 좌표 JSON
@@ -29,6 +35,8 @@
 2. 가구와 캐릭터: `04_Props/GameReady/`
 3. 정면문과 측벽문: `06_Connectors/GameReady/`
 4. 캐릭터 애니메이션: `04_Characters/HoodedMechanic/`
+
+추가 방을 구성할 때는 `05_Tiles/<Theme>/`의 배경 타일과 `04_Props/<Theme>/`의 투명 프랍을 조합한다. 복도는 의도적으로 별도 프랍 없이 비워 둔다.
 
 조립 결과와 정확한 배치 좌표는 `07_Validation/workshop_long_room_tile_prop_validation.png` 및 같은 이름의 JSON에서 확인한다.
 

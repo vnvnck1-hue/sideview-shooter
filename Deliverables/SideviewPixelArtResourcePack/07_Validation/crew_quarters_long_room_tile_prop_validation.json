@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "theme": "CrewQuarters",
+  "canvas": {
+    "width": 2304,
+    "height": 941
+  },
+  "roomOrigin": {
+    "x": 96,
+    "y": 184
+  },
+  "floorY": 670,
+  "constructionTileHeight": 560,
+  "floorFromTileBottom": 74,
+  "tileSequence": [
+    "cap_left",
+    "wall_a",
+    "wall_b",
+    "wall_c",
+    "wall_d",
+    "wall_c_mirror",
+    "wall_d_mirror",
+    "wall_repeat",
+    "cap_right"
+  ],
+  "placements": {
+    "washStation": {
+      "x": 170,
+      "y": 356,
+      "width": 207,
+      "height": 300
+    },
+    "heater": {
+      "x": 500,
+      "y": 343,
+      "width": 169,
+      "height": 330
+    },
+    "bedsideCabinet": {
+      "x": 790,
+      "y": 513,
+      "width": 133,
+      "height": 160
+    },
+    "bunkLeft": {
+      "x": 980,
+      "y": 383,
+      "width": 305,
+      "height": 290
+    },
+    "privacyScreen": {
+      "x": 1450,
+      "y": 393,
+      "width": 220,
+      "height": 280
+    },
+    "bunkRight": {
+      "x": 1740,
+      "y": 383,
+      "width": 315,
+      "height": 290
+    },
+    "character": {
+      "x": 900,
+      "y": 431,
+      "width": 239,
+      "height": 245
+    }
+  }
+}

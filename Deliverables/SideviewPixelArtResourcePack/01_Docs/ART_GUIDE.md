@@ -150,6 +150,9 @@
 - 동일 투영으로 교정한 책상: `Assets/Generated/CanonicalProps/workshop_workbench_corrected_projection_v2.png`
 - 캐릭터 애니메이션 마스터 시트: `Assets/GameReady/Characters/HoodedMechanic/Sheets/hooded_mechanic_all_4x4_v1.png`
 - 캐릭터 애니메이션 메타데이터: `Assets/GameReady/Characters/HoodedMechanic/hooded_mechanic_animation_v1.json`
+- 복도 배경 타일: `Assets/GameReady/Tiles/Corridor/`
+- 수경재배실 배경 타일·프랍: `Assets/GameReady/Tiles/Hydroponics/`, `Assets/GameReady/Props/Hydroponics/`
+- 승무원 숙소 배경 타일·프랍: `Assets/GameReady/Tiles/CrewQuarters/`, `Assets/GameReady/Props/CrewQuarters/`
 
 v3는 프랍 색상 기준, v4는 카메라 거리와 환경 구성 기준으로 사용한다. v2는 프랍을 과도하게 밝힌 반례로 취급한다.
 
@@ -174,3 +177,4 @@ v3는 프랍 색상 기준, v4는 카메라 거리와 환경 구성 기준으로
 - v0.8: 프랍별 바닥 오프셋과 픽셀 접촉 그림자 규칙 추가. 측벽문의 사선 앞면 표현을 폐기하고 단면형 닫힘·열림 상태로 교체.
 - v0.9: 기준 이미지의 캐비넷·소파를 표준 투영으로 지정. 완전한 무원근 정면도가 아니라 윗면과 측면이 조금 보이는 약한 원근을 프랍 공통 규칙으로 확정하고 책상을 같은 투영으로 교정.
 - v1.0: 아이들·걷기·사격·숙이기 최소 키프레임 규칙 추가. 모든 캐릭터 프레임에 동일한 셀 크기, 하단 중앙 피벗과 공통 바닥선을 적용.
+- v1.1: 빈 연결 복도, 수경재배실과 승무원 숙소를 작업실과 같은 세로 매크로 타일 규격으로 확장. 테마별 빈 배경과 투명 프랍 분리 및 긴 방 재조립 검증 추가.

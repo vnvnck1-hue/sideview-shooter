@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "theme": "Corridor",
+  "canvas": {
+    "width": 2304,
+    "height": 941
+  },
+  "roomOrigin": {
+    "x": 96,
+    "y": 184
+  },
+  "floorY": 670,
+  "constructionTileHeight": 560,
+  "floorFromTileBottom": 74,
+  "tileSequence": [
+    "cap_left",
+    "wall_a",
+    "wall_b",
+    "wall_c",
+    "wall_d",
+    "wall_c_mirror",
+    "wall_d_mirror",
+    "wall_repeat",
+    "cap_right"
+  ],
+  "placements": {
+    "character": {
+      "x": 1030,
+      "y": 431,
+      "width": 239,
+      "height": 245
+    }
+  }
+}

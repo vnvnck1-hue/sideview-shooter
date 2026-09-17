@@ -22,6 +22,37 @@
 
 이 타일은 작은 지형 셀을 칠하는 일반 타일맵용 타일이 아니라, 천장·벽·바닥·기초를 한 번에 연결하는 세로 매크로 타일이다.
 
+### 추가 배경 테마
+
+작업실과 동일한 규격으로 다음 테마가 제공된다.
+
+| 테마 | 경로 | 용도 |
+|---|---|---|
+| Corridor | `Assets/GameReady/Tiles/Corridor/` | 프랍이 없는 방 연결 구간 |
+| Hydroponics | `Assets/GameReady/Tiles/Hydroponics/` | 수경재배실 배경 |
+| CrewQuarters | `Assets/GameReady/Tiles/CrewQuarters/` | 승무원 숙소 배경 |
+
+각 테마는 `cap_left`, `cap_right`, `wall_a`, `wall_b`, `wall_c`, `wall_d`, `wall_c_mirror`, `wall_d_mirror`, `wall_repeat`의 9개 타일을 가진다. 파일명 앞에는 테마 이름이 붙는다.
+
+### 추가 방 프랍
+
+수경재배실 프랍 경로: `Assets/GameReady/Props/Hydroponics/`
+
+- 성장 탱크 3종
+- 제어 콘솔과 실린더
+- 바퀴 달린 식물 랙
+- 세척대와 수도관
+
+승무원 숙소 프랍 경로: `Assets/GameReady/Props/CrewQuarters/`
+
+- 거울·선반·세면대 통합 프랍
+- 배기 파이프가 포함된 난로
+- 책과 머그가 놓인 협탁
+- 좌우 침대 2종
+- 이동식 가림막
+
+프랍은 실제 알파 투명 PNG이며 기본 피벗은 Bottom Center다. 세면대처럼 벽에 붙는 프랍은 배치 JSON의 오프셋을 기준으로 벽 높이를 맞춘다.
+
 ### 캐릭터 애니메이션
 
 경로: `Assets/GameReady/Characters/HoodedMechanic/`
@@ -98,6 +129,8 @@ cap_right
 | 9 | cap_right | 1952 |
 
 이 조합의 전체 방 너비는 2112px이다.
+
+같은 순서를 Corridor, Hydroponics, CrewQuarters 타일에도 사용할 수 있다. 테마가 다른 타일을 한 방 안에서 섞기보다 방 또는 복도 블록 단위로 전환한다.
 
 ### 바닥선과 충돌면
 
@@ -238,6 +271,10 @@ Foreground Frame
 
 - 타일·프랍 배치 결과: `Assets/GameReady/Validation/workshop_long_room_tile_prop_validation.png`
 - 타일 배치 순서와 좌표: `Assets/GameReady/Validation/workshop_long_room_tile_prop_validation.json`
+- 복도 조립 검증: `Assets/GameReady/Validation/corridor_long_tile_prop_validation.png`
+- 수경재배실 조립 검증: `Assets/GameReady/Validation/hydroponics_long_room_tile_prop_validation.png`
+- 승무원 숙소 조립 검증: `Assets/GameReady/Validation/crew_quarters_long_room_tile_prop_validation.png`
+- 추가 테마 좌표: 위 검증 이미지와 같은 이름의 JSON 파일
 - 캐릭터 피벗과 클립 데이터: `Assets/GameReady/Characters/HoodedMechanic/hooded_mechanic_animation_v1.json`
 - 누적 스타일 규칙: `Docs/ART_GUIDE.md`
 

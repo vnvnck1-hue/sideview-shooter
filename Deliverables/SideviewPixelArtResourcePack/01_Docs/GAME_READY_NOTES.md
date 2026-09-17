@@ -17,7 +17,12 @@
 ## 폴더
 
 - `Tiles/Workshop/`: 작업실 좌우 캡, 중앙 벽 변형, 좌우 반전 변형
+- `Tiles/Corridor/`: 빈 연결 복도 좌우 캡과 중앙 벽 변형
+- `Tiles/Hydroponics/`: 수경재배실 빈 배경 타일
+- `Tiles/CrewQuarters/`: 승무원 숙소 빈 배경 타일
 - `Props/Workshop/`: 공통 장면 스케일로 정규화한 작업실 프랍과 캐릭터
+- `Props/Hydroponics/`: 성장 탱크 3종, 제어 콘솔, 식물 랙, 세척대
+- `Props/CrewQuarters/`: 세면대, 난로, 협탁, 침대 2종, 가림막
 - `Connectors/`: 정면문과 측벽문
 - `Characters/HoodedMechanic/`: 4종 애니메이션 시트, 개별 프레임과 피벗 메타데이터
 - `Validation/`: 타일만 사용한 긴 방, 프랍까지 배치한 검증 이미지와 JSON 배치값
@@ -64,7 +69,15 @@
 - 캐비넷·소파의 기준 투영을 유지하고 책상만 같은 약한 원근으로 교정했다.
 - 측벽문은 방의 소실점과 충돌하는 앞면 표현을 제거하고 단면형 열림·닫힘 상태로 교체했다.
 - 반복되는 벽 무늬는 벽 변형 및 좌우 반전 타일로 분산한다.
+- 복도·수경재배실·승무원 숙소도 작업실과 동일한 560px 높이, 256px 중앙 타일, 160px 좌우 캡 규격을 사용한다.
+- 수경재배실과 숙소는 빈 배경 타일과 투명 프랍을 분리해 원본 구성을 다시 만들거나 새로운 배치를 만들 수 있다.
 - 구체적인 타일 순서와 오브젝트 좌표는 `Validation/workshop_long_room_tile_prop_validation.json`에 기록돼 있다.
+
+추가 테마의 검증 좌표는 다음 파일에 기록돼 있다.
+
+- `Validation/corridor_long_tile_prop_validation.json`
+- `Validation/hydroponics_long_room_tile_prop_validation.json`
+- `Validation/crew_quarters_long_room_tile_prop_validation.json`
 
 ## 임포트 권장값
 
