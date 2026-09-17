@@ -52,6 +52,7 @@ static func apply(room: Node2D, layer: Node2D, ambient: CanvasModulate, i: int) 
 	mood.name = "Mood"
 	layer.add_child(mood)
 	var width := float(room.width)
+	var room_floor := float(room.get("floor_y")) if room.get("floor_y") != null else float(RoomData.FLOOR_Y)
 
 	if p.has("fill"):
 		var f: Dictionary = p["fill"]
@@ -77,7 +78,7 @@ static func apply(room: Node2D, layer: Node2D, ambient: CanvasModulate, i: int) 
 			l.color = fl["color"]
 			l.energy = fl["energy"]
 			l.height = fl["height"]
-			l.position = Vector2(width * (k + 0.5) / n, RoomData.FLOOR_Y + float(fl["dy"]))
+			l.position = Vector2(width * (k + 0.5) / n, room_floor + float(fl["dy"]))
 			mood.add_child(l)
 
 	if p.has("strip"):

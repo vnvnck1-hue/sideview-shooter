@@ -16,6 +16,13 @@ GROUPS = {
     "tiles": (2.4, 0, 1.0),
     "props": (3.2, 6, 0.8),
     "connectors": (3.0, 5, 0.8),
+    # 방식 B 전력 릴레이실 — 기존 지하 시설물의 노멀 반응을 유지하되,
+    # 게임 런타임이 참조하는 전용 폴더 구조를 그대로 보존한다.
+    "power_relay_room/Props": (3.2, 6, 0.8),
+    "power_relay_room/Destruction": (3.2, 5, 0.7),
+    "power_relay_room/Lighting": (2.6, 4, 0.7),
+    "power_relay_room/Tiles/Background": (2.4, 0, 1.0),
+    "power_relay_room/Tiles/Frame": (2.4, 0, 1.0),
     "character/Split": (2.8, 4, 0.6),     # 게임이 쓰는 분리 프레임(몸통·팔)만
     "character/ToxicTumorCrawler": (2.6, 5, 0.7),   # 몬스터: 종양 덩어리가 둥글게 굴러 보이도록 베벨을 조금 넓게
 }

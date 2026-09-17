@@ -12,6 +12,7 @@ signal player_hit(point: Vector2, dir: float)
 
 var room_id: String
 var width: int = 0
+var floor_y: float = RoomData.FLOOR_Y
 var front_doors: Array = []   # [{"x", "target", "target_door", "center": Vector2}]
 var left_door_open := false
 var right_door_open := false
@@ -51,6 +52,7 @@ func build(id: String) -> void:
 	room_id = id
 	var data := RoomData.get_room(id)
 	width = RoomData.room_width(id)
+	floor_y = float(RoomData.floor_y(id))
 
 	# 1. 배경 타일 — Bottom Left 피벗, 같은 Y, 간격 없이 X 누적
 	var tiles := Node2D.new()
@@ -67,6 +69,8 @@ func build(id: String) -> void:
 	lights.name = "Lights"
 	add_child(lights)
 	_lights = lights
+	if data.get("theme", "") == "power_relay":
+		_build_power_relay_background(tiles)
 
 	var x := 0
 	for tile_name in data["tiles"]:
@@ -119,7 +123,7 @@ func build(id: String) -> void:
 		doors.add_child(s)
 		_doors.append({"sprite": s, "rect": Rect2(s.position, s.texture.get_size()), "heat": HeatSurface.new(dm)})
 		var info: Dictionary = fd.duplicate()
-		info["center"] = Vector2(fd["x"] + FRONT_DOOR_W * 0.5, RoomData.FLOOR_Y)
+		info["center"] = Vector2(fd["x"] + FRONT_DOOR_W * 0.5, floor_y)
 		front_doors.append(info)
 
 	# 3. 측벽문 — 방 좌우 끝 중심에 배치. 왼쪽은 X 뒤집기.
@@ -138,6 +142,8 @@ func build(id: String) -> void:
 	props.z_index = 2
 	add_child(props)
 	_props_layer = props
+	if data.get("theme", "") == "power_relay":
+		_build_power_relay_props(props, data)
 	for p in data["props"]:
 		var shadow := _add_contact_shadow(props, p)
 		var s := HitProp.new()
@@ -150,8 +156,10 @@ func build(id: String) -> void:
 	air.name = "Air"
 	air.z_index = 4
 	add_child(air)
+	if data.get("theme", "") == "power_relay":
+		_build_power_relay_lights(lights, data)
 	for lamp in lamps:
-		lamp.attach_cone(air, RoomData.FLOOR_Y)
+		lamp.attach_cone(air, floor_y)
 
 	var room_rect := RoomData.room_rect(id)            # 층고가 높은 방은 천장이 0 위로 올라간다
 	var sources: Array = []
@@ -162,7 +170,7 @@ func build(id: String) -> void:
 				b.name = "Beacon"
 				b.position = fx["pos"]
 				lights.add_child(b)
-				b.setup(air, room_rect, RoomData.FLOOR_Y)
+				b.setup(air, room_rect, floor_y)
 				beacons.append(b)
 				sources.append(b)
 			"leak":
@@ -170,16 +178,24 @@ func build(id: String) -> void:
 				wl.name = "Leak"
 				wl.position = fx["pos"]
 				air.add_child(wl)
-				wl.setup(props, fx.get("dir", Vector2(0.3, 1.0)), RoomData.FLOOR_Y, fx.get("pressure", 1.0))
+				wl.setup(props, fx.get("dir", Vector2(0.3, 1.0)), floor_y, fx.get("pressure", 1.0))
 				leaks.append(wl)
 			"wire":
 				var w := BrokenWire.new()
 				w.name = "Wire"
 				w.position = fx["pos"]
 				air.add_child(w)
-				w.setup(fx.get("length", 200.0), RoomData.FLOOR_Y)
+				w.setup(fx.get("length", 200.0), floor_y)
 				wires.append(w)
 				sources.append(w)
+			"power_cable":
+				var cable := PowerRelayCable.new()
+				cable.name = "PowerRelayCable"
+				cable.position = fx["pos"]
+				air.add_child(cable)
+				cable.setup(float(fx.get("length", 260.0)), floor_y)
+				wires.append(cable)
+				sources.append(cable)
 			"fire":
 				var f := FireSource.new()
 				f.name = "Fire"
@@ -208,6 +224,103 @@ func build(id: String) -> void:
 	air.add_child(dust)
 
 
+func _build_power_relay_background(parent: Node2D) -> void:
+	var bg_names := [
+		"power_relay_bg_plain.png", "power_relay_bg_blocks.png", "power_relay_bg_channel.png",
+		"power_relay_bg_vent.png", "power_relay_bg_repaired.png", "power_relay_bg_cracked.png",
+	]
+	for y in range(8):
+		for x in range(14):
+			var sprite := Sprite2D.new()
+			sprite.centered = false
+			sprite.texture = Lighting.textured(RoomData.POWER_RELAY_DIR + "Tiles/Background/" + bg_names[(x + y * 2) % bg_names.size()])
+			sprite.position = Vector2(x * 128, y * 128)
+			var material := Lighting.lit_material()
+			material.set_shader_parameter("rim_ambient_strength", 0.0)
+			material.set_meta("rim_ambient_fixed", true)
+			sprite.material = material
+			parent.add_child(sprite)
+			_tiles.append({"sprite": sprite, "rect": Rect2(sprite.position, Vector2(128, 128)), "heat": HeatSurface.new(material)})
+
+	var frame_entries := [
+		["power_relay_frame_top_left.png", Vector2i(0, 0)], ["power_relay_frame_top_right.png", Vector2i(13, 0)],
+		["power_relay_frame_bottom_left.png", Vector2i(0, 7)], ["power_relay_frame_bottom_right.png", Vector2i(13, 7)],
+	]
+	for x in range(1, 13):
+		frame_entries.append(["power_relay_frame_top.png", Vector2i(x, 0)])
+		frame_entries.append(["power_relay_frame_bottom.png", Vector2i(x, 7)])
+	for y in range(1, 7):
+		frame_entries.append(["power_relay_frame_left.png", Vector2i(0, y)])
+		frame_entries.append(["power_relay_frame_right.png", Vector2i(13, y)])
+	for entry in frame_entries:
+		var frame := Sprite2D.new()
+		frame.centered = false
+		frame.texture = Lighting.textured(RoomData.POWER_RELAY_DIR + "Tiles/Frame/" + String(entry[0]))
+		frame.position = Vector2(entry[1]) * 128.0
+		frame.material = Lighting.lit_material()
+		frame.material.set_shader_parameter("rim_ambient_strength", 0.0)
+		frame.material.set_meta("rim_ambient_fixed", true)
+		parent.add_child(frame)
+
+
+func _build_power_relay_props(parent: Node2D, data: Dictionary) -> void:
+	for prop in data.get("power_relay_props", []):
+		match prop.get("type", ""):
+			"cabinet":
+				_add_power_relay_shadow(parent, float(prop["x"]), 368.0)
+				var cabinet := PowerRelayProp.new()
+				cabinet.setup(float(prop["x"]), floor_y)
+				parent.add_child(cabinet)
+				props_hit.append(cabinet)
+			"capacitor":
+				var capacitor_tex := Lighting.textured(RoomData.POWER_RELAY_DIR + "Props/power_relay_capacitor_bank.png")
+				var capacitor_shadow := _add_power_relay_shadow(parent, float(prop["x"]), float(capacitor_tex.get_width()))
+				var capacitor := HitProp.new()
+				capacitor.setup(capacitor_tex, Vector2(float(prop["x"]) - capacitor_tex.get_width() * 0.5, floor_y - capacitor_tex.get_height()), capacitor_shadow)
+				parent.add_child(capacitor)
+				props_hit.append(capacitor)
+			"cart":
+				var cart_tex := Lighting.textured(RoomData.POWER_RELAY_DIR + "Props/power_relay_maintenance_cart.png")
+				var cart_shadow := _add_power_relay_shadow(parent, float(prop["x"]), float(cart_tex.get_width()))
+				var cart := HitProp.new()
+				cart.setup(cart_tex, Vector2(float(prop["x"]) - cart_tex.get_width() * 0.5, floor_y - cart_tex.get_height()), cart_shadow)
+				parent.add_child(cart)
+				props_hit.append(cart)
+			"breaker":
+				var breaker := Sprite2D.new()
+				breaker.centered = false
+				breaker.texture = Lighting.textured(RoomData.POWER_RELAY_DIR + "Props/power_relay_breaker_box.png")
+				breaker.position = Vector2(float(prop["x"]), float(prop.get("y", 240.0)))
+				breaker.material = Lighting.shader_material("prop_surface")
+				parent.add_child(breaker)
+
+
+func _add_power_relay_shadow(parent: Node2D, center_x: float, width: float) -> ColorRect:
+	var shadow := ColorRect.new()
+	shadow.color = Color(0, 0, 0, 0.38)
+	shadow.position = Vector2(center_x - width * 0.5 + 18.0, floor_y - 2.0)
+	shadow.size = Vector2(maxf(width - 36.0, 18.0), 10.0)
+	parent.add_child(shadow)
+	return shadow
+
+
+func _build_power_relay_lights(parent: Node2D, data: Dictionary) -> void:
+	for light_data in data.get("power_relay_lights", []):
+		var fixture := Sprite2D.new()
+		fixture.centered = true
+		fixture.texture = Lighting.textured(RoomData.POWER_RELAY_DIR + String(light_data["file"]))
+		fixture.position = light_data["pos"]
+		fixture.material = Lighting.shader_material("prop_surface")
+		parent.add_child(fixture)
+		var point := PointLight2D.new()
+		point.texture = Lighting.radial_texture()
+		point.texture_scale = Lighting.scale_for_radius(float(light_data.get("radius", 200.0)))
+		point.color = Color(1.0, 0.54, 0.25)
+		point.energy = 1.0
+		point.position = light_data["pos"]
+		parent.add_child(point)
+
+
 ## 옛 가로 스트립 타일 표시/숨김 (모듈러 타일맵만 배경으로 쓸 때 숨긴다). 램프·창문 등 부속은 그대로 둔다.
 func set_legacy_tiles_visible(v: bool) -> void:
 	for t in _tiles:
@@ -222,7 +335,7 @@ func apply_mood(i: int) -> void:
 func _add_crawler(x: float, facing: int) -> Crawler:
 	var c := Crawler.new()
 	c.name = "Crawler"
-	c.setup(self, x, RoomData.FLOOR_Y + 2.0, MONSTER_MARGIN, width - MONSTER_MARGIN, facing)
+	c.setup(self, x, floor_y + 2.0, MONSTER_MARGIN, width - MONSTER_MARGIN, facing)
 	c.spat.connect(_on_monster_spat)
 	_monster_layer.add_child(c)
 	monsters.append(c)
@@ -374,7 +487,7 @@ func _add_side_door(parent: Node2D, center_x: float, is_open: bool, flip: bool) 
 	s.centered = false
 	s.texture = Lighting.textured(RoomData.SIDE_DOOR_OPEN_TEX if is_open else RoomData.SIDE_DOOR_CLOSED_TEX)
 	var w := s.texture.get_width()
-	s.position = Vector2(center_x - w * 0.5, 14)
+	s.position = Vector2(center_x - w * 0.5, floor_y - s.texture.get_height())
 	s.flip_h = flip
 	var dm := Lighting.lit_material()
 	s.material = dm
@@ -389,7 +502,7 @@ func _add_contact_shadow(parent: Node2D, p: Dictionary) -> ColorRect:
 	var w := tex.get_width()
 	var shadow := ColorRect.new()
 	shadow.color = Color(0, 0, 0, 0.35)
-	shadow.position = Vector2(pos.x + 18, RoomData.FLOOR_Y - 2)
+	shadow.position = Vector2(pos.x + 18, floor_y - 2)
 	shadow.size = Vector2(w - 36, 10)
 	parent.add_child(shadow)
 	return shadow

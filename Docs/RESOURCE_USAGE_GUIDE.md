@@ -289,3 +289,18 @@ Foreground Frame
 - 누적 스타일 규칙: `Docs/ART_GUIDE.md`
 
 현재 캐릭터 애니메이션은 게임 플레이 검증을 위한 최소 키프레임 버전이다. 최종 리소스로 발전시킬 때도 셀 크기, Bottom Center 피벗과 공통 바닥선은 변경하지 않는다.
+
+## 10. Power Relay Room — 방식 B 신규 룸
+
+새 지하 전력 릴레이·축전실 테마는 `Assets/GameReady/PowerRelayRoom/`에 있다. 네이티브 8px 규격 원본은 `Assets/GameReady/Native8/PowerRelayRoom/`, Godot에서 바로 읽는 game-scale 출력은 `GodotPrototype/assets/power_relay_room/`에 배치했다.
+
+- 모듈형 배경: `Tiles/Background/` 16×16 art px 셀 6종, X/Y 반복 가능
+- 외곽 프레임: `Tiles/Frame/` 8종과 `InnerCorners/` 4종
+- 프랍: `Props/`의 릴레이 캐비닛·축전기 뱅크·차단기·정비 카트·작업 램프·배관 접속부
+- 조명 프랍: `Lighting/`에 실제 기구만 분리. 빛의 범위는 코드 광원으로 별도 처리
+- 물리 전선: `Cables/`에 고정점이 명확한 직선·처짐·수직·엘보·분리 끝단 변형
+- 분해 파츠: `Destruction/`에 릴레이 캐비닛 조립본과 문짝·코어·상부 캡·베이스·힌지·전선 조각·파편을 각각 분리
+
+Godot 런타임에는 `RoomData`의 `power_relay` 방으로 연결돼 있다. `scripts/power_relay_prop.gd`와 `scripts/power_relay_part.gd`가 캐비닛의 기능별 파츠를 충격 누적에 따라 RigidBody2D로 분리하고, `scripts/power_relay_cable.gd`가 케이블 텍스처를 물리 처짐 체인에 입힌다.
+
+조립 및 충격 분리 순서는 `Assets/GameReady/PowerRelayRoom/README.md`, 전체 크기·피벗·물리 권장값은 `power_relay_room_manifest_v1.json`을 따른다. 검증 미리보기는 `Assets/GameReady/PowerRelayRoom/Validation/power_relay_room_modular_preview.png`다.

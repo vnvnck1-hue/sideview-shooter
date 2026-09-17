@@ -17,6 +17,13 @@ const FADE_TIME := 0.11
 const VIEW_SIZE := Vector2i(534, 300)
 const VIEW_SCALE := 3
 const CAMERA_ZOOM := 0.25
+const NATIVE8_VIEW_SIZE := Vector2i(267, 150)
+const NATIVE8_VIEW_SCALE := 6
+const NATIVE8_CAMERA_ZOOM := 0.125
+
+var view_size := VIEW_SIZE
+var view_scale := VIEW_SCALE
+var camera_zoom := CAMERA_ZOOM
 
 var world_vp: SubViewport                  # 저해상도 월드 뷰포트
 var world: Node2D                          # 방·플레이어·탄 등 월드 노드의 부모 (world_vp 안)
@@ -45,6 +52,10 @@ const ABERRATION_DECAY := 18.0
 
 
 func _ready() -> void:
+	if AppFlow.start_room == "power_relay":
+		view_size = NATIVE8_VIEW_SIZE
+		view_scale = NATIVE8_VIEW_SCALE
+		camera_zoom = NATIVE8_CAMERA_ZOOM
 	_setup_input_map()
 	_setup_view()
 	_setup_environment()
@@ -64,10 +75,10 @@ func _ready() -> void:
 
 	camera = GameCamera.new()
 	camera.name = "Camera"
-	camera.zoom = Vector2(CAMERA_ZOOM, CAMERA_ZOOM)
+	camera.zoom = Vector2(camera_zoom, camera_zoom)
 	camera.target = player
 	camera.base_y = RoomData.TILE_HEIGHT * 0.5
-	camera.view_scale = float(VIEW_SCALE)
+	camera.view_scale = float(view_scale)
 
 	crosshair = Crosshair.new()
 	crosshair.name = "Crosshair"
@@ -154,7 +165,7 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	# 이동 한계: 닫힌 쪽은 벽 앞에서 멈추고, 열린 쪽은 문을 지나갈 수 있게 조금 더 허용
 	var left_limit := -DOOR_PASS_MARGIN if current_room.left_door_open else WALL_MARGIN
 	var right_limit := current_room.width + DOOR_PASS_MARGIN if current_room.right_door_open else current_room.width - WALL_MARGIN
-	player.position = Vector2(spawn_x, RoomData.FLOOR_Y + 2)
+	player.position = Vector2(spawn_x, current_room.floor_y + 2)
 	player.set_bounds(left_limit, right_limit)
 	player.face(face_dir)
 
@@ -291,16 +302,16 @@ func _setup_view() -> void:
 	var container := SubViewportContainer.new()
 	container.name = "View"
 	container.stretch = true
-	container.stretch_shrink = VIEW_SCALE
+	container.stretch_shrink = view_scale
 	container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST     # 정수 확대 시 픽셀 선명하게
 	var win := Vector2(1600, 900)
-	container.size = Vector2(VIEW_SIZE * VIEW_SCALE)
+	container.size = Vector2(view_size * view_scale)
 	container.position = ((win - container.size) * 0.5).floor()      # 1602×900 → x = -1 (가운데 정렬, 넘치는 1px 은 잘림)
 	add_child(container)
 
 	world_vp = SubViewport.new()
 	world_vp.name = "World"
-	world_vp.size = VIEW_SIZE
+	world_vp.size = view_size
 	world_vp.disable_3d = true
 	world_vp.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 	world_vp.snap_2d_transforms_to_pixel = true                        # 카메라 보간·서브픽셀 이동을 뷰 픽셀에 스냅
@@ -316,7 +327,7 @@ func _setup_view() -> void:
 ## 월드 좌표 → 창(루트 뷰포트) 좌표. AutoTest 의 마우스 워프 등에 쓴다.
 func world_to_screen(p: Vector2) -> Vector2:
 	var container := world_vp.get_parent() as Control
-	return Vector2(world_vp.get_canvas_transform() * p) * float(VIEW_SCALE) + container.position
+	return Vector2(world_vp.get_canvas_transform() * p) * float(view_scale) + container.position
 
 
 ## 글로우(WorldEnvironment) + 풀스크린 후처리(색수차·비네트). 둘 다 저해상도 월드 뷰포트 안에 둔다.

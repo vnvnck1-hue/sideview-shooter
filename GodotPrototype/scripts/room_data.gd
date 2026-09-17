@@ -12,6 +12,7 @@ const WALL_WIDTH := 256
 const TILE_DIR := "res://assets/tiles/"
 const PROP_DIR := "res://assets/props/"
 const CONNECTOR_DIR := "res://assets/connectors/"
+const POWER_RELAY_DIR := "res://assets/power_relay_room/"
 
 const FRONT_DOOR_TEX := CONNECTOR_DIR + "front_bulkhead_door_game_scale.png"
 const SIDE_DOOR_CLOSED_TEX := CONNECTOR_DIR + "sidewall_shutter_closed_edge_game_scale.png"
@@ -27,6 +28,40 @@ const SIDE_DOOR_OPEN_TEX := CONNECTOR_DIR + "sidewall_shutter_open_frame_game_sc
 ## "width"(선택): 방 폭 px. 모듈러 타일맵(scenes/rooms/<id>.tscn)으로 그리는 방은 옛 스트립 합계 대신 이 값을 쓴다.
 ## "ceiling_y"(선택): 천장 y px(기본 0). 층고가 높은 방은 음수(예: 8행 방 = -488). 카메라 중심·비상등·먼지 범위가 따라간다.
 const ROOMS := {
+	"power_relay": {
+		"title": "전력 릴레이·축전실 (Power Relay Room)",
+		"theme": "power_relay",
+		"width": 1792,
+		"height": 1024,
+		"floor_y": 992,
+		"ceiling_y": 0,
+		"tiles": [],
+		"props": [],
+		"power_relay_props": [
+			{"type": "cabinet", "x": 310},
+			{"type": "capacitor", "x": 820},
+			{"type": "breaker", "x": 1190, "y": 240},
+			{"type": "cart", "x": 1480},
+		],
+		"power_relay_lights": [
+			{"file": "Lighting/power_relay_ceiling_lamp.png", "pos": Vector2(520, 112), "radius": 280.0},
+			{"file": "Lighting/power_relay_wall_lamp.png", "pos": Vector2(1130, 330), "radius": 190.0},
+			{"file": "Lighting/power_relay_indicator_beacon.png", "pos": Vector2(1180, 150), "radius": 150.0},
+		],
+		"front_doors": [],
+		"left_door": {"open": false},
+		"right_door": {"open": false},
+		"fx": [
+			{"type": "power_cable", "pos": Vector2(430, 78), "length": 300.0},
+			{"type": "power_cable", "pos": Vector2(930, 78), "length": 250.0},
+			{"type": "power_cable", "pos": Vector2(1420, 92), "length": 210.0},
+		],
+		"monsters": [
+			{"type": "crawler", "x": 620, "facing": 1},
+			{"type": "crawler", "x": 1320, "facing": -1},
+		],
+		"spawn": {"max": 5, "interval": [2.0, 3.8]},
+	},
 	"workshop": {
 		"title": "작업실 (Workshop)",
 		"tiles": [
@@ -246,10 +281,15 @@ static func room_ceiling(id: String) -> int:
 	return int(ROOMS[id].get("ceiling_y", 0))
 
 
+static func floor_y(id: String) -> int:
+	return int(ROOMS[id].get("floor_y", FLOOR_Y))
+
+
 ## 방의 세로 범위 사각형 (천장 ~ 스트립 하단 560). 카메라 중심·비상등 스윕·먼지 레이어 범위에 쓴다.
 static func room_rect(id: String) -> Rect2:
 	var top := room_ceiling(id)
-	return Rect2(0, top, room_width(id), TILE_HEIGHT - top)
+	var height := int(ROOMS[id].get("height", TILE_HEIGHT))
+	return Rect2(0, top, room_width(id), height - top)
 
 
 static func tile_width(tile_name: String) -> int:

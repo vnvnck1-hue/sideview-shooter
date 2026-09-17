@@ -1,0 +1,421 @@
+{
+  "formatVersion": 1,
+  "theme": "PowerRelay",
+  "concept": "지하 전력 릴레이·축전실",
+  "artGuide": "Docs/ART_GUIDE.md §10 방식 B",
+  "native": {
+    "root": "Assets/GameReady/Native8/PowerRelayRoom",
+    "artPixelToWorldPx": 8,
+    "gameScale": 8,
+    "cellArtPx": [
+      16,
+      16
+    ],
+    "cellWorldPx": [
+      128,
+      128
+    ],
+    "alpha": "binary 0/255",
+    "filter": "nearest/point"
+  },
+  "backgroundTiles": {
+    "folder": "Tiles/Background",
+    "repeatAxes": [
+      "x",
+      "y"
+    ],
+    "files": [
+      "power_relay_bg_plain.png",
+      "power_relay_bg_blocks.png",
+      "power_relay_bg_channel.png",
+      "power_relay_bg_vent.png",
+      "power_relay_bg_repaired.png",
+      "power_relay_bg_cracked.png"
+    ]
+  },
+  "frameTiles": {
+    "folder": "Tiles/Frame",
+    "architecture": "Workshop_Modular perimeter grammar, restyled through native 8px export",
+    "files": [
+      "Tiles/Frame/InnerCorners/power_relay_frame_inner_bottom_left.png",
+      "Tiles/Frame/InnerCorners/power_relay_frame_inner_bottom_right.png",
+      "Tiles/Frame/InnerCorners/power_relay_frame_inner_top_left.png",
+      "Tiles/Frame/InnerCorners/power_relay_frame_inner_top_right.png",
+      "Tiles/Frame/power_relay_frame_bottom.png",
+      "Tiles/Frame/power_relay_frame_bottom_left.png",
+      "Tiles/Frame/power_relay_frame_bottom_right.png",
+      "Tiles/Frame/power_relay_frame_left.png",
+      "Tiles/Frame/power_relay_frame_right.png",
+      "Tiles/Frame/power_relay_frame_top.png",
+      "Tiles/Frame/power_relay_frame_top_left.png",
+      "Tiles/Frame/power_relay_frame_top_right.png"
+    ]
+  },
+  "props": {
+    "power_relay_cabinet_assembled.png": {
+      "path": "Props/power_relay_cabinet_assembled.png",
+      "sizeArtPx": [
+        46,
+        40
+      ],
+      "pivot": "bottom_center",
+      "layer": "floor_prop"
+    },
+    "power_relay_capacitor_bank.png": {
+      "path": "Props/power_relay_capacitor_bank.png",
+      "sizeArtPx": [
+        48,
+        32
+      ],
+      "pivot": "bottom_center",
+      "layer": "floor_prop"
+    },
+    "power_relay_breaker_box.png": {
+      "path": "Props/power_relay_breaker_box.png",
+      "sizeArtPx": [
+        24,
+        24
+      ],
+      "pivot": "bottom_center",
+      "layer": "floor_prop"
+    },
+    "power_relay_maintenance_cart.png": {
+      "path": "Props/power_relay_maintenance_cart.png",
+      "sizeArtPx": [
+        40,
+        24
+      ],
+      "pivot": "bottom_center",
+      "layer": "floor_prop"
+    },
+    "power_relay_work_lamp_fixture.png": {
+      "path": "Props/power_relay_work_lamp_fixture.png",
+      "sizeArtPx": [
+        20,
+        20
+      ],
+      "pivot": "bottom_center",
+      "layer": "floor_prop"
+    },
+    "power_relay_conduit_junction.png": {
+      "path": "Props/power_relay_conduit_junction.png",
+      "sizeArtPx": [
+        28,
+        24
+      ],
+      "pivot": "bottom_center",
+      "layer": "floor_prop"
+    }
+  },
+  "lightingProps": [
+    {
+      "path": "Lighting/power_relay_ceiling_lamp.png",
+      "sizeArtPx": [
+        24,
+        16
+      ],
+      "pivot": "center",
+      "sourceCell": 0
+    },
+    {
+      "path": "Lighting/power_relay_wall_lamp.png",
+      "sizeArtPx": [
+        16,
+        16
+      ],
+      "pivot": "center",
+      "sourceCell": 1
+    },
+    {
+      "path": "Lighting/power_relay_indicator_beacon.png",
+      "sizeArtPx": [
+        16,
+        16
+      ],
+      "pivot": "center",
+      "sourceCell": 2
+    },
+    {
+      "path": "Lighting/power_relay_fluorescent_lamp.png",
+      "sizeArtPx": [
+        32,
+        8
+      ],
+      "pivot": "center",
+      "sourceCell": 3
+    },
+    {
+      "path": "Lighting/power_relay_dangling_lamp.png",
+      "sizeArtPx": [
+        16,
+        24
+      ],
+      "pivot": "center",
+      "sourceCell": 4
+    },
+    {
+      "path": "Lighting/power_relay_floor_work_light.png",
+      "sizeArtPx": [
+        24,
+        16
+      ],
+      "pivot": "center",
+      "sourceCell": 5
+    }
+  ],
+  "physicsCables": [
+    {
+      "path": "Cables/power_relay_cable_straight.png",
+      "sizeArtPx": [
+        32,
+        8
+      ],
+      "pivot": "center",
+      "sourceCell": 0,
+      "physics": {
+        "attachmentMode": "two_point",
+        "runtimeScript": "GodotPrototype/scripts/power_relay_cable.gd",
+        "simulation": "Verlet chain with fixed ceiling anchor and free tip",
+        "detachOnImpact": false,
+        "impactResponse": "elastic shot/body impulse"
+      }
+    },
+    {
+      "path": "Cables/power_relay_cable_hanging.png",
+      "sizeArtPx": [
+        24,
+        16
+      ],
+      "pivot": "center",
+      "sourceCell": 1,
+      "physics": {
+        "attachmentMode": "two_point",
+        "runtimeScript": "GodotPrototype/scripts/power_relay_cable.gd",
+        "simulation": "Verlet chain with fixed ceiling anchor and free tip",
+        "detachOnImpact": false,
+        "impactResponse": "elastic shot/body impulse"
+      }
+    },
+    {
+      "path": "Cables/power_relay_cable_shallow_sag.png",
+      "sizeArtPx": [
+        24,
+        12
+      ],
+      "pivot": "center",
+      "sourceCell": 2,
+      "physics": {
+        "attachmentMode": "two_point",
+        "runtimeScript": "GodotPrototype/scripts/power_relay_cable.gd",
+        "simulation": "Verlet chain with fixed ceiling anchor and free tip",
+        "detachOnImpact": false,
+        "impactResponse": "elastic shot/body impulse"
+      }
+    },
+    {
+      "path": "Cables/power_relay_cable_vertical_drop.png",
+      "sizeArtPx": [
+        8,
+        24
+      ],
+      "pivot": "center",
+      "sourceCell": 3,
+      "physics": {
+        "attachmentMode": "two_point",
+        "runtimeScript": "GodotPrototype/scripts/power_relay_cable.gd",
+        "simulation": "Verlet chain with fixed ceiling anchor and free tip",
+        "detachOnImpact": false,
+        "impactResponse": "elastic shot/body impulse"
+      }
+    },
+    {
+      "path": "Cables/power_relay_cable_elbow.png",
+      "sizeArtPx": [
+        24,
+        24
+      ],
+      "pivot": "center",
+      "sourceCell": 4,
+      "physics": {
+        "attachmentMode": "two_point",
+        "runtimeScript": "GodotPrototype/scripts/power_relay_cable.gd",
+        "simulation": "Verlet chain with fixed ceiling anchor and free tip",
+        "detachOnImpact": false,
+        "impactResponse": "elastic shot/body impulse"
+      }
+    },
+    {
+      "path": "Cables/power_relay_cable_loose_end.png",
+      "sizeArtPx": [
+        16,
+        24
+      ],
+      "pivot": "center",
+      "sourceCell": 5,
+      "physics": {
+        "attachmentMode": "two_point",
+        "runtimeScript": "GodotPrototype/scripts/power_relay_cable.gd",
+        "simulation": "Verlet chain with fixed ceiling anchor and free tip",
+        "detachOnImpact": false,
+        "impactResponse": "elastic shot/body impulse"
+      }
+    }
+  ],
+  "destructionParts": {
+    "intact": "Destruction/power_relay_cabinet_assembled.png",
+    "parts": [
+      {
+        "path": "Destruction/power_relay_cabinet_assembled.png",
+        "sizeArtPx": [
+          46,
+          40
+        ],
+        "pivot": "center",
+        "partRole": "assembled"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_left_door.png",
+        "sizeArtPx": [
+          18,
+          28
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_inner_core.png",
+        "sizeArtPx": [
+          18,
+          28
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_right_door.png",
+        "sizeArtPx": [
+          18,
+          28
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_top_cap.png",
+        "sizeArtPx": [
+          32,
+          10
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_lower_base.png",
+        "sizeArtPx": [
+          32,
+          10
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_hinge_a.png",
+        "sizeArtPx": [
+          8,
+          8
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_hinge_b.png",
+        "sizeArtPx": [
+          8,
+          8
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_cable_chunk_a.png",
+        "sizeArtPx": [
+          12,
+          8
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_cable_chunk_b.png",
+        "sizeArtPx": [
+          12,
+          8
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_debris_a.png",
+        "sizeArtPx": [
+          8,
+          8
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_debris_b.png",
+        "sizeArtPx": [
+          8,
+          8
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_debris_c.png",
+        "sizeArtPx": [
+          8,
+          8
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      },
+      {
+        "path": "Destruction/power_relay_cabinet_debris_d.png",
+        "sizeArtPx": [
+          8,
+          8
+        ],
+        "pivot": "center",
+        "partRole": "detachable"
+      }
+    ],
+    "assembly": [
+      "lower_base",
+      "inner_core",
+      "left_door",
+      "right_door",
+      "top_cap",
+      "hinges",
+      "cable_chunks"
+    ],
+    "impactOrder": [
+      "door_panels",
+      "top_cap",
+      "inner_core",
+      "lower_base",
+      "debris"
+    ]
+  },
+  "validation": "Assets/GameReady/PowerRelayRoom/Validation/power_relay_room_modular_preview.png",
+  "layerOrder": [
+    "Background Tiles",
+    "Back-wall Doors",
+    "Floor Props",
+    "Lighting Props",
+    "Physics Cables",
+    "Character",
+    "Front Effects"
+  ]
+}
