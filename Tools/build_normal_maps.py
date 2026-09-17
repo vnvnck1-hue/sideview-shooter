@@ -3,7 +3,7 @@
 높이 = 밝기(블러) + 알파 실루엣 베벨(프랍·문). Sobel 기울기 → 노멀.
 Godot 는 OpenGL(Y+ 위) 규약이므로 화면 위쪽을 향한 면이 G>0.5 가 된다.
 
-실행: python Tools/build_normal_maps.py   (저장소 루트에서)
+실행: python Tools/build_normal_maps.py [그룹 ...]  (저장소 루트에서. 그룹을 주면 그 그룹만)
 출력: GodotPrototype/assets/normals/<종류>/<이름>.png  (원본과 같은 크기)
 """
 from pathlib import Path
@@ -17,6 +17,7 @@ GROUPS = {
     "props": (3.2, 6, 0.8),
     "connectors": (3.0, 5, 0.8),
     "character/Split": (2.8, 4, 0.6),     # 게임이 쓰는 분리 프레임(몸통·팔)만
+    "character/ToxicTumorCrawler": (2.6, 5, 0.7),   # 몬스터: 종양 덩어리가 둥글게 굴러 보이도록 베벨을 조금 넓게
 }
 EXCLUDE = {"muzzle_flash.png"}            # 발광 스프라이트는 노멀 불필요
 
@@ -64,7 +65,11 @@ def normal_from_height(h: np.ndarray, strength: float) -> np.ndarray:
 
 
 def main() -> None:
+    import sys
+    only = set(sys.argv[1:])          # 인자로 그룹 이름을 주면 그 그룹만 (예: character/ToxicTumorCrawler)
     for group, (strength, bevel, blur) in GROUPS.items():
+        if only and group not in only:
+            continue
         src_dir = ROOT / group
         out_dir = ROOT / "normals" / group
         out_dir.mkdir(parents=True, exist_ok=True)

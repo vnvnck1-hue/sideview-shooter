@@ -1,5 +1,10 @@
 ; Engine configuration file.
-; Godot 4.7 — 사이드뷰 작업실 방 이동 프로토타입
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -7,22 +12,22 @@ config_version=5
 
 config/name="Sideview Workshop Prototype"
 config/version="0.1.0"
-run/main_scene="res://scenes/Main.tscn"
+run/main_scene="res://scenes/Lobby.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
+config/icon="res://icon/icon.png"
+config/windows_native_icon="res://icon/icon.ico"
 
 [display]
 
-; 리소스 원본 픽셀 크기(캐릭터 셀 320px, 타일 높이 560px)를 1:1 로 표시한다.
 window/size/viewport_width=1600
 window/size/viewport_height=900
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
-window/vsync/vsync_mode=1
+
+[dotnet]
+
+project/assembly_name="Sideview Workshop Prototype"
 
 [rendering]
 
-; 청키 픽셀 유지 — Nearest 필터, 밉맵 없음
 textures/canvas_textures/default_texture_filter=0
-; HDR 2D 는 끈다 — 선형 블렌딩이 어두운 채널을 눌러 기존 sRGB 조명 톤이 깨진다. 글로우는 LDR 임계값(0.85)으로 잡는다.
-viewport/hdr_2d=false
 environment/defaults/default_clear_color=Color(0, 0, 0, 1)

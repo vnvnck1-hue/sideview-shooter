@@ -13,6 +13,14 @@
       "shoulder_from_pivot": [
         39,
         -142
+      ],
+      "neck": [
+        175,
+        172
+      ],
+      "neck_from_pivot": [
+        15,
+        -148
       ]
     },
     "idle_01": {
@@ -23,6 +31,14 @@
       "shoulder_from_pivot": [
         39,
         -142
+      ],
+      "neck": [
+        175,
+        172
+      ],
+      "neck_from_pivot": [
+        15,
+        -148
       ]
     },
     "walk_01": {
@@ -33,6 +49,14 @@
       "shoulder_from_pivot": [
         33,
         -142
+      ],
+      "neck": [
+        169,
+        172
+      ],
+      "neck_from_pivot": [
+        9,
+        -148
       ]
     },
     "walk_02": {
@@ -43,6 +67,14 @@
       "shoulder_from_pivot": [
         33,
         -139
+      ],
+      "neck": [
+        169,
+        175
+      ],
+      "neck_from_pivot": [
+        9,
+        -145
       ]
     },
     "walk_03": {
@@ -53,6 +85,14 @@
       "shoulder_from_pivot": [
         33,
         -141
+      ],
+      "neck": [
+        169,
+        173
+      ],
+      "neck_from_pivot": [
+        9,
+        -147
       ]
     },
     "walk_04": {
@@ -63,6 +103,14 @@
       "shoulder_from_pivot": [
         33,
         -146
+      ],
+      "neck": [
+        169,
+        168
+      ],
+      "neck_from_pivot": [
+        9,
+        -152
       ]
     },
     "crouch_01": {
@@ -73,6 +121,14 @@
       "shoulder_from_pivot": [
         8,
         -142
+      ],
+      "neck": [
+        190,
+        164
+      ],
+      "neck_from_pivot": [
+        30,
+        -156
       ]
     },
     "crouch_02": {
@@ -83,6 +139,14 @@
       "shoulder_from_pivot": [
         8,
         -111
+      ],
+      "neck": [
+        214,
+        194
+      ],
+      "neck_from_pivot": [
+        54,
+        -126
       ]
     },
     "crouch_03": {
@@ -93,6 +157,14 @@
       "shoulder_from_pivot": [
         8,
         -70
+      ],
+      "neck": [
+        216,
+        236
+      ],
+      "neck_from_pivot": [
+        56,
+        -84
       ]
     },
     "crouch_04": {
@@ -103,6 +175,14 @@
       "shoulder_from_pivot": [
         8,
         -76
+      ],
+      "neck": [
+        212,
+        229
+      ],
+      "neck_from_pivot": [
+        52,
+        -91
       ]
     }
   },
@@ -125,5 +205,9 @@
       52,
       61
     ]
+  },
+  "head": {
+    "overlap": 28,
+    "note": "head/<clip>/<clip>_NN.png 은 320 셀 그대로, neck 이 회전축"
   }
 }

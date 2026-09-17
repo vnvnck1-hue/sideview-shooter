@@ -6,7 +6,10 @@
 // 4) 파츠 마스크: 셀 단위로 조각난 프랍 — 깨진 셀은 투명 (lit_surface 는 기본 흰색 = 전부 온전).
 
 uniform float rim_strength : hint_range(0.0, 3.0) = 1.15;
-uniform float rim_width_px : hint_range(0.5, 6.0) = 2.0;
+uniform float rim_width_px : hint_range(0.5, 24.0) = 2.0;      // 림이 실루엣 안쪽으로 번지는 폭 (스프라이트 안쪽으로만 — 알파 밖은 그리지 않는다)
+uniform float rim_falloff : hint_range(0.3, 4.0) = 2.0;        // 폭 안에서의 감쇠 지수 (클수록 가장자리에 몰려 예리함)
+uniform float rim_white_mix : hint_range(0.0, 1.0) = 0.55;     // 림 색: 표면색(0) ↔ 흰색(1)
+uniform float rim_reach : hint_range(0.05, 1.0) = 0.4;         // 림 전용 감쇠 지수: 광원 텍스처 감쇠를 pow 로 완만하게 → 멀리 있는 사물에도 림이 닿는다 (디퓨즈·스페큘러는 그대로)
 uniform vec3 rim_ambient : source_color = vec3(0.40, 0.50, 0.74);
 uniform float rim_ambient_strength : hint_range(0.0, 2.0) = 0.42;
 uniform float normal_response : hint_range(0.5, 4.0) = 1.9;
@@ -15,8 +18,8 @@ uniform float specular_power : hint_range(2.0, 64.0) = 16.0;
 
 uniform int heat_count = 0;
 uniform vec4 heat_hits[12];                 // (u, v, 세기, 경과 시간)
-uniform float heat_radius_px = 36.0;
-uniform float heat_cool : hint_range(0.5, 10.0) = 3.4;
+uniform float heat_radius_px = 18.0;
+uniform float heat_cool : hint_range(0.5, 10.0) = 1.7;
 
 uniform sampler2D mask : filter_nearest, repeat_disable, hint_default_white;   // 파츠 마스크 (r=1 온전)
 
@@ -27,16 +30,24 @@ float surf_alpha(sampler2D tex, vec2 uv) {
 	return texture(tex, uv).a * step(0.5, texture(mask, uv).r);
 }
 
-// 실루엣 경계: 이웃 알파가 비면 경계. 반환 (edge, 바깥방향 uv 공간)
+// 실루엣 경계: 폭 w 안에서 8방향×3링으로 알파 커버리지를 재서 부드러운 경계 세기를 만든다.
+// 커버리지가 낮을수록(투명에 가까울수록) 경계. falloff 로 예리함을 조절한다.
+// 반환 (edge, 바깥방향 uv 공간)
 vec3 silhouette_edge(sampler2D tex, vec2 uv, vec2 px, float w) {
-	vec2 o = px * w;
-	float ax0 = surf_alpha(tex, uv - vec2(o.x, 0.0));
-	float ax1 = surf_alpha(tex, uv + vec2(o.x, 0.0));
-	float ay0 = surf_alpha(tex, uv - vec2(0.0, o.y));
-	float ay1 = surf_alpha(tex, uv + vec2(0.0, o.y));
-	float mn = min(min(ax0, ax1), min(ay0, ay1));
-	float edge = 1.0 - smoothstep(0.0, 0.6, mn);
-	vec2 g = vec2(ax0 - ax1, ay0 - ay1);          // 불투명 → 투명 쪽
+	const vec2 dirs[8] = {vec2(1,0), vec2(-1,0), vec2(0,1), vec2(0,-1),
+		vec2(0.7071,0.7071), vec2(-0.7071,0.7071), vec2(0.7071,-0.7071), vec2(-0.7071,-0.7071)};
+	float cover = 0.0;
+	vec2 g = vec2(0.0);
+	for (int r = 1; r <= 3; r++) {
+		float d = w * float(r) / 3.0;
+		for (int i = 0; i < 8; i++) {
+			float a = surf_alpha(tex, uv + dirs[i] * px * d);
+			cover += a;
+			g -= dirs[i] * a;                       // 불투명 쪽의 반대 = 바깥 방향
+		}
+	}
+	cover /= 24.0;
+	float edge = pow(clamp(1.0 - cover, 0.0, 1.0), rim_falloff);
 	return vec3(edge, g);
 }
 
@@ -83,6 +94,8 @@ vec4 lit_fragment(sampler2D tex, vec2 uv, vec2 px, vec4 c, out float edge, out v
 }
 
 // 공용 light 본체: 강한 노멀 반응 + 스페큘러 + 광원 방향 림 + 프레넬
+// light_color 는 Light2D 색 × 라이트 텍스처(거리 감쇠). 림·프레넬은 감쇠를 pow(rim_reach) 로 펴서
+// 광원 자체 밝기는 그대로 두고 림만 더 멀리 닿게 한다 (빛의 공간감).
 vec4 lit_light(vec3 N, vec3 L, vec4 light_color, float energy, vec3 base) {
 	float ndl = max(dot(N, L), 0.0);
 	float diff = pow(ndl, normal_response) * (1.0 + 0.4 * (normal_response - 1.0));
@@ -94,6 +107,11 @@ vec4 lit_light(vec3 N, vec3 L, vec4 light_color, float energy, vec3 base) {
 	// 노멀이 기울어진 면(베벨·경사) 프레넬
 	float fres = pow(1.0 - clamp(N.z, 0.0, 1.0), 2.2) * ndl * 0.9 * rim_strength;
 	vec3 lc = light_color.rgb * energy;
-	vec3 rim_col = mix(base, vec3(1.0), 0.55);
-	return vec4(lc * (base * diff + spec * (0.35 + 0.65 * base) + (rim + fres) * rim_col), light_color.a);
+	vec3 rim_col = mix(base, vec3(1.0), rim_white_mix);
+	// 거리 감쇠(텍스처)와 광원 고유색을 분리해, 림에는 완만한 감쇠를 쓴다
+	float fall = max(max(light_color.r, light_color.g), light_color.b);
+	vec3 pure = light_color.rgb / max(fall, 1e-4);
+	float rim_att = pow(clamp(fall, 0.0, 1.0), rim_reach);
+	vec3 rim_lc = pure * energy * rim_att;
+	return vec4(lc * (base * diff + spec * (0.35 + 0.65 * base)) + rim_lc * (rim + fres) * rim_col, light_color.a);
 }

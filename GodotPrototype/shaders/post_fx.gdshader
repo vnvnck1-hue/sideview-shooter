@@ -3,7 +3,7 @@ shader_type canvas_item;
 
 uniform sampler2D screen_tex : hint_screen_texture, filter_nearest;
 uniform float aberration : hint_range(0.0, 8.0) = 0.0;   // 화면 가장자리 최대 오프셋 (px)
-uniform float vignette : hint_range(0.0, 1.0) = 0.35;
+uniform float vignette : hint_range(0.0, 1.0) = 0.25;
 uniform vec2 center = vec2(0.5, 0.5);
 
 void fragment() {

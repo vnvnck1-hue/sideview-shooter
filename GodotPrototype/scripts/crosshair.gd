@@ -8,6 +8,7 @@ const KICK := 8.0
 const RETURN := 26.0
 
 var _spread := 0.0
+var heat := 0.0                 # 연사 열 (Player.spread_ratio) — 벌어짐이 유지된다
 
 
 func kick() -> void:
@@ -20,7 +21,7 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	var g := GAP + _spread
+	var g := GAP + _spread + heat * 14.0
 	var c := Color(1.0, 0.9, 0.55, 0.95)
 	var shadow := Color(0, 0, 0, 0.6)
 	for d in [Vector2.RIGHT, Vector2.LEFT, Vector2.UP, Vector2.DOWN]:

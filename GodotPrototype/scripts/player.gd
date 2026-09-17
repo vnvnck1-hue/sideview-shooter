@@ -4,13 +4,19 @@ extends Node2D
 ## 구조:  Player
 ##          BodyPivot (몸 중심, 구르기 회전축)
 ##            Body      AnimatedSprite2D  — idle(조준 자세 1프레임) / walk(다리만 애니) / crouch
+##            HeadPivot (목 앵커, 마우스 방향으로 제한된 각도만큼 회전)
+##              Head    Sprite2D  — 후드+마스크 (목이 원점, 몸 프레임에 맞춰 텍스처 교체)
 ##          ArmPivot   (어깨 앵커, 마우스 방향으로 실시간 회전)
 ##            Arm       Sprite2D  — 팔+총 (어깨가 원점)
 ##            Muzzle    Marker2D  — 총구
 ##            Flash     Sprite2D  — 총구 화염
-## 상태 우선순위: Roll > Crouch > Walk > Idle. 사격은 Roll 이 아닐 때 언제나 가능(즉발).
+## 상태 우선순위: Roll > Crouch > Walk > Idle. 사격은 Roll 이 아닐 때 언제나 가능(즉발). 버튼을 누르고 있으면 FIRE_COOLDOWN 간격으로 연사.
+## 탄창: MAG_SIZE 발을 쏘면 자동 재장전(RELOAD_TIME, R 로 수동). 재장전 중엔 팔이 아래로 내려가 총을 흔든다.
+## 반동은 팔·머리·몸통 세 개의 2차 스프링이 서로 다른 강도·감쇠·지연으로 받아 **절차적으로 따로** 흔들린다(팔 즉시 → 머리 → 몸통 순).
+## 탄착점은 연사 열(_heat)에 비례한 산탄각으로 흔들린다(첫 발은 거의 정확, 길게 누르면 벌어짐).
 
 signal shoot_fired(muzzle_pos: Vector2, target_pos: Vector2)
+signal ammo_changed(ammo: int, mag: int, reloading: bool)
 signal shell_ejected(pos: Vector2, dir: int)
 signal request_front_door()
 
@@ -26,7 +32,7 @@ const ROLL_CENTER := Vector2(10.0, 103.0)   # 웅크린 프레임(crouch_04) 내
 const DEFAULT_SHOULDER := Vector2(39, -142)
 const EJECT_LOCAL := Vector2(46, -14)     # 어깨 기준 탄피 배출구 (팔 로컬)
 
-const SPEED := 840.0
+const SPEED := 588.0                # 840 → 30% 감속
 const WALK_THRESHOLD := 30.0
 const ACCEL := 5200.0               # 출발 가속 (px/s^2) - 약 0.16초에 최고속
 const DECEL := 3600.0               # 정지 감속 - 약 0.23초에 멈춤, 살짝 미끄러짐
@@ -37,16 +43,57 @@ const BREATH_PERIOD := 2.6
 const BREATH_SCALE := Vector2(0.012, 0.028)   # x는 살짝 줄고 y는 늘어남
 
 # 사격 — 카타나 제로식 즉발·고속 연사
-const FIRE_COOLDOWN := 0.09         # 초. 한 발씩(클릭마다) 발사, 최소 간격
-const RECOIL_KICK := 14.0           # 팔이 뒤로 밀리는 픽셀
-const RECOIL_ANGLE := 0.14          # 팔이 위로 튀는 라디안
-const RECOIL_RETURN := 44.0         # 복귀 속도
+const FIRE_COOLDOWN := 0.09         # 초. 누르고 있으면 이 간격으로 연사 (≈11발/초)
+const MAG_SIZE := 14                # 장탄수
+const RELOAD_TIME := 1.15           # 재장전 시간 (초)
 const FLASH_TIME := 0.03
+
+# 산탄 — 연사 열(_heat, 0..1)이 오르면 탄착점이 더 흔들린다
+const SPREAD_BASE := 0.012          # 첫 발 산탄각 (rad)
+const SPREAD_HEAT := 0.055          # 열 1.0 에서 더해지는 산탄각
+const HEAT_PER_SHOT := 0.16
+const HEAT_DECAY := 2.2             # 초당
+
+# 반동 — 팔 → 머리 → 몸통이 서로 다른 2차 스프링으로 연쇄 반응한다.
+# 한 발 = 단 한 번의 펄스: 속도 임펄스를 주되 감쇠를 임계값(c = 2√k)으로 잡아 뒤로 밀렸다가 튕김 없이 제자리로 돌아온다.
+#   spring : (k 강성, c 감쇠, 지연 초).  임계 감쇠에서 피크 변위 = imp/(√k·e) → imp = √k·e 면 피크 1.0, 피크 시각 1/√k
+#   arm_px / arm_rad : 팔이 총 축을 따라 뒤로 밀리는 픽셀 / 회전 (최소)
+#   head_px / head_rad : 머리 뒤로 밀림(목 기준 X) / 회전 (최소)
+#   body_px : 상체가 뒤로 밀리는 픽셀 — 발은 고정(마찰)이고 몸이 발 위에서 기울어지는 전단(skew)으로 표현
+#   body_squat : 반동 순간 몸이 눌리는 비율 (scale.y, 발 고정)
+const RECOIL_PRESETS := [
+	{"id": "light", "name": "라이트 (단발 40px)", "desc": "팔 40px·머리 10px·상체 16px 단발 펄스, 튕김 없음. 발 고정",
+		"arm": Vector3(2600.0, 102.0, 0.0), "arm_imp": 139.0, "arm_px": 40.0, "arm_rad": 0.04,
+		"head": Vector3(1400.0, 75.0, 0.02), "head_imp": 102.0, "head_rad": 0.02, "head_px": 10.0,
+		"body": Vector3(900.0, 60.0, 0.04), "body_imp": 82.0, "body_px": 16.0, "body_squat": 0.03},
+	{"id": "medium", "name": "미디엄 (단발 60px)", "desc": "팔 60px·머리 16px·상체 26px. 조금 느린 단발 펄스",
+		"arm": Vector3(1800.0, 85.0, 0.0), "arm_imp": 115.0, "arm_px": 60.0, "arm_rad": 0.05,
+		"head": Vector3(900.0, 60.0, 0.03), "head_imp": 82.0, "head_rad": 0.03, "head_px": 16.0,
+		"body": Vector3(500.0, 45.0, 0.05), "body_imp": 61.0, "body_px": 26.0, "body_squat": 0.045},
+	{"id": "heavy", "name": "헤비 (단발 80px)", "desc": "팔 80px·머리 22px·상체 36px. 무겁고 느린 단발 펄스",
+		"arm": Vector3(1100.0, 66.0, 0.0), "arm_imp": 90.0, "arm_px": 80.0, "arm_rad": 0.06,
+		"head": Vector3(550.0, 47.0, 0.04), "head_imp": 64.0, "head_rad": 0.04, "head_px": 22.0,
+		"body": Vector3(300.0, 35.0, 0.07), "body_imp": 47.0, "body_px": 36.0, "body_squat": 0.06},
+]
+static var recoil_index := 0
+const RELOAD_ARM_DROP := 1.05       # 재장전 중 팔이 내려가는 각도 (rad)
 const AIM_SMOOTH := 80.0            # 팔 회전 보간 속도 (클수록 즉각적)
 
-# 구르기 (Space)
-const ROLL_TIME := 0.18             # 2배 템포
-const ROLL_SPEED := 3150.0          # 1050 ×2(템포) ×1.5(거리 +50%)
+# 머리 — 목을 축으로 조준 방향을 바라본다 (팔보다 느리고 각도 제한)
+const HEAD_MAX_ANGLE := 0.42        # 최대 기울기 (rad, ≈24°)
+const HEAD_SMOOTH := 26.0
+const DEFAULT_NECK := Vector2(15, -148)
+
+# 구르기 (Space) — 속도 = ROLL_PEAK × 가속(smoothstep 0~42%: 느리고 부드럽게 진입) × 감속(1 − 0.85·k^2.2). 이동 거리 ≈ 430px
+const ROLL_TIME := 0.30
+const ROLL_PEAK := 2720.0
+const ROLL_ACCEL_PORTION := 0.42
+const ROLL_DECEL := 0.85
+const ROLL_DECEL_POW := 2.2
+const ROLL_DISTANCE := 430.0        # 위 프로파일의 적분값 (회전 정규화용)
+const ROLL_EXIT_SPEED := 0.85       # 구르기가 끝날 때 남는 관성 (SPEED 배율)
+const ROLL_SLIDE_TIME := 0.4        # 그 뒤 이 시간 동안은 약한 감속으로 미끄러진다
+const ROLL_SLIDE_DECEL := 1500.0
 
 enum State { IDLE, WALK, CROUCH, UNCROUCH, ROLL }
 
@@ -59,18 +106,33 @@ var max_x := 10000.0
 var aim_target := Vector2.ZERO      # 월드 좌표. Main 이 매 프레임 마우스 위치를 넣어준다
 
 var _fire_cd := 0.0
-var _recoil := 0.0                  # 1 → 0 감쇠
 var _flash_t := 0.0
 var _roll_t := 0.0
 var _roll_dir := 1
+var _roll_dist := 0.0               # 구르기 누적 이동 거리 (회전은 거리에 비례)
+var _slide_t := 0.0                 # 구르기 뒤 미끄러짐 잔여 시간
+var ammo := MAG_SIZE
+var reloading := false
+var _reload_t := 0.0
+var _heat := 0.0                    # 연사 열 (산탄)
+# 반동 스프링 상태: 각 Vector2(값, 속도). 값 1.0 = 한 발 반동 크기. pending: [{t, part}] 지연 임펄스
+var _arm_rc := Vector2.ZERO
+var _head_rc := Vector2.ZERO
+var _body_rc := Vector2.ZERO
+var _pending: Array = []
 var _arm_angle := 0.0
 var _breath_t := 0.0
 var _breath := Vector2.ONE
 var _meta := {}
 var _shoulders := {}                # "walk_02" → 어깨 오프셋(바닥 중심 기준, 오른쪽 방향)
+var _necks := {}                    # "walk_02" → 목 오프셋(바닥 중심 기준, 오른쪽 방향)
+var _head_tex := {}                 # "walk_02" → 머리 텍스처
+var _head_angle := 0.0
 
 var body_pivot: Node2D
 var body: AnimatedSprite2D
+var head_pivot: Node2D
+var head: Sprite2D
 var arm_pivot: Node2D
 var arm: Sprite2D
 var muzzle: Marker2D
@@ -95,6 +157,17 @@ func _ready() -> void:
 	body_pivot.add_child(body)
 	body.animation_finished.connect(_on_animation_finished)
 	body.play("idle")
+
+	# 머리: 몸통과 같은 BodyPivot 아래 (숨쉬기 스케일·구르기 회전을 함께 받는다), 몸 위에 그려진다
+	head_pivot = Node2D.new()
+	head_pivot.name = "HeadPivot"
+	body_pivot.add_child(head_pivot)
+	head = Sprite2D.new()
+	head.name = "Head"
+	head.centered = false
+	head.material = Lighting.lit_material()
+	head_pivot.add_child(head)
+	_load_head_textures()
 
 	arm_pivot = Node2D.new()
 	arm_pivot.name = "ArmPivot"
@@ -153,6 +226,18 @@ func _load_meta() -> void:
 	for key in _meta.get("frames", {}).keys():
 		var v: Array = _meta["frames"][key]["shoulder_from_pivot"]
 		_shoulders[key] = Vector2(v[0], v[1])
+		if _meta["frames"][key].has("neck_from_pivot"):
+			var nk: Array = _meta["frames"][key]["neck_from_pivot"]
+			_necks[key] = Vector2(nk[0], nk[1])
+
+
+func _load_head_textures() -> void:
+	for clip_name in CLIPS.keys():
+		for i in range(1, CLIPS[clip_name]["frames"] + 1):
+			var key := "%s_%02d" % [clip_name, i]
+			var path := "%shead/%s/%s.png" % [SPLIT_DIR, clip_name, key]
+			if ResourceLoader.exists(path):
+				_head_tex[key] = Lighting.textured(path)
 
 
 func _build_frames() -> SpriteFrames:
@@ -168,9 +253,62 @@ func _build_frames() -> SpriteFrames:
 	return sf
 
 
+static func recoil_preset() -> Dictionary:
+	return RECOIL_PRESETS[wrapi(recoil_index, 0, RECOIL_PRESETS.size())]
+
+
+## 2차 스프링 한 스텝: s = (값, 속도), p = (k, 감쇠, _)
+static func _spring(s: Vector2, p: Vector3, delta: float) -> Vector2:
+	s.y += -s.x * p.x * delta
+	s.y *= exp(-p.y * delta)
+	s.x += s.y * delta
+	return s
+
+
+func _update_recoil(delta: float) -> void:
+	# 지연 임펄스 전달 (팔 → 머리 → 몸통 순으로 조금씩 늦게 받는다)
+	var rp := recoil_preset()
+	var i := 0
+	while i < _pending.size():
+		_pending[i]["t"] -= delta
+		if _pending[i]["t"] <= 0.0:
+			match _pending[i]["part"]:
+				"head": _head_rc.y += float(rp["head_imp"])
+				"body": _body_rc.y += float(rp["body_imp"])
+			_pending.remove_at(i)
+		else:
+			i += 1
+	_arm_rc = _spring(_arm_rc, rp["arm"], delta)
+	_head_rc = _spring(_head_rc, rp["head"], delta)
+	_body_rc = _spring(_body_rc, rp["body"], delta)
+	_heat = maxf(_heat - HEAT_DECAY * delta, 0.0)
+
+
+func _update_reload(delta: float) -> void:
+	if not reloading:
+		return
+	_reload_t += delta
+	if _reload_t >= RELOAD_TIME:
+		reloading = false
+		ammo = MAG_SIZE
+		ammo_changed.emit(ammo, MAG_SIZE, false)
+
+
+func start_reload() -> void:
+	if reloading or ammo >= MAG_SIZE:
+		return
+	reloading = true
+	_reload_t = 0.0
+	_body_rc.y -= 6.0          # 탄창 빼는 몸짓 — 살짝 앞으로 숙임
+	ammo_changed.emit(ammo, MAG_SIZE, true)
+
+
 func _process(delta: float) -> void:
 	_fire_cd = maxf(_fire_cd - delta, 0.0)
-	_recoil = maxf(_recoil - RECOIL_RETURN * delta * maxf(_recoil, 0.15), 0.0)
+	_update_recoil(delta)
+	_update_reload(delta)
+	if input_enabled and Input.is_action_just_pressed("reload"):
+		start_reload()
 	if _flash_t > 0.0:
 		_flash_t -= delta
 		if _flash_t <= 0.0:
@@ -183,7 +321,7 @@ func _process(delta: float) -> void:
 	if input_enabled:
 		axis = Input.get_axis("move_left", "move_right")
 		crouch_held = Input.is_action_pressed("crouch")
-		shoot_pressed = Input.is_action_just_pressed("shoot")
+		shoot_pressed = Input.is_action_pressed("shoot")      # 홀드 = 연사
 		if Input.is_action_just_pressed("roll") and state != State.ROLL:
 			_start_roll(int(signf(axis)) if absf(axis) > 0.1 else facing)
 		if Input.is_action_just_pressed("interact") and state != State.ROLL:
@@ -192,6 +330,7 @@ func _process(delta: float) -> void:
 	if state == State.ROLL:
 		_process_roll(delta)
 		_update_arm(delta)
+		_update_head(delta)
 		return
 
 	# 조준 방향이 바라보는 방향을 결정 (구르기 중 제외)
@@ -210,8 +349,10 @@ func _process(delta: float) -> void:
 	# 이동 - 가속/감속 이징 (숙인 동안은 감속만)
 	var target_v := axis * SPEED if (state != State.CROUCH and state != State.UNCROUCH) else 0.0
 	var rate := ACCEL
+	_slide_t = maxf(_slide_t - delta, 0.0)
 	if absf(target_v) < 1.0:
-		rate = DECEL
+		# 구르기 직후엔 약하게 감속해 살짝 더 미끄러진다
+		rate = ROLL_SLIDE_DECEL if _slide_t > 0.0 else DECEL
 	elif signf(target_v) != signf(velocity_x) and absf(velocity_x) > 1.0:
 		rate = TURN_DECEL
 	velocity_x = move_toward(velocity_x, target_v, rate * delta)
@@ -235,11 +376,50 @@ func _process(delta: float) -> void:
 
 	_update_breath(delta)
 
-	# 사격 - 클릭마다 한 발 (즉발)
-	if shoot_pressed and _fire_cd <= 0.0:
-		_fire()
+	# 사격 - 누르고 있는 동안 쿨다운마다 한 발 (첫 발 즉발). 탄창이 비면 자동 재장전
+	if shoot_pressed and _fire_cd <= 0.0 and not reloading:
+		if ammo > 0:
+			_fire()
+		else:
+			start_reload()
 
 	_update_arm(delta)
+	_update_head(delta)
+
+
+## 머리 위치·회전 갱신. 몸 프레임에 맞는 머리 텍스처를 고르고 목 앵커에 붙인 뒤,
+## 조준 방향으로 HEAD_MAX_ANGLE 안에서만 기울인다. 구르기 중엔 기울이지 않는다(몸과 함께 회전).
+func _update_head(delta: float, snap := false) -> void:
+	var key := "%s_%02d" % [body.animation, body.frame + 1]
+	var tex: Texture2D = _head_tex.get(key)
+	head.visible = tex != null
+	if tex == null:
+		return
+	head.texture = tex
+	var neck: Vector2 = _necks.get(key, DEFAULT_NECK)
+	# 머리 텍스처는 320 셀 그대로 — 목 픽셀이 원점에 오도록 오프셋
+	head.offset = -(neck + Vector2(FRAME_SIZE * 0.5, FRAME_SIZE))
+	# 목 앵커: 몸 스프라이트 로컬(=BodyPivot 로컬)에서 목 픽셀 위치. flip_h 는 셀 중심 기준 반전이므로 x 부호만 뒤집는다.
+	head_pivot.position = body.offset + Vector2(FRAME_SIZE * 0.5, FRAME_SIZE) + Vector2(neck.x * facing, neck.y)
+
+	var base := 0.0 if facing > 0 else PI
+	var rel := 0.0
+	if state != State.ROLL:
+		var to_target := aim_target - head_pivot.global_position
+		rel = clampf(angle_difference(base, to_target.angle()), -HEAD_MAX_ANGLE, HEAD_MAX_ANGLE)
+	var target_angle := base + rel
+	if snap or delta <= 0.0:
+		_head_angle = target_angle
+	else:
+		_head_angle = lerp_angle(_head_angle, target_angle, minf(1.0, HEAD_SMOOTH * delta))
+	# 왼쪽을 볼 때는 팔과 같은 방식으로 y 반전 + π 회전 → 좌우 반전
+	head_pivot.scale = Vector2(1, -1) if facing < 0 else Vector2(1, 1)
+	# 반동: 머리가 뒤로 젖혀지며(위) 조금 밀린다 — 몸통과 다른 스프링이라 따로 흔들린다
+	var rp := recoil_preset()
+	var head_k := _head_rc.x
+	head_pivot.rotation = _head_angle + float(rp["head_rad"]) * head_k * (-1.0 if facing > 0 else 1.0)
+	head_pivot.position.x += -facing * float(rp["head_px"]) * head_k
+	head_pivot.skew = -body_pivot.skew         # 몸통 전단이 머리 스프라이트를 찌그러뜨리지 않게 상쇄
 
 
 ## Idle 숨쉬기: 발 위치를 고정한 채 BodyPivot 스케일을 잔잔하게 트위닝
@@ -252,21 +432,48 @@ func _update_breath(delta: float) -> void:
 	else:
 		_breath_t = 0.0
 	_breath = _breath.lerp(want, minf(1.0, 6.0 * delta))
-	body_pivot.scale = _breath
-	body_pivot.position = Vector2(0, -BODY_CENTER_Y * _breath.y)
+	# 반동: 발은 고정(마찰)하고 상체만 뒤로 밀린다 — 전단(skew) + 발 위치 보정, 여기에 눌림(scale.y)
+	var rp := recoil_preset()
+	var body_k := _body_rc.x
+	var lean := -facing * float(rp["body_px"]) * body_k            # 머리 높이에서의 X 이동량
+	var sy := _breath.y * (1.0 - float(rp.get("body_squat", 0.0)) * absf(body_k))
+	body_pivot.scale = Vector2(_breath.x, sy)
+	# skew: 로컬 y 에 비례해 x 가 -sin(skew)·y 만큼 밀린다. 머리(y=-C) 는 +sin·C, 발(y=+C) 은 -sin·C 로 반대 →
+	# 반씩 나눠 skew 로 만들고 나머지 반은 위치로 보정하면 발 0 · 머리 lean
+	var half := clampf(lean * 0.5 / BODY_CENTER_Y, -0.6, 0.6)
+	body_pivot.skew = asin(half)
+	body_pivot.position = Vector2(lean * 0.5, -BODY_CENTER_Y * sy)
+	body_pivot.rotation = 0.0
 
 
 func _fire() -> void:
 	_fire_cd = FIRE_COOLDOWN
-	_recoil = 1.0
+	ammo -= 1
 	_flash_t = FLASH_TIME
 	flash.visible = true
 	muzzle_light.enabled = true
 	flash.rotation = randf_range(-0.3, 0.3)
 	flash.scale = Vector2.ONE * randf_range(0.85, 1.25)
+	# 반동 임펄스: 팔은 즉시 속도 임펄스(뒤로 확 → 앞으로 되튐), 머리·몸통은 지연 뒤 (절차적 연쇄)
+	var rp := recoil_preset()
+	_arm_rc.y += float(rp["arm_imp"])
+	_pending.append({"t": rp["arm"].z + rp["head"].z, "part": "head"})
+	_pending.append({"t": rp["arm"].z + rp["body"].z, "part": "body"})
+	# 산탄: 조준점을 총구 기준 각도로 흔든다 (열이 오를수록 크게)
+	var to_aim := aim_target - muzzle.global_position
+	var spread := SPREAD_BASE + SPREAD_HEAT * _heat
+	var target := muzzle.global_position + to_aim.rotated(randf_range(-spread, spread) * randf_range(0.4, 1.0))
+	_heat = minf(_heat + HEAT_PER_SHOT, 1.0)
 	_update_arm(0.0, true)
-	shoot_fired.emit(muzzle.global_position, aim_target)
+	shoot_fired.emit(muzzle.global_position, target)
 	shell_ejected.emit(arm_pivot.to_global(EJECT_LOCAL), facing)
+	ammo_changed.emit(ammo, MAG_SIZE, false)
+	if ammo <= 0:
+		start_reload()
+
+
+func spread_ratio() -> float:
+	return _heat
 
 
 ## 어깨 위치·팔 회전 갱신. 몸 애니 프레임에 맞춰 어깨 앵커를 따라간다.
@@ -283,22 +490,33 @@ func _update_arm(delta: float, snap := false) -> void:
 
 	var to_target := aim_target - arm_pivot.global_position
 	var target_angle := to_target.angle()
+	if reloading:
+		# 재장전: 팔이 아래로 내려가 총을 두 번 흔든다 (빼기·끼우기)
+		var k := clampf(_reload_t / RELOAD_TIME, 0.0, 1.0)
+		var drop := sin(k * PI)                                   # 0 → 1 → 0
+		var jiggle := sin(k * TAU * 2.0) * 0.12 * drop
+		var base := 0.0 if facing > 0 else PI
+		target_angle = base + (RELOAD_ARM_DROP * drop + jiggle) * (1.0 if facing > 0 else -1.0)
 	if snap or delta <= 0.0:
 		_arm_angle = target_angle
 	else:
-		_arm_angle = lerp_angle(_arm_angle, target_angle, minf(1.0, AIM_SMOOTH * delta))
+		var sm := AIM_SMOOTH if not reloading else 14.0
+		_arm_angle = lerp_angle(_arm_angle, target_angle, minf(1.0, sm * delta))
 
 	# 왼쪽을 볼 때는 팔 축 기준으로 상하 반전해서 총이 뒤집히지 않게 한다.
 	# scale.y = -1 이면 로컬 회전의 시각적 방향도 반전되므로 반동 각도 부호를 보정한다.
 	arm_pivot.scale = Vector2(1, -1) if facing < 0 else Vector2(1, 1)
-	var kick_angle := RECOIL_ANGLE * _recoil * (-1.0 if facing > 0 else 1.0)
+	var rp := recoil_preset()
+	var arm_k := _arm_rc.x
+	var kick_angle := float(rp["arm_rad"]) * arm_k * (-1.0 if facing > 0 else 1.0)
 	arm_pivot.rotation = _arm_angle + kick_angle
-	arm.position = Vector2(-RECOIL_KICK * _recoil, 0)
+	arm.position = Vector2(-float(rp["arm_px"]) * arm_k, 0)
 
 
 func _start_roll(dir: int) -> void:
 	state = State.ROLL
 	_roll_t = 0.0
+	_roll_dist = 0.0
 	_roll_dir = dir if dir != 0 else facing
 	facing = _roll_dir
 	body.flip_h = facing < 0
@@ -309,22 +527,34 @@ func _start_roll(dir: int) -> void:
 	# 회전축을 웅크린 실루엣의 중심으로 옮긴다 (발 밑 원점은 유지)
 	_breath = Vector2.ONE
 	body_pivot.scale = Vector2.ONE
+	body_pivot.skew = 0.0
+	head_pivot.skew = 0.0
 	body_pivot.position = Vector2(ROLL_CENTER.x * facing, -ROLL_CENTER.y)
 	body.offset = Vector2(-FRAME_SIZE * 0.5, -FRAME_SIZE) - body_pivot.position
+
+
+## 구르기 속도 프로파일 (k = 0..1): 짧게 가속해 정점을 찍고 뒤로 갈수록 점점 느려진다
+static func _roll_speed(k: float) -> float:
+	var accel := smoothstep(0.0, ROLL_ACCEL_PORTION, k)
+	var decel := 1.0 - ROLL_DECEL * pow(k, ROLL_DECEL_POW)
+	return ROLL_PEAK * accel * decel
 
 
 func _process_roll(delta: float) -> void:
 	_roll_t += delta
 	var t := clampf(_roll_t / ROLL_TIME, 0.0, 1.0)
-	var speed := ROLL_SPEED * (1.0 - 0.55 * t)       # 감속
-	position.x = clampf(position.x + _roll_dir * speed * delta, min_x, max_x)
-	body_pivot.rotation = TAU * t * _roll_dir
+	var step := _roll_speed(t) * delta
+	_roll_dist += step
+	position.x = clampf(position.x + _roll_dir * step, min_x, max_x)
+	# 회전은 시간이 아니라 이동 거리에 비례 — 빠를 때 빨리 돌고 멈출 때 천천히 돈다
+	body_pivot.rotation = TAU * clampf(_roll_dist / ROLL_DISTANCE, 0.0, 1.0) * _roll_dir
 	if _roll_t >= ROLL_TIME:
 		state = State.IDLE
 		body_pivot.rotation = 0.0
 		body_pivot.position = Vector2(0, -BODY_CENTER_Y)
 		body.offset = Vector2(-FRAME_SIZE * 0.5, -FRAME_SIZE + BODY_CENTER_Y)
-		velocity_x = _roll_dir * SPEED * 0.6      # 구르기 끝에 관성이 남아 자연스럽게 이어진다
+		velocity_x = _roll_dir * SPEED * ROLL_EXIT_SPEED    # 구르기 끝에 관성이 남아 미끄러지며 이어진다
+		_slide_t = ROLL_SLIDE_TIME
 		body.play("idle")
 
 
@@ -349,7 +579,16 @@ func face(dir: int) -> void:
 	aim_target = position + Vector2(400 * dir, -140)
 	if arm_pivot:
 		_update_arm(0.0, true)
+	if head_pivot:
+		_update_head(0.0, true)
 
 
 func is_rolling() -> bool:
 	return state == State.ROLL
+
+
+## 외부 충격(몬스터 독액)으로 밀린다. 구르기 중엔 무시(회피).
+func knockback(vx: float) -> void:
+	if state == State.ROLL:
+		return
+	velocity_x = vx

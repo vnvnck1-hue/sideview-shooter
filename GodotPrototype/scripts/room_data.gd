@@ -22,6 +22,8 @@ const SIDE_DOOR_OPEN_TEX := CONNECTOR_DIR + "sidewall_shutter_open_frame_game_sc
 ## 정면문은 (1120-96, 364-184) = (1024, 180).
 ## "fx": 환경 연출. beacon(회전 비상등, 벽 좌표) · leak(새는 수도관: pos=균열, dir=분사 방향) ·
 ##       wire(끊긴 전선: pos=천장 앵커, length) · fire(불: pos=바닥 중심, size). 수도관은 wall_a 의 가로 파이프(y≈96) 위.
+## "monsters": 시작 배치. {"type": "crawler", "x": 발 밑 X, "facing": 1|-1}
+## "spawn": 지속 스폰 {"max": 살아 있는 최대 수, "interval": [최소, 최대 초]}. 없으면 Room.SPAWN_DEFAULT(6마리, 1.8~3.5초). 긴 격납고는 더 많이, 복도는 적게.
 const ROOMS := {
 	"workshop": {
 		"title": "작업실 (Workshop)",
@@ -45,6 +47,11 @@ const ROOMS := {
 			{"type": "leak", "pos": Vector2(462, 100), "dir": Vector2(0.42, 1.0), "pressure": 1.0},
 			{"type": "wire", "pos": Vector2(1230, 42), "length": 210.0},
 		],
+		"monsters": [
+			{"type": "crawler", "x": 760, "facing": 1},
+			{"type": "crawler", "x": 320, "facing": 1},
+		],
+		"spawn": {"max": 6, "interval": [1.8, 3.5]},
 	},
 	"corridor": {
 		"title": "연결 복도 (Corridor)",
@@ -61,6 +68,7 @@ const ROOMS := {
 			{"type": "wire", "pos": Vector2(880, 42), "length": 240.0},
 			{"type": "fire", "pos": Vector2(330, 486), "size": Vector2(150.0, 190.0)},
 		],
+		"spawn": {"max": 4, "interval": [2.5, 4.5]},
 	},
 	"storage": {
 		"title": "창고 (Storage)",
@@ -81,6 +89,11 @@ const ROOMS := {
 			{"type": "leak", "pos": Vector2(606, 100), "dir": Vector2(0.35, 1.0), "pressure": 0.9},
 			{"type": "wire", "pos": Vector2(1100, 42), "length": 190.0},
 		],
+		"monsters": [
+			{"type": "crawler", "x": 1300, "facing": -1},
+			{"type": "crawler", "x": 1800, "facing": -1},
+		],
+		"spawn": {"max": 6, "interval": [1.8, 3.5]},
 	},
 	"hangar": {
 		# 화면(월드 3200px)보다 훨씬 긴 방 - 카메라 스크롤 확인용. 폭 4416px
@@ -113,6 +126,15 @@ const ROOMS := {
 			{"type": "wire", "pos": Vector2(700, 42), "length": 230.0},
 			{"type": "wire", "pos": Vector2(2980, 42), "length": 200.0},
 		],
+		"monsters": [
+			{"type": "crawler", "x": 1500, "facing": -1},
+			{"type": "crawler", "x": 3150, "facing": -1},
+			{"type": "crawler", "x": 3900, "facing": -1},
+			{"type": "crawler", "x": 900, "facing": -1},
+			{"type": "crawler", "x": 2400, "facing": -1},
+			{"type": "crawler", "x": 4250, "facing": -1},
+		],
+		"spawn": {"max": 12, "interval": [1.3, 2.5]},
 	},
 	"quarters": {
 		"title": "숙소 (Crew Quarters)",
@@ -134,6 +156,11 @@ const ROOMS := {
 			{"type": "wire", "pos": Vector2(1200, 42), "length": 200.0},
 			{"type": "beacon", "pos": Vector2(760, 112)},
 		],
+		"monsters": [
+			{"type": "crawler", "x": 1250, "facing": -1},
+			{"type": "crawler", "x": 350, "facing": 1},
+		],
+		"spawn": {"max": 6, "interval": [1.8, 3.5]},
 	},
 }
 

@@ -1,0 +1,111 @@
+{
+  "formatVersion": 2,
+  "theme": "Workshop",
+  "source": {
+    "path": "Assets/Generated/Environments/workshop_empty_background_plate_v1.png",
+    "purpose": "clean canonical plate; fixed props and fixtures are intentionally not part of repeat tiles"
+  },
+  "coordinateSystem": "top-left, +x right, +y down",
+  "cellSizePx": 128,
+  "backgroundLayer": {
+    "folder": "Background",
+    "tileCount": 6,
+    "repeatAxes": [
+      "x",
+      "y"
+    ],
+    "sheet": "workshop_modular_background_sheet_3x2.png",
+    "tiles": [
+      "workshop_bg_fill_a",
+      "workshop_bg_fill_b",
+      "workshop_bg_fill_c",
+      "workshop_bg_fill_d",
+      "workshop_bg_fill_e",
+      "workshop_bg_fill_f"
+    ]
+  },
+  "frameLayer": {
+    "folder": "Frame",
+    "overlay": true,
+    "sheet": "workshop_modular_frame_sheet_4x2.png",
+    "tiles": [
+      "workshop_frame_top_left",
+      "workshop_frame_top",
+      "workshop_frame_top_right",
+      "workshop_frame_left",
+      "workshop_frame_right",
+      "workshop_frame_bottom_left",
+      "workshop_frame_bottom",
+      "workshop_frame_bottom_right"
+    ],
+    "assembly": "one-cell perimeter: corners once, top/bottom edges repeat on x, left/right edges repeat on y",
+    "innerCorners": {
+      "folder": "Frame/InnerCorners",
+      "sheet": "workshop_modular_frame_inner_corners_sheet_4x1.png",
+      "tiles": [
+        "workshop_frame_inner_top_left",
+        "workshop_frame_inner_top_right",
+        "workshop_frame_inner_bottom_left",
+        "workshop_frame_inner_bottom_right"
+      ],
+      "purpose": "concave corners for recessed/notched wall lines and RuleTile inside-corner states",
+      "rules": [
+        {
+          "tile": "workshop_frame_inner_top_left",
+          "openQuadrant": "top_left",
+          "visibleBands": [
+            "bottom",
+            "right"
+          ],
+          "pattern": "X X X / X * . / X . ."
+        },
+        {
+          "tile": "workshop_frame_inner_top_right",
+          "openQuadrant": "top_right",
+          "visibleBands": [
+            "bottom",
+            "left"
+          ],
+          "pattern": "X X X / . * X / . . X"
+        },
+        {
+          "tile": "workshop_frame_inner_bottom_left",
+          "openQuadrant": "bottom_left",
+          "visibleBands": [
+            "top",
+            "right"
+          ],
+          "pattern": "X . . / X * . / X X X"
+        },
+        {
+          "tile": "workshop_frame_inner_bottom_right",
+          "openQuadrant": "bottom_right",
+          "visibleBands": [
+            "top",
+            "left"
+          ],
+          "pattern": ". . X / . * X / X X X"
+        }
+      ]
+    }
+  },
+  "preview": {
+    "file": "Assets/GameReady/Validation/workshop_modular_12x6_preview.png",
+    "innerCornersFile": "Assets/GameReady/Validation/workshop_modular_inner_corners_preview.png",
+    "interiorCells": {
+      "width": 12,
+      "height": 6
+    },
+    "footprintCells": {
+      "width": 14,
+      "height": 8
+    }
+  },
+  "import": {
+    "filter": "nearest/point",
+    "compression": "lossless or none",
+    "mipmaps": false,
+    "alpha": "frame layer preserves transparency",
+    "pivot": "top-left for Godot Sprite2D / bottom-left equivalent when using the legacy guide"
+  }
+}

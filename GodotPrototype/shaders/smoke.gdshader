@@ -6,13 +6,15 @@ shader_type canvas_item;
 uniform vec3 smoke_color : source_color = vec3(0.78, 0.76, 0.80);
 uniform float light_wrap : hint_range(0.0, 1.0) = 0.65;
 uniform float light_gain : hint_range(0.0, 6.0) = 4.0;
+uniform bool use_particle_color = false;   // true 면 파티클 색 램프(불 연기: 붉은기 → 검정)를 연기색으로 쓴다
 
 void fragment() {
 	vec4 c = texture(TEXTURE, UV);
 	float a = c.a * COLOR.a;
 	a = floor(a * 4.0 + 0.001) / 4.0;
-	// 파티클 COLOR.rgb 는 램프 색을 곱하지 않도록 연기색 고정 (밝기만 파티클 알파 곡선을 따른다)
-	COLOR = vec4(smoke_color * c.rgb, a);
+	// 기본은 연기색 고정 (밝기만 파티클 알파 곡선을 따른다). 불 연기는 파티클 색 램프를 따른다.
+	vec3 base = use_particle_color ? COLOR.rgb : smoke_color;
+	COLOR = vec4(base * c.rgb, a);
 }
 
 void light() {

@@ -1,0 +1,302 @@
+{
+  "formatVersion": 1,
+  "character": "toxic_tumor_crawler",
+  "displayName": "ToxicTumorCrawler",
+  "facing": "right",
+  "sheet": "Sheets/toxic_tumor_crawler_all_4x4_v1.png",
+  "layout": {
+    "columns": 4,
+    "rows": 4,
+    "cellWidth": 543,
+    "cellHeight": 756
+  },
+  "commonPivot": {
+    "x": 0.5,
+    "y": 0.0,
+    "description": "bottom-center ground pivot"
+  },
+  "clips": [
+    {
+      "name": "walk",
+      "frames": 4,
+      "suggestedFps": 8,
+      "loop": true
+    },
+    {
+      "name": "jump",
+      "frames": 4,
+      "suggestedFps": 8,
+      "loop": false
+    },
+    {
+      "name": "death",
+      "frames": 4,
+      "suggestedFps": 10,
+      "loop": false
+    },
+    {
+      "name": "attack",
+      "frames": 4,
+      "suggestedFps": 10,
+      "loop": false
+    }
+  ],
+  "frames": [
+    {
+      "clip": "walk",
+      "frame": 1,
+      "file": "Frames/walk/toxic_tumor_crawler_walk_01.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "walk",
+      "frame": 2,
+      "file": "Frames/walk/toxic_tumor_crawler_walk_02.png",
+      "rect": {
+        "x": 543,
+        "y": 0,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "walk",
+      "frame": 3,
+      "file": "Frames/walk/toxic_tumor_crawler_walk_03.png",
+      "rect": {
+        "x": 1086,
+        "y": 0,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "walk",
+      "frame": 4,
+      "file": "Frames/walk/toxic_tumor_crawler_walk_04.png",
+      "rect": {
+        "x": 1629,
+        "y": 0,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "jump",
+      "frame": 1,
+      "file": "Frames/jump/toxic_tumor_crawler_jump_01.png",
+      "rect": {
+        "x": 0,
+        "y": 756,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "jump",
+      "frame": 2,
+      "file": "Frames/jump/toxic_tumor_crawler_jump_02.png",
+      "rect": {
+        "x": 543,
+        "y": 756,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "jump",
+      "frame": 3,
+      "file": "Frames/jump/toxic_tumor_crawler_jump_03.png",
+      "rect": {
+        "x": 1086,
+        "y": 756,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "jump",
+      "frame": 4,
+      "file": "Frames/jump/toxic_tumor_crawler_jump_04.png",
+      "rect": {
+        "x": 1629,
+        "y": 756,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "death",
+      "frame": 1,
+      "file": "Frames/death/toxic_tumor_crawler_death_01.png",
+      "rect": {
+        "x": 0,
+        "y": 1512,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "death",
+      "frame": 2,
+      "file": "Frames/death/toxic_tumor_crawler_death_02.png",
+      "rect": {
+        "x": 543,
+        "y": 1512,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "death",
+      "frame": 3,
+      "file": "Frames/death/toxic_tumor_crawler_death_03.png",
+      "rect": {
+        "x": 1086,
+        "y": 1512,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "death",
+      "frame": 4,
+      "file": "Frames/death/toxic_tumor_crawler_death_04.png",
+      "rect": {
+        "x": 1629,
+        "y": 1512,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "attack",
+      "frame": 1,
+      "file": "Frames/attack/toxic_tumor_crawler_attack_01.png",
+      "rect": {
+        "x": 0,
+        "y": 2268,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "attack",
+      "frame": 2,
+      "file": "Frames/attack/toxic_tumor_crawler_attack_02.png",
+      "rect": {
+        "x": 543,
+        "y": 2268,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "attack",
+      "frame": 3,
+      "file": "Frames/attack/toxic_tumor_crawler_attack_03.png",
+      "rect": {
+        "x": 1086,
+        "y": 2268,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "attack",
+      "frame": 4,
+      "file": "Frames/attack/toxic_tumor_crawler_attack_04.png",
+      "rect": {
+        "x": 1629,
+        "y": 2268,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    }
+  ]
+}

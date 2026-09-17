@@ -26,6 +26,7 @@ func setup(source: Texture2D, region: Rect2, world_pos: Vector2, velocity: Vecto
 	floor_y = floor_line
 	material = Lighting.lit_material()
 	material.set_shader_parameter("rim_ambient_strength", 0.6)
+	material.set_meta("rim_ambient_fixed", true)
 
 
 func _process(delta: float) -> void:
@@ -34,7 +35,7 @@ func _process(delta: float) -> void:
 		vel.y += GRAVITY * delta
 		position += vel * delta
 		rotation += spin * delta
-		var half_h := texture.get_height() * 0.5
+		var half_h := texture.get_height() * 0.5 * absf(scale.y)
 		if position.y + half_h >= floor_y and vel.y > 0.0:
 			position.y = floor_y - half_h
 			vel.y = -vel.y * 0.3

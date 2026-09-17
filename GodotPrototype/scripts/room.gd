@@ -5,6 +5,11 @@ extends Node2D
 ##                     → Air(빛 기둥 · 비상등 팬 · 불꽃 · 연기 · 물줄기 · 전선 · 먼지) → (Character) → Front Effects
 ## 타일·문·프랍은 노멀맵이 붙은 CanvasTexture + lit_surface/prop_surface 셰이더로 그려 라이트에 입체·림으로 반응한다.
 
+const LightMood := preload("res://scripts/light_mood.gd")
+
+## 몬스터의 독액이 플레이어에 맞음 (Main 이 카메라 흔들림·밀림 처리)
+signal player_hit(point: Vector2, dir: float)
+
 var room_id: String
 var width: int = 0
 var front_doors: Array = []   # [{"x", "target", "target_door", "center": Vector2}]
@@ -19,12 +24,26 @@ var beacons: Array = []       # EmergencyLight
 var wires: Array = []         # BrokenWire
 var leaks: Array = []         # WaterLeak
 var fires: Array = []         # FireSource
+var monsters: Array = []      # Crawler
 var player: Node2D            # Main 이 넣어준다 (전선 밀치기)
 
+var _ambient: CanvasModulate
+var _monster_layer: Node2D
+var _props_layer: Node2D
+var _stains: Array = []       # BloodStain (오래된 것부터 정리)
+const MAX_STAINS := 48
+var _spawn_cfg: Dictionary = SPAWN_DEFAULT
+var _spawn_t := 0.0
+var _lights: Node2D
 var _tiles: Array = []        # [{sprite, rect, heat}] 벽 열 잔광용
+var room_tiles: RoomTiles      # Workshop_Modular 터레인 타일맵 씬 (scenes/rooms/<id>.tscn, Godot 에디터에서 편집)
 var _doors: Array = []        # [{sprite, rect, heat}]
 
 const FRONT_DOOR_W := 315
+const MONSTER_MARGIN := 150.0
+## 지속 스폰 기본값 — RoomData 의 "spawn": {"max": 살아 있는 최대 수, "interval": [최소, 최대 초]} 로 방마다 덮어쓴다
+const SPAWN_DEFAULT := {"max": 6, "interval": [1.8, 3.5]}
+const SPAWN_MIN_PLAYER_DIST := 900.0    # 플레이어에서 이만큼 떨어진 곳(가능하면 화면 밖)에 나온다
 const FRONT_DOOR_INTERACT_RANGE := 110.0
 
 
@@ -43,9 +62,11 @@ func build(id: String) -> void:
 	dim.name = "Ambient"
 	dim.color = Lighting.AMBIENT
 	add_child(dim)
+	_ambient = dim
 	var lights := Node2D.new()
 	lights.name = "Lights"
 	add_child(lights)
+	_lights = lights
 
 	var x := 0
 	for tile_name in data["tiles"]:
@@ -55,6 +76,7 @@ func build(id: String) -> void:
 		s.position = Vector2(x, 0)
 		var tm := Lighting.lit_material()
 		tm.set_shader_parameter("rim_ambient_strength", 0.0)      # 타일은 실루엣 림 없음(불투명), 노멀 림만
+		tm.set_meta("rim_ambient_fixed", true)
 		s.material = tm
 		tiles.add_child(s)
 		_tiles.append({"sprite": s, "rect": Rect2(s.position, s.texture.get_size()), "heat": HeatSurface.new(tm)})
@@ -73,6 +95,14 @@ func build(id: String) -> void:
 			lights.add_child(win)
 			windows.append(win)
 		x += RoomData.tile_width(tile_name)
+
+	# 1b. 모듈러 타일맵 씬(Godot 터레인 오토타일) — 스트립 타일 위에 덧그린다. scenes/rooms/<id>.tscn 이 있을 때만.
+	#     RoomTiles.hide_legacy_tiles 가 켜져 있으면 옛 560px 스트립을 숨기고 이 타일맵만 배경으로 쓴다.
+	if RoomTiles.exists(id):
+		room_tiles = load(RoomTiles.scene_path(id)).instantiate()
+		room_tiles.apply_lit_material()
+		tiles.add_child(room_tiles)
+		set_legacy_tiles_visible(not room_tiles.hide_legacy_tiles)
 
 	# 2. 뒷벽 정면문
 	var doors := Node2D.new()
@@ -107,6 +137,7 @@ func build(id: String) -> void:
 	props.name = "Props"
 	props.z_index = 2
 	add_child(props)
+	_props_layer = props
 	for p in data["props"]:
 		var shadow := _add_contact_shadow(props, p)
 		var s := HitProp.new()
@@ -158,6 +189,18 @@ func build(id: String) -> void:
 				fires.append(f)
 				sources.append(f)
 
+	apply_mood(LightMood.index)
+
+	# 6. 몬스터 — 캐릭터와 같은 층(z 5). 발 밑은 플레이어와 같은 바닥선, 좌우는 캡 타일 안쪽까지
+	_monster_layer = Node2D.new()
+	_monster_layer.name = "Monsters"
+	_monster_layer.z_index = 5
+	add_child(_monster_layer)
+	for m in data.get("monsters", []):
+		_add_crawler(float(m["x"]), int(m.get("facing", -1)))
+	_spawn_cfg = data.get("spawn", SPAWN_DEFAULT)
+	_spawn_t = _next_spawn_delay() * 0.5
+
 	var dust := DustLayer.new()
 	dust.name = "Dust"
 	dust.setup(float(width), float(RoomData.TILE_HEIGHT), lamps, sources)
@@ -165,7 +208,70 @@ func build(id: String) -> void:
 	air.add_child(dust)
 
 
+## 옛 가로 스트립 타일 표시/숨김 (모듈러 타일맵만 배경으로 쓸 때 숨긴다). 램프·창문 등 부속은 그대로 둔다.
+func set_legacy_tiles_visible(v: bool) -> void:
+	for t in _tiles:
+		t["sprite"].visible = v
+
+
+## 배경 라이팅 무드 프리셋 적용 (앰비언트 색 + 보조 광원)
+func apply_mood(i: int) -> void:
+	LightMood.apply(self, _lights, _ambient, i)
+
+
+func _add_crawler(x: float, facing: int) -> Crawler:
+	var c := Crawler.new()
+	c.name = "Crawler"
+	c.setup(self, x, RoomData.FLOOR_Y + 2.0, MONSTER_MARGIN, width - MONSTER_MARGIN, facing)
+	c.spat.connect(_on_monster_spat)
+	_monster_layer.add_child(c)
+	monsters.append(c)
+	return c
+
+
+func _next_spawn_delay() -> float:
+	var iv: Array = _spawn_cfg.get("interval", SPAWN_DEFAULT["interval"])
+	return randf_range(float(iv[0]), float(iv[1]))
+
+
+func alive_monsters() -> int:
+	var n := 0
+	for m in monsters:
+		if is_instance_valid(m) and not m.is_dead():
+			n += 1
+	return n
+
+
+## 지속 스폰: 살아 있는 수가 max 미만이면 interval 마다 한 마리. 플레이어에서 먼 자리를 고른다(8회 시도, 없으면 먼 쪽 끝)
+func _tick_spawner(delta: float) -> void:
+	var cap := int(_spawn_cfg.get("max", 0))
+	if cap <= 0 or player == null:
+		return
+	_spawn_t -= delta
+	if _spawn_t > 0.0:
+		return
+	_spawn_t = _next_spawn_delay()
+	if alive_monsters() >= cap:
+		return
+	var lo := MONSTER_MARGIN
+	var hi := width - MONSTER_MARGIN
+	var x := 0.0
+	var found := false
+	for i in range(8):
+		x = randf_range(lo, hi)
+		if absf(x - player.position.x) >= SPAWN_MIN_PLAYER_DIST:
+			found = true
+			break
+	if not found:
+		x = lo if player.position.x > width * 0.5 else hi
+	var c := _add_crawler(x, 1 if player.position.x >= x else -1)
+	c.spawn_in()
+
+
 func _process(_delta: float) -> void:
+	# 죽어 사라진 몬스터 정리 + 지속 스폰
+	monsters = monsters.filter(func(m): return is_instance_valid(m))
+	_tick_spawner(_delta)
 	# 플레이어가 전선을 지나가면 밀친다
 	if player and not wires.is_empty():
 		var vx: float = player.get("velocity_x") if player.get("velocity_x") != null else 0.0
@@ -173,9 +279,36 @@ func _process(_delta: float) -> void:
 			w.apply_body(player.position, vx)
 
 
-## 탄착점이 무엇을 맞췃는지. {"kind": "lamp"|"beacon"|"glass"|"prop"|"wall"|"none", "node": ...}
-## 프랍의 부서진 구멍은 통과해 뒤의 벽이 맞는다.
+func _on_monster_spat(glob: Node2D) -> void:
+	_monster_layer.add_child(glob)
+
+
+## 벽면 체액 자국 (프랍 층 — 타일·문 앞, 캐릭터 뒤). 너무 많이 쌓이면 오래된 것부터 지운다
+func add_stain(pos: Vector2, dir: Vector2, amount: int, spread: float) -> void:
+	_trim_stains()
+	_stains.append(BloodStain.splat(_props_layer, pos, dir, amount, spread))
+
+
+## 벽면 분사 자국 (덩어리가 순차적으로 찍히고 흘러내린다)
+func add_spray(pos: Vector2, dir: Vector2, amount: int, length: float, fan: float) -> void:
+	_trim_stains()
+	_stains.append(BloodStain.spray(_props_layer, pos, dir, amount, length, fan))
+
+
+func _trim_stains() -> void:
+	_stains = _stains.filter(func(s): return is_instance_valid(s))
+	while _stains.size() >= MAX_STAINS:
+		var old: Node = _stains.pop_front()
+		if is_instance_valid(old):
+			old.queue_free()
+
+
+## 탄착점이 무엇을 맞췃는지. {"kind": "monster"|"lamp"|"beacon"|"glass"|"prop"|"wall"|"none", "node": ...}
+## 몬스터가 맨 앞이라 먼저 본다. 죽은 몬스터·프랍의 부서진 구멍은 통과해 뒤의 벽이 맞는다.
 func hit_at(point: Vector2) -> Dictionary:
+	for m in monsters:
+		if is_instance_valid(m) and m.is_hit(point):
+			return {"kind": "monster", "node": m}
 	for lamp in lamps:
 		if lamp.is_hit(point):
 			return {"kind": "lamp", "node": lamp}

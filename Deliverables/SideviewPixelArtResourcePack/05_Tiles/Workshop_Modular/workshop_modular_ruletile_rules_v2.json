@@ -1,0 +1,54 @@
+{
+  "formatVersion": 1,
+  "tile": "Workshop_Modular_Frame_RuleTile",
+  "grid": "rectangular",
+  "requiredUnityPackages": [
+    "com.unity.2d.tilemap",
+    "com.unity.2d.tilemap.extras"
+  ],
+  "analysis": {
+    "method": "3x3 alpha/connection grid",
+    "center": "*",
+    "thisNeighbor": ".",
+    "dontCareNeighbor": "X",
+    "note": "Patterns are top-to-bottom and map the visible bands to connected frame neighbors."
+  },
+  "insideCornerRules": [
+    {
+      "tile": "workshop_frame_inner_top_left",
+      "openQuadrant": "top_left",
+      "visibleBands": [
+        "bottom",
+        "right"
+      ],
+      "pattern": "X X X / X * . / X . ."
+    },
+    {
+      "tile": "workshop_frame_inner_top_right",
+      "openQuadrant": "top_right",
+      "visibleBands": [
+        "bottom",
+        "left"
+      ],
+      "pattern": "X X X / . * X / . . X"
+    },
+    {
+      "tile": "workshop_frame_inner_bottom_left",
+      "openQuadrant": "bottom_left",
+      "visibleBands": [
+        "top",
+        "right"
+      ],
+      "pattern": "X . . / X * . / X X X"
+    },
+    {
+      "tile": "workshop_frame_inner_bottom_right",
+      "openQuadrant": "bottom_right",
+      "visibleBands": [
+        "top",
+        "left"
+      ],
+      "pattern": ". . X / . * X / X X X"
+    }
+  ]
+}

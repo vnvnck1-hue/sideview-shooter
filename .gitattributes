@@ -22,3 +22,7 @@
 *.wav binary
 *.ogg binary
 *.ttf binary
+
+# 아이콘
+*.ico binary
+*.lnk binary

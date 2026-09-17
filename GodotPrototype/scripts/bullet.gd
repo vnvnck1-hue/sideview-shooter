@@ -4,7 +4,7 @@ extends Node2D
 ## 시각: 총구부터 탄두까지 이어지는 한 줄 궤적이 찍히고 탄착 직후 사라진다.
 ## 탄착: 플래시 + 불꽃 스파크 + 중력을 받는 벽 파편 + 짧은 라이트 (타격감). 궤적·플래시·스파크·라이트는 붉은 팔레트(Lighting.RED_*).
 
-const SPEED := 10400.0
+const SPEED := 20800.0
 const TRAIL_W := 7.0
 const TRAIL_FADE := 0.05       # 탄착 후 궤적이 사라지는 시간 (거의 즉시)
 
@@ -15,7 +15,7 @@ const GRAVITY := 2600.0
 const FLASH_TIME := 0.08
 const RING_TIME := 0.16
 
-enum Impact { WALL, GLASS, PROP }
+enum Impact { WALL, GLASS, PROP, FLESH }
 
 var impact_kind: Impact = Impact.WALL
 var start := Vector2.ZERO
@@ -191,6 +191,9 @@ func _impact() -> void:
 	elif impact_kind == Impact.GLASS:
 		spark_n = int(SPARK_COUNT * 0.8)
 		chip_n = CHIP_COUNT + 4
+	elif impact_kind == Impact.FLESH:
+		spark_n = int(SPARK_COUNT * 0.4)          # 살에는 불꽃이 거의 없고 독액 방울(Crawler 가 뿌림)이 대신
+		chip_n = int(CHIP_COUNT * 0.5)
 	# 불꽃 스파크: 진행 반대 방향 원뿔로 빠르게, 약한 중력
 	for i in range(spark_n):
 		var s := ColorRect.new()
@@ -206,7 +209,7 @@ func _impact() -> void:
 		_debris.append({"node": s, "vel": v, "spin": 0.0, "gravity": GRAVITY * 0.35,
 			"life": randf_range(0.18, 0.32)})
 
-	# 파편: 벽=회색 조각 / 유리=밝은 청백색 얇은 조각(아래로 쏟아짐) / 프랍=나무·금속색 소량
+	# 파편: 벽=회색 조각 / 유리=밝은 청백색 얇은 조각(아래로 쏟아짐) / 프랍=나무·금속색 소량 / 살=어두운 살점
 	for i in range(chip_n):
 		var c := ColorRect.new()
 		var sz := randf_range(7.0, 14.0)
@@ -222,6 +225,10 @@ func _impact() -> void:
 			Impact.PROP:
 				var w := randf_range(0.35, 0.55)
 				c.color = Color(w * 1.25, w * 0.95, w * 0.7)
+			Impact.FLESH:
+				var m := randf_range(0.3, 0.5)
+				c.color = Color(m * 1.4, m * 0.25, m * 0.2)
+				c.size = Vector2(sz * 0.8, sz * 0.6)
 			_:
 				var g := randf_range(0.42, 0.62)
 				c.color = Color(g * 0.9, g * 0.95, g * 1.15)

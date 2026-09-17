@@ -89,6 +89,16 @@
 
 ## 3. 배경 타일 조립 방법
 
+### 3-0. Workshop Modular v2 — X/Y 확장형 두 레이어 타일
+
+기존 `Tiles/Workshop/`의 560px 세로 매크로 타일과 별개로, `Tiles/Workshop_Modular/`에는 128×128 셀 기반 확장형 리소스가 있다.
+
+- `Background/`: 방 내부를 X/Y 방향으로 반복하는 불투명 배경 셀 6종
+- `Frame/`: 외곽 벽 라인만 남긴 투명 오버레이 8종(모서리 4 + 변 4)
+- `Frame/InnerCorners/`: 안쪽으로 꺾이는 오목 코너 4종
+
+조립 순서는 `Background`로 전체 바탕을 채운 뒤, 모서리를 한 번 배치하고 `top`/`bottom`을 X축으로, `left`/`right`를 Y축으로 반복하는 방식이다. 안쪽으로 꺾이는 벽이나 룰타일 오목 코너에는 `Frame/InnerCorners/`의 4종을 사용한다. 검증 미리보기는 `Assets/GameReady/Validation/workshop_modular_12x6_preview.png`, 셀·파일 목록은 `workshop_modular_tiles_v2.json`, 룰 패턴은 `workshop_modular_ruletile_rules_v2.json`에 있다. 고정 램프·환기구·문·프랍은 반복 타일에 포함하지 않고 별도 레이어로 배치한다.
+
 ### 기본 규칙
 
 1. 모든 타일의 피벗을 Bottom Left로 설정한다.

@@ -4,7 +4,8 @@ extends RefCounted
 ## 매 프레임 경과 시간을 올린다. 활성 표면만 static 목록에 올려 Main 이 tick_all 로 갱신한다.
 
 const MAX_HITS := 12
-const COOL := 3.4                  # 셰이더 heat_cool 과 같은 값
+const COOL := 1.7                  # 셰이더 heat_cool 과 같은 값 (3.4 → 1.7, 잔광 절반)
+const RADIUS_PX := 18.0            # 잔광 반경 (36 → 18, 절반)
 const KEEP := COOL * 4.5           # 이 시간이 지나면 항목 제거 (exp(-4.5) ≈ 1%)
 
 static var _active: Array = []
@@ -17,6 +18,7 @@ var _listed := false
 func _init(m: ShaderMaterial) -> void:
 	material = m
 	material.set_shader_parameter("heat_cool", COOL)
+	material.set_shader_parameter("heat_radius_px", RADIUS_PX)
 
 
 ## uv: 텍스처 UV 상의 탄착점. strength: 1.0 = 한 발 (겹치면 더 뜨겁게 → 흰 열)

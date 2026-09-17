@@ -14,6 +14,9 @@ const GLITCH_TAIL := 0.35         # 꺼진 뒤에도 잠깐 잔상 글리치
 const CONE_TOP_HALF := 34.0       # 빛 기둥 윗변 반폭 (전구 아래)
 const CONE_BOTTOM_HALF := 330.0   # 바닥에서의 반폭
 const CONE_INTENSITY := 0.55
+const POOL_RADIUS := 400.0        # 램프 바로 아래 바닥에 고이는 빛
+const POOL_ENERGY_RATIO := 0.35   # 램프 밝기 대비 (0.7 → 절반)
+const POOL_SQUASH := 0.4          # 바닥에 납작하게
 
 var broken := false
 var bulb_rect := Rect2()          # 월드 좌표 전구 픽셀 영역
@@ -23,6 +26,7 @@ var _sprite: Sprite2D
 var _sprite_mat: ShaderMaterial
 var _cone: Polygon2D
 var _cone_mat: ShaderMaterial
+var _pool: PointLight2D           # 바닥 풀 라이트 (자식, 램프와 같이 깜빡인다)
 var _t := 0.0
 var _phase := 0.0
 var _next_flicker := 0.0
@@ -99,6 +103,19 @@ func attach_cone(parent: Node2D, floor_y: float) -> void:
 	_cone.material = _cone_mat
 	parent.add_child(_cone)
 
+	# 바닥 풀: 램프 바로 아래 바닥선에 납작한 라이트. 바닥 타일 노멀이 반응해 바닥이 살아난다.
+	_pool = PointLight2D.new()
+	_pool.name = "FloorPool"
+	_pool.texture = Lighting.radial_texture()
+	_pool.texture_scale = Lighting.scale_for_radius(POOL_RADIUS)
+	_pool.scale = Vector2(1.0, POOL_SQUASH)
+	_pool.color = COLOR
+	_pool.energy = BASE_ENERGY * POOL_ENERGY_RATIO
+	_pool.height = 90.0
+	_pool.shadow_enabled = false
+	_pool.position = Vector2(0.0, floor_y + 8.0 - global_position.y)
+	add_child(_pool)
+
 
 func is_hit(point: Vector2) -> bool:
 	return not broken and global_position.distance_to(point) <= HIT_RADIUS
@@ -139,6 +156,9 @@ func _apply_visuals(ratio: float, glitch: float) -> void:
 		_cone_mat.set_shader_parameter("intensity", CONE_INTENSITY * ratio)
 	if _cone:
 		_cone.visible = ratio > 0.01
+	if _pool:
+		_pool.energy = BASE_ENERGY * POOL_ENERGY_RATIO * ratio
+		_pool.enabled = ratio > 0.01
 
 
 func _process(delta: float) -> void:

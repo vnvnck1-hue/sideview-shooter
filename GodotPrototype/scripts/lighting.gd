@@ -3,7 +3,7 @@ extends RefCounted
 ## 2D 라이팅 공용 값. 방은 CanvasModulate 로 어둡게 깔고, 램프·총구·탄착 PointLight2D 가 비춘다.
 ## 노멀맵(CanvasTexture)·셰이더 로딩 헬퍼, 절차 생성 텍스처(연기 구 노멀·비상등 광선)도 여기 모아둔다.
 
-static var AMBIENT := _tune_color("VFX_AMB", Color(0.26, 0.28, 0.40))      # 라이트가 없는 곳의 밝기. HDR(선형) 이전 sRGB 0.26 과 같은 체감 밝기
+static var AMBIENT := _tune_color("VFX_AMB", Color(0.42, 0.43, 0.55))      # 라이트가 없는 곳의 밝기. 0.26,0.28,0.40 → 배경 색이 보이도록 올림 (푸른 기는 유지해 난색 라이트와 대비)
 ## 2D 노멀맵용 라이트 높이(px). 0 이면 표면에 평행해 노멀이 반응하지 않는다
 static var LAMP_HEIGHT := _tune("VFX_H", 140.0)
 const FLASH_HEIGHT := 90.0
@@ -41,6 +41,45 @@ const EMERGENCY_RED := Color(1.0, 0.16, 0.10)
 const FIRE_LIGHT := Color(1.0, 0.55, 0.22)
 const ARC_BLUE := Color(0.70, 0.82, 1.0)
 const WATER := Color(0.55, 0.75, 1.0)
+
+## 림라이트 프리셋 3종 (R 키 순환). lit_surface / prop_surface 머티리얼 전부에 적용된다.
+##   width  : 실루엣 안쪽으로 번지는 폭(px)   falloff : 감쇠 지수(클수록 가장자리에 몰림)
+##   strength : 광원 림 세기   ambient : 고정 키 림 세기   white : 림 색의 흰색 비율
+const RIM_PRESETS := [
+	{"id": "fine", "name": "가는 실선", "desc": "폭 2.5px, 예리한 감쇠 — 기존 느낌을 살짝만 다듬음",
+		"width": 2.5, "falloff": 1.8, "strength": 1.0, "ambient": 0.38, "white": 0.5},
+	{"id": "soft", "name": "부드러운 중간", "desc": "폭 15px, 완만한 감쇠 — 외곽선에서 안쪽으로 넓게 스며듦 (확정, 5px 의 3배)",
+		"width": 15.0, "falloff": 1.0, "strength": 0.9, "ambient": 0.32, "white": 0.35},
+	{"id": "glow", "name": "넓은 글로우", "desc": "폭 9px, 아주 완만 — 실루엣 전체가 광원 쪽으로 물듦",
+		"width": 9.0, "falloff": 0.8, "strength": 0.7, "ambient": 0.26, "white": 0.3},
+]
+const RIM_DEFAULT := 1
+static var rim_index := RIM_DEFAULT
+static var _lit_materials: Array = []          # WeakRef — 런타임 프리셋 전환용
+
+static func rim_preset() -> Dictionary:
+	return RIM_PRESETS[wrapi(rim_index, 0, RIM_PRESETS.size())]
+
+static func _apply_rim_to(m: ShaderMaterial, p: Dictionary) -> void:
+	m.set_shader_parameter("rim_width_px", p["width"])
+	m.set_shader_parameter("rim_falloff", p["falloff"])
+	m.set_shader_parameter("rim_strength", p["strength"])
+	m.set_shader_parameter("rim_white_mix", p["white"])
+	# 타일(0)·파편(0.6)처럼 개별로 정한 앰비언트 림은 유지, 기본값을 쓰는 곳만 갱신
+	if not m.has_meta("rim_ambient_fixed"):
+		m.set_shader_parameter("rim_ambient_strength", p["ambient"])
+
+## 모든 살아 있는 라이팅 머티리얼에 프리셋 적용
+static func apply_rim_preset(i: int) -> void:
+	rim_index = wrapi(i, 0, RIM_PRESETS.size())
+	var p := rim_preset()
+	var alive: Array = []
+	for w in _lit_materials:
+		var m = w.get_ref()
+		if m != null:
+			_apply_rim_to(m, p)
+			alive.append(w)
+	_lit_materials = alive
 
 static var _radial: GradientTexture2D
 static var _canvas_cache := {}
@@ -101,6 +140,9 @@ static func shader_material(name: String) -> ShaderMaterial:
 		_shader_cache[name] = load("res://shaders/%s.gdshader" % name)
 	var m := ShaderMaterial.new()
 	m.shader = _shader_cache[name]
+	if name == "lit_surface" or name == "prop_surface":
+		_apply_rim_to(m, rim_preset())
+		_lit_materials.append(weakref(m))
 	return m
 
 

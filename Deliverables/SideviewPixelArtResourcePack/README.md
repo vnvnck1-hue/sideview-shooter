@@ -19,6 +19,7 @@
 - `04_Characters/HoodedMechanic/`: 아이들·걷기·사격·숙이기 시트, 개별 프레임과 메타데이터
 - `04_Characters/Source/`: 캐릭터 애니메이션 생성 원본 시트
 - `05_Tiles/Workshop/`: 긴 작업실을 조립하는 세로 매크로 배경 타일
+- `05_Tiles/Workshop_Modular/`: X/Y 확장용 128px 배경 셀 + 투명 외곽 프레임 타일
 - `05_Tiles/Corridor/`: 빈 연결 복도 타일
 - `05_Tiles/Hydroponics/`: 수경재배실 빈 배경 타일
 - `05_Tiles/CrewQuarters/`: 승무원 숙소 빈 배경 타일
@@ -50,6 +51,21 @@
 - 검증 장면 바닥선: Y = 670 px
 - 이미지 스케일링: Point / Nearest
 - 프랍과 연결 문: 투명 PNG
+
+## Workshop Modular Tile Set v2
+
+기존 세로 매크로 타일과 별개로, 작업실을 가로·세로 모두 확장할 수 있는 두 레이어 리소스를 추가했다.
+
+- `05_Tiles/Workshop_Modular/Background/`: 128×128 불투명 내부 배경 셀 6종
+- `05_Tiles/Workshop_Modular/Frame/`: 128×128 투명 외곽 프레임 8종
+- `05_Tiles/Workshop_Modular/Frame/InnerCorners/`: 128×128 투명 오목 코너 4종
+- `05_Tiles/Workshop_Modular/workshop_modular_frame_inner_corners_sheet_4x1.png`: 오목 코너 시트
+- 검증본: `07_Validation/workshop_modular_12x6_preview.png`
+- 오목 코너 검증본: `07_Validation/workshop_modular_inner_corners_preview.png`
+- 조립 메타데이터: `05_Tiles/Workshop_Modular/workshop_modular_tiles_v2.json`
+- 룰타일 패턴: `05_Tiles/Workshop_Modular/workshop_modular_ruletile_rules_v2.json`
+
+배경을 원하는 셀 수만큼 먼저 채우고, 네 모서리와 반복 가능한 상·하·좌·우 프레임을 한 셀 외곽에 오버레이한다. 램프·환기구·문·프랍은 반복 타일에서 분리해 별도 장식 레이어로 유지한다.
 
 ## 프랍 투영 기준
 
