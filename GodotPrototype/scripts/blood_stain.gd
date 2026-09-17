@@ -16,6 +16,9 @@ const WALL_TOP := 40.0
 const SPRAY_DRIP_TIME := 6.5     # 분사 덩어리가 흘러내리는 시간 (느리게 시작해 가속)
 const SPRAY_POP := 0.09          # 벽에 찍히는 순간 커 보이는 시간
 
+## 체액 기본색 — 채도·밝기를 눌러 형광기 없이 '젖은 초록'으로. 빛 반응은 fluid.gdshader 가 light_response 로 낮춘다.
+const FLUID := Color(0.34, 0.60, 0.16)
+
 var _blobs: Array = []       # {p, size(Vector2), col, drip(최대 늘어나는 높이), [t0 도착 시각, slide 미끄러짐]}
 var _t := 0.0
 var _spray := false
@@ -40,6 +43,11 @@ static func spray(parent: Node, pos: Vector2, dir: Vector2, amount: int, length:
 	return bs
 
 
+func _init() -> void:
+	# 빛에 둔한 체액 재질 (스페큘러·림 없음, 광원 밝기 28% 만 받음)
+	material = Lighting.shader_material("fluid")
+
+
 func _build_spray(pos: Vector2, dir: Vector2, amount: int, length: float, fan: float) -> void:
 	_spray = true
 	var d := dir.normalized() if dir.length() > 0.01 else Vector2.RIGHT
@@ -53,8 +61,8 @@ func _build_spray(pos: Vector2, dir: Vector2, amount: int, length: float, fan: f
 		# 도착 시각: 멀수록 늦게 (분사가 퍼져 나가는 순서) + 약간의 흔들림
 		var t0 := frac * randf_range(0.22, 0.34) + randf_range(0.0, 0.05)
 		var sz := randf_range(4.0, 8.0) + (1.0 - frac) * randf_range(4.0, 12.0)
-		var shade := randf_range(0.55, 1.0)
-		var col := Color(0.46 * shade, 0.92 * shade, 0.16 * shade, randf_range(0.82, 0.97))
+		var shade := randf_range(0.6, 1.0)
+		var col := Color(FLUID.r * shade, FLUID.g * shade, FLUID.b * shade, randf_range(0.82, 0.97))
 		var drip := 0.0
 		if sz >= 6.0:
 			drip = randf_range(14.0, 60.0) * randf_range(0.6, 1.2)  # 대부분 흘러내림
@@ -77,9 +85,8 @@ func _build(pos: Vector2, dir: Vector2, amount: int, spread: float) -> void:
 		p.y = minf(p.y, FLOOR_Y - 2.0)                    # 바닥선 아래로는 안 내려감
 		var near := 1.0 - clampf(p.distance_to(pos) / maxf(spread, 1.0), 0.0, 1.0)
 		var sz := randf_range(4.0, 9.0) + near * randf_range(6.0, 18.0)
-		var shade := randf_range(0.55, 1.0)
-		# 앰비언트(≈0.42)로 어두워지는 만큼 밝게 — 벽에서 초록이 또렷히 읽히도록
-		var col := Color(0.46 * shade, 0.92 * shade, 0.16 * shade, randf_range(0.8, 0.97))
+		var shade := randf_range(0.6, 1.0)
+		var col := Color(FLUID.r * shade, FLUID.g * shade, FLUID.b * shade, randf_range(0.8, 0.97))
 		var drip := 0.0
 		if sz > 9.0 and randf() < 0.5:
 			drip = randf_range(10.0, 40.0)

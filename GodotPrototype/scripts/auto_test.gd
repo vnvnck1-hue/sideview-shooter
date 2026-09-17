@@ -37,6 +37,7 @@ var steps := [
 	[3.52, "release:shoot"],
 	[3.56, "shot:00a_lamp_hit"],
 	[3.8, "shot:00b_lamp_broken"],
+	[3.81, "spraytest"],           # 램프 옆 벽에 체액 자국·분사 (빛 반응 확인용)
 	[3.82, "aimw:1560:380"],
 	[4, "press:shoot"],
 	[4.02, "release:shoot"],
@@ -189,6 +190,10 @@ func _do(cmd: String) -> void:
 				if is_instance_valid(m):
 					mon += " crawler(x=%.0f hp=%d state=%d)" % [m.position.x, m.hp, m.state]
 			print("SHOT %s  room=%s player.x=%.0f state=%s%s" % [parts[1], room, main.player.position.x, main.player.state, mon])
+		"spraytest":
+			var r = main.current_room
+			r.add_stain(Vector2(760, 300), Vector2(1, -0.15), 12, 60.0)
+			r.add_spray(Vector2(700, 260), Vector2(1, 0.15), 18, 200.0, 0.9)
 		"quit":
 			print("AUTOTEST DONE")
 			get_tree().quit()

@@ -123,8 +123,8 @@ func _draw() -> void:
 		var k := clampf(_t / PUDDLE_LIFE, 0.0, 1.0)
 		var a := 1.0 - smoothstep(0.55, 1.0, k)
 		var w := _puddle_w * (0.6 + 0.4 * minf(1.0, _t / 0.15))
-		var col := Color(BODY.r * 1.8, BODY.g * 1.8, BODY.b * 1.8, 0.85 * a)
+		var col := Color(BODY.r * 1.1, BODY.g * 1.1, BODY.b * 1.1, 0.85 * a)     # 바닥 웅덩이는 덜 빛난다
 		draw_rect(Rect2(_p.x - w * 0.5, _p.y - 5.0, w, 5.0), col)
 		draw_rect(Rect2(_p.x - w * 0.3, _p.y - 9.0, w * 0.6, 4.0), col)
 		draw_rect(Rect2(_p.x - w * 0.12, _p.y - 12.0, w * 0.24, 3.0),
-			Color(CORE.r * 2.0, CORE.g * 2.0, CORE.b * 2.0, 0.8 * a))
+			Color(CORE.r * 1.2, CORE.g * 1.2, CORE.b * 1.2, 0.8 * a))

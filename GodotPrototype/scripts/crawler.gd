@@ -48,6 +48,7 @@ const ACID_HOT := Color(0.96, 1.0, 0.62)
 const ACID_COLD := Color(0.55, 0.72, 0.12)
 const BLOOD_HOT := Color(0.62, 0.92, 0.30)     # 체액 (초록)
 const BLOOD_COLD := Color(0.22, 0.45, 0.08)
+const BLOOD_GLOW := 0.45                        # 체액 방울 발광 배율 (독액 1.0 대비 둔하게 — 형광기 제거)
 
 # 스케일 스프링 (발 밑 축). 값은 배율 — (1,1) 로 돌아온다
 const SQUASH_K := 210.0               # 스프링 강도
@@ -477,7 +478,7 @@ func hit(point: Vector2, dir: float) -> void:
 	sb.burst(point, 9, Vector2(-signf(dir), -0.6), 0.9, Vector2(140, 420), ACID_HOT, ACID_COLD,
 		Vector2(0.3, 0.7), 2000.0, 4.5, false)
 	sb.burst(point, 7, Vector2(signf(dir), -0.3), 0.7, Vector2(200, 520), BLOOD_HOT, BLOOD_COLD,
-		Vector2(0.25, 0.6), 2200.0, 3.5, false)
+		Vector2(0.25, 0.6), 2200.0, 3.5, false, BLOOD_GLOW)
 	if room and room.has_method("add_stain"):
 		room.add_stain(point + Vector2(signf(dir) * 30.0, 0.0), Vector2(signf(dir), -0.15), 6, 40.0)
 		# 가끔(35%) 체액이 탄 방향 벽면으로 부채꼴로 흩뿌려진다 — 덩어리가 순차적으로 찍히고 흘러내림
@@ -504,7 +505,7 @@ func _die(dir: float) -> void:
 	sb.burst(c, 22, Vector2(-signf(dir) * 0.4, -1.0), 1.1, Vector2(160, 560), ACID_HOT, ACID_COLD,
 		Vector2(0.45, 1.1), 2000.0, 5.0, true)
 	sb.burst(c, 34, Vector2(signf(dir) * 0.3, -0.8), PI, Vector2(220, 760), BLOOD_HOT, BLOOD_COLD,
-		Vector2(0.5, 1.3), 2300.0, 6.0, false)
+		Vector2(0.5, 1.3), 2300.0, 6.0, false, BLOOD_GLOW)
 	# 육편: 현재 프레임 텍스처를 조각내 사방으로 날린다
 	_spawn_chunks(c, dir)
 	# 벽에 큰 체액 자국 (탄 방향으로 길게) + 바닥 쪽 작은 자국

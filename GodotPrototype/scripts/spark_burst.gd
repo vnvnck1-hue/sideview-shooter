@@ -22,13 +22,13 @@ static func spawn(parent: Node, floor_line: float, keep := false) -> SparkBurst:
 ## dir: 중심 방향, spread: 각도 반폭(rad). hot→cold 색으로 식는다.
 func burst(pos: Vector2, count: int, dir := Vector2(0, 1), spread := PI, speed := Vector2(180, 520),
 		hot := Color(1.0, 0.9, 0.7), cold := Color(1.0, 0.25, 0.08), life := Vector2(0.35, 0.9),
-		gravity := 2200.0, size := 3.0, with_light := true) -> void:
+		gravity := 2200.0, size := 3.0, with_light := true, glow := 1.0) -> void:
 	for i in range(count):
 		var v := dir.normalized().rotated(randf_range(-spread, spread)) * randf_range(speed.x, speed.y)
 		_sparks.append({
 			"p": pos, "v": v, "life": randf_range(life.x, life.y), "age": 0.0,
 			"size": size * randf_range(0.7, 1.3), "hot": hot, "cold": cold, "g": gravity,
-			"bounce": randf_range(0.25, 0.5),
+			"bounce": randf_range(0.25, 0.5), "glow": glow,
 		})
 	if with_light:
 		_flash_light(pos, minf(0.6 + count * 0.06, 2.4), cold.lerp(hot, 0.4))
@@ -83,7 +83,7 @@ func _draw() -> void:
 	for s in _sparks:
 		var k: float = s["age"] / s["life"]
 		var col: Color = s["hot"].lerp(s["cold"], smoothstep(0.0, 0.6, k))
-		var bright := lerpf(4.2, 1.6, k)                    # CanvasModulate 를 이겨 글로우에 닿는 발광
+		var bright := lerpf(4.2, 1.6, k) * float(s.get("glow", 1.0))   # CanvasModulate 를 이겨 글로우에 닿는 발광 (체액은 glow<1 로 둔하게)
 		col = Color(col.r * bright, col.g * bright, col.b * bright, 1.0 - smoothstep(0.7, 1.0, k))
 		var p: Vector2 = s["p"]
 		var v: Vector2 = s["v"]
