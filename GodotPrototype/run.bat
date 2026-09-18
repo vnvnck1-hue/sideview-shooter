@@ -37,10 +37,15 @@ if not defined GODOT_EXE (
 echo [run.bat] Godot: !GODOT_EXE!
 set "PROJ=%~dp0"
 set "PROJ=!PROJ:~0,-1!"
-rem Fresh clone: .godot/ cache is absent, so class_name lookups fail on the
-rem very first run. Do one headless import pass to build the cache first.
+rem Godot caches class_name registrations and texture imports in .godot/,
+rem which is per-PC (gitignored). After a git pull that adds scripts or
+rem assets, that cache is stale and the game fails with "Identifier not
+rem declared" / "Compilation failed". A headless import pass rebuilds it;
+rem it takes a few seconds when the cache is warm, so always run it.
 if not exist "!PROJ!\.godot\" (
-  echo [run.bat] First run on this PC - importing project ^(one time^)...
-  "!GODOT_EXE!" --path "!PROJ!" --headless --import >nul 2>nul
+  echo [run.bat] First run on this PC - importing project ^(one time, may take a while^)...
+) else (
+  echo [run.bat] Refreshing import cache...
 )
+"!GODOT_EXE!" --path "!PROJ!" --headless --import >nul 2>nul
 "!GODOT_EXE!" --path "!PROJ!" %*
