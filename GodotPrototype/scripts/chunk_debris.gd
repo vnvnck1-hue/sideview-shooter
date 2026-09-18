@@ -12,6 +12,7 @@ var spin := 0.0
 var floor_y := 0.0
 var _t := 0.0
 var _resting := false
+var _wet := false                 # 고인 물에 한 번 첨벙
 
 
 func setup(source: Texture2D, region: Rect2, world_pos: Vector2, velocity: Vector2, floor_line: float) -> void:
@@ -33,9 +34,15 @@ func _process(delta: float) -> void:
 	_t += delta
 	if not _resting:
 		vel.y += GRAVITY * delta
+		var prev_y := position.y
 		position += vel * delta
 		rotation += spin * delta
 		var half_h := texture.get_height() * 0.5 * absf(scale.y)
+		if not _wet and WaterPool.active != null and WaterPool.active.crossed(position.x, prev_y + half_h, position.y + half_h):
+			_wet = true
+			WaterPool.active.splash(position.x, clampf(0.4 + half_h / 30.0, 0.4, 1.0))
+			vel *= 0.4
+			spin *= 0.3
 		if position.y + half_h >= floor_y and vel.y > 0.0:
 			position.y = floor_y - half_h
 			vel.y = -vel.y * 0.3

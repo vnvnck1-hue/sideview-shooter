@@ -1,0 +1,111 @@
+{
+  "formatVersion": 2,
+  "theme": "CrewQuarters",
+  "source": {
+    "path": "Assets/Generated/Environments/crew_quarters_empty_background_plate_v2.png",
+    "purpose": "clean canonical plate; fixed props and fixtures are intentionally not part of repeat tiles"
+  },
+  "coordinateSystem": "top-left, +x right, +y down",
+  "cellSizePx": 128,
+  "backgroundLayer": {
+    "folder": "Background",
+    "tileCount": 6,
+    "repeatAxes": [
+      "x",
+      "y"
+    ],
+    "sheet": "crewquarters_modular_background_sheet_3x2.png",
+    "tiles": [
+      "crewquarters_bg_fill_a",
+      "crewquarters_bg_fill_b",
+      "crewquarters_bg_fill_c",
+      "crewquarters_bg_fill_d",
+      "crewquarters_bg_fill_e",
+      "crewquarters_bg_fill_f"
+    ]
+  },
+  "frameLayer": {
+    "folder": "Frame",
+    "overlay": true,
+    "sheet": "crewquarters_modular_frame_sheet_4x2.png",
+    "tiles": [
+      "crewquarters_frame_top_left",
+      "crewquarters_frame_top",
+      "crewquarters_frame_top_right",
+      "crewquarters_frame_left",
+      "crewquarters_frame_right",
+      "crewquarters_frame_bottom_left",
+      "crewquarters_frame_bottom",
+      "crewquarters_frame_bottom_right"
+    ],
+    "assembly": "one-cell perimeter: corners once, top/bottom edges repeat on x, left/right edges repeat on y",
+    "innerCorners": {
+      "folder": "Frame/InnerCorners",
+      "sheet": "crewquarters_modular_frame_inner_corners_sheet_4x1.png",
+      "tiles": [
+        "crewquarters_frame_inner_top_left",
+        "crewquarters_frame_inner_top_right",
+        "crewquarters_frame_inner_bottom_left",
+        "crewquarters_frame_inner_bottom_right"
+      ],
+      "purpose": "concave corners for recessed/notched wall lines and RuleTile inside-corner states",
+      "rules": [
+        {
+          "tile": "crewquarters_frame_inner_top_left",
+          "openQuadrant": "top_left",
+          "visibleBands": [
+            "bottom",
+            "right"
+          ],
+          "pattern": "X X X / X * . / X . ."
+        },
+        {
+          "tile": "crewquarters_frame_inner_top_right",
+          "openQuadrant": "top_right",
+          "visibleBands": [
+            "bottom",
+            "left"
+          ],
+          "pattern": "X X X / . * X / . . X"
+        },
+        {
+          "tile": "crewquarters_frame_inner_bottom_left",
+          "openQuadrant": "bottom_left",
+          "visibleBands": [
+            "top",
+            "right"
+          ],
+          "pattern": "X . . / X * . / X X X"
+        },
+        {
+          "tile": "crewquarters_frame_inner_bottom_right",
+          "openQuadrant": "bottom_right",
+          "visibleBands": [
+            "top",
+            "left"
+          ],
+          "pattern": ". . X / . * X / X X X"
+        }
+      ]
+    }
+  },
+  "preview": {
+    "file": "Assets/GameReady/Validation/crewquarters_modular_12x6_preview.png",
+    "innerCornersFile": "Assets/GameReady/Validation/crewquarters_modular_inner_corners_preview.png",
+    "interiorCells": {
+      "width": 12,
+      "height": 6
+    },
+    "footprintCells": {
+      "width": 14,
+      "height": 8
+    }
+  },
+  "import": {
+    "filter": "nearest/point",
+    "compression": "lossless or none",
+    "mipmaps": false,
+    "alpha": "frame layer preserves transparency",
+    "pivot": "top-left for Godot Sprite2D / bottom-left equivalent when using the legacy guide"
+  }
+}

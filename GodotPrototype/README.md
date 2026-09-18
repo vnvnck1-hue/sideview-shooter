@@ -1,7 +1,7 @@
 # 사이드뷰 작업실 방 이동 프로토타입 (Godot 4.7)
 
-`Docs/RESOURCE_USAGE_GUIDE.md` 의 규칙대로 GameReady 타일·프랍·캐릭터를 조립해,
-붉은 후드 정비공을 움직여 4개의 방을 오갈 수 있는 프로토타입이다. GDScript 로만 작성됐다.
+`Docs/RESOURCE_USAGE_GUIDE.md` 의 규칙대로 GameReady 모듈러 타일(5 테마)·프랍·캐릭터를 조립해,
+붉은 후드 정비공을 움직여 **방 21개 · 구역 4개**의 맵을 탐색하는 프로토타입이다. GDScript 로만 작성됐다.
 
 ## 실행
 
@@ -10,16 +10,16 @@
 
 ## 로비 (`scenes/Lobby.tscn`, 시작 씬)
 
-마우스 버튼으로 고른다. 씬은 로비와 Main 두 개이고, 시작 방은 `scripts/app_flow.gd` 의 정적 값으로 넘긴다.
+마우스 버튼으로 고른다. 시작 방은 `scripts/app_flow.gd` 의 정적 값으로 넘긴다.
 
 | 버튼 | 동작 |
 |---|---|
-| 방 드롭다운 | 아래 두 버튼이 쓰는 방. 타일맵 씬(`scenes/rooms/<방 id>.tscn`) 유무가 옆에 표시된다 |
-| ▶ 게임 시작 | 고른 방에서 플레이 |
-| ▦ 타일 씬 보기 | 고른 방의 타일 씬만 자유 카메라로 띄우는 뷰어(`scenes/TileViewer.tscn`). 휠 줌 · 휠클릭/WASD 이동 · G 격자 · L 옛 스트립 반투명 참고 · **R 디스크에서 다시 읽기**(Godot 에디터에서 저장한 직후 반영) |
+| ▶ 메인 게임 | `scenes/MainGame.tscn`(`scripts/main_game.gd`, `main.gd` 상속). **에어록**(`RoomData.START_ROOM`)에서 시작해 측벽문·정면문으로 전체 맵을 탐색한다. 우상단에 구역 · 몬스터 밀도(안전/적음/위험) · 탐색한 방 수 |
+| ⚙ 테스트 — 랜덤한 방에서 시작 | `scenes/Main.tscn`. 방 하나를 무작위로 골라 바로 플레이 (원버튼) |
+| ▦ 맵 뷰어 | `scenes/MapViewer.tscn`(`scripts/map_viewer.gd`). 방을 `Room.build` 로 통째로 조립해 자유 카메라로 본다. **[ ]** 이전/다음 방 · 휠 줌 · 휠클릭/WASD 이동 · F 방 전체 보기 · G 격자·문 표시 · L 전체 밝게 · R 다시 조립 |
 | ✕ 종료 | 프로그램 종료 |
 
-게임·뷰어 안에서는 **F1** 로 로비로 돌아온다. 실행 중인 게임 안에서 TileMap 을 찍는 기능은 Godot 에디터 전용이라 없다 — 편집은 에디터에서, 확인은 뷰어나 게임에서 한다.
+게임·뷰어 안에서는 **F1** 로 로비로 돌아온다.
 
 ## 조작
 
@@ -30,51 +30,36 @@
 | 좌클릭 (J) | 사격 — **누르고 있으면 연사**(0.09초 간격 ≈ 11발/초, 첫 발 즉발). **장탄 14발**, 비면 자동 재장전 1.15초(팔이 내려가 총을 흔듦, 우하단 HUD). 탄착점은 연사 열에 비례해 산탄(첫 발 0.012rad → 열 최대 0.067rad, 조준점도 벌어짐). **포인터 위치가 곧 탄착점**. 쏠 때마다 포인터가 실제로 사방으로 튀고(반동), 연사할수록 커진다 — 절반은 자동 복귀, 나머지는 직접 끌어내려야 한다. 총구→탄착점 한 줄 궤적이 찍히고 0.05초 안에 사라진다. 탄피가 뒤·위로 튀어 바닥에서 튕긴다 |
 | Space | 구르기 — 이동 중이면 그 방향, 아니면 바라보는 방향. 0.30초 · ≈430px. 앞 42% 구간에서 느리고 부드럽게 가속해 정점(2720px/s)을 찍고 점점 느려진다(회전은 이동 거리에 비례). 끝나면 SPEED×0.85 의 관성이 남아 0.4초 동안 약한 감속(1500px/s²)으로 살짝 더 미끄러진다. 구르는 동안 사격 불가 |
 | R | 수동 재장전 |
-| P | (비교 중) 반동 프리셋 순환: 1 라이트 / 2 미디엄 / 3 헤비 (모두 튕김 없는 단발 펄스). 우상단 표시 |
+| F2 | (비교 중) **공간감 프리셋 A/B**: 1 이전(평면) ↔ 2 근경 분리(기본). 같은 방·위치에서 씬을 다시 로드한다. 우상단 표시 |
+| F4 / Shift+F4 | **CRT 모니터 프리셋** 다음/이전 (모든 씬 공통, 기본 "아케이드 모니터"). 화면 위 토스트로 이름·설명 표시. 로비의 "CRT 모니터" 드롭다운으로도 선택. 아래 "CRT 모니터 후처리" 참고 |
 | Ctrl (S / ↓) | 앉기 (홀드) — 앉은 채로 조준·사격 가능 |
 | W / ↑ | 정면문 앞에서 다른 방으로 진입 |
 | F1 | 로비로 돌아가기 |
 | F11 | 전체화면 토글 |
 
-## 모듈러 타일맵 — Godot 내장 룰타일(터레인 오토타일)로 방 배경 만들기
+## 맵과 방 모양 — 데이터로 찍는 모듈러 타일맵
 
-`Assets/GameReady/Tiles/Workshop_Modular` 의 128px 두 레이어 타일(배경 채움 6종 + 외곽 프레임 8종)을
-Godot 에디터의 **TileMap 터레인(Terrains) 브러시**로 찍는다. 별도 툴 없이 Godot 표준 기능만 쓴다.
+맵 전체는 `scripts/room_data.gd` 의 `ROOMS` 하나에 들어 있다. 방마다 **테마**와 **열 프로필**(`"shape": [[폭 셀, 높이 셀], ...]`, 128px 셀)을 적으면
+`RoomTiles.build`(`scripts/room_tiles.gd`) 가 실행 중에 TileMapLayer 두 장(`Background` 채움 6종 랜덤 · `Frame` 외곽선)을 찍는다. 씬 파일·TileSet 파일은 없다.
 
-- TileSet: `tiles/workshop_modular_tileset.tres` — `tools/build_workshop_tileset.gd` 가 생성(재실행하면 덮어씀)
-  - 터레인 세트 0 **배경 채움**: 소스 0, 채움 a~f. 피어링 비트 없음 + 같은 확률 → 찍을 때마다 무늬가 랜덤으로 섞인다
-  - 터레인 세트 1 **프레임**: 소스 1, `workshop_modular_frame_terrain_3x3.png`(외곽 8조각 + 투명 내부 1칸). 빈 이웃 방향에 맞는 모서리·변이 자동으로 붙는다
-  - 소스 2 **안쪽 모서리** 4종(`InnerCorners/`): 터레인 없이 **Tiles** 탭에서 수동 배치. 함께 들어온 `workshop_modular_ruletile_rules_v2.json` 은 Unity RuleTile 규격이라 Godot 터레인 이웃 패턴 대응은 정해지면 `build_workshop_tileset.gd` 에 비트만 추가하면 된다.
-    단, 이 조각은 **벽 띠가 천장 띠를 지나 아래로 이어지는 T자** 모양이라 낮은 천장이 높은 벽과 만나는 곳에 놓으면 벽이 한 칸 튀어나와 보인다.
-  - 소스 3 **L-벤드** 4종(`workshop_modular_frame_bend_sheet_4x1.png`): 오목 코너용. 벽 띠 × 천장(바닥) 띠가 겹치는 56×48 사각형만 남긴 조각으로, 위 셀의 벽이 천장 높이에서 멈추고 옆 셀의 천장으로 꺾인다.
-    `tools/make_frame_bend_tiles.py`(Pillow) 가 프레임 3×3 시트에서 합성한다. 순서: top_left · top_right · bottom_left · bottom_right = 띠가 남는 사각형 위치. 검증 목업은 `Assets/GameReady/Validation/workshop_modular_bend_*_preview.png`
-- 방 씬: `scenes/rooms/<방 id>.tscn` — 루트 `RoomTiles`(`scripts/room_tiles.gd`) 아래 `Background`·`Frame` TileMapLayer 두 개.
-  `Room.build` 가 방 id 와 같은 이름의 씬이 있으면 인스턴스해서 옛 스트립 타일 위에 올린다. 예시로 `workshop.tscn`(16×4 셀)이 들어 있다.
-- 루트 `position` 이 격자 원점. 기본 `(0, 24)`: 4행이 방 높이(560) 안에 들고 3번째 행 바닥 프레임의 밟는 띠 윗선이 바닥선(486)에 온다.
-  층고를 높이려면 바닥 행은 그대로 두고 위로 행을 늘린다 — 원점 y = 408 − 128 × (행 수 − 1). 8행이면 `(0, -488)`.
-- `RoomTiles.hide_legacy_tiles`(인스펙터 체크박스): 옛 560px 스트립을 숨기고 타일맵만 배경으로 쓴다. 바닥선·문·프랍 좌표는 `RoomData` 기준이고,
-  방 폭은 `"width"`, 천장은 `"ceiling_y"` 키로 타일맵에 맞춰 준다(카메라 세로 중심·비상등 스윕·먼지 범위가 따라간다). 숨긴 스트립의 램프 위치는 그대로 쓰인다.
-- **대형 정비 홀 `hall.tscn`** — 모듈러 타일맵만으로 그린 첫 방. 24×8 셀(3072×1024), 중앙 고층부 14×8 + 양 날개 5×5 의 성당형 실루엣.
-  `tools/build_hall_room.gd` 가 만든다(`SHAPE` 사각형 합집합 → Frame 조각을 이웃 판정으로 직접 고르고, 날개 천장이 고층부 벽과 만나는 오목 코너 2곳에 소스 2 안쪽 모서리를 놓는다).
-  다시 돌리면 덮어쓰므로 에디터에서 손본 뒤에는 실행하지 않는다. 격납고 오른쪽 측벽문으로 이어진다.
-
-### 찍는 순서 (Godot 에디터)
-
-1. `scenes/rooms/workshop.tscn` 을 열거나, 새 방이면 이 씬을 복제해 `<방 id>.tscn` 으로 저장한다 (id 는 `RoomData.ROOMS` 키).
-2. `Background` 레이어 선택 → 하단 TileMap 패널 → **Terrains** 탭 → "배경 채움" → 방 전체 영역을 사각형(또는 붓)으로 채운다.
-3. `Frame` 레이어 선택 → **Terrains** 탭 → "프레임" → 같은 영역을 채운다. 테두리 셀만 그려지고 안쪽은 투명 타일이다.
-4. 문 자리 등 예외는 **Tiles** 탭에서 조각을 직접 놓거나 지운다(지우기: 우클릭).
-5. 방은 2×2 셀 이상으로. 1칸 폭 기둥·1칸 높이 복도·외딴 1칸은 맞는 조각이 아트에 없어 빈 셀로 남는다.
-
-TileSet 을 다시 만들 때:
-
-```bash
-godot --path GodotPrototype --headless --script res://tools/build_workshop_tileset.gd
-```
+- **열 프로필**: 바닥 행은 모든 열이 공유하고 위로 쌓인다. 높이 4 = 낮은 복도(천장 y 24) · 5 = 보통(-104) · 7 = 높은 방(-360) · 9 = 굴뚝·성당(-616).
+  성당형(`[[5,5],[14,8],[5,5]]` 대형 정비 홀) · 계단형(격납고) · 굴뚝(창고) · H자(침실 B) · 피라미드(대형 재배실) · ㄱ자(축전기 저장고) 처럼 자유롭게.
+  높이가 바뀌는 곳의 오목 코너에는 **L-벤드** 조각이 자동으로 들어간다. 같은 높이 구간은 2셀 이상(1칸 폭 기둥·1칸 높이 구간은 아트에 조각이 없다).
+- **테마** (`scripts/room_theme.gd`): `workshop` · `corridor` · `hydroponics` · `crewquarters` · `power_relay`. 테마마다 시트 세 장 — 배경 3×2, 프레임 3×3(외곽 8조각 + 투명 내부), L-벤드 4×1 —
+  을 `tools/build_theme_tile_sheets.py` 가 `Assets/GameReady` 낱장 PNG 에서 합성한다(GodotPrototype 폴더에서 `python tools/build_theme_tile_sheets.py`, 멱등).
+  같은 스크립트가 옛 스트립 타일의 천장 램프를 잘라 `assets/lights/pendant_lamp.png`(+`.json` 전구 영역)을 만들고 수경재배·숙소 프랍을 `assets/props/` 로 복사한다.
+  복사한 프랍은 저장소 루트에서 `python Tools/bake_pixel_grid.py` → `python Tools/build_normal_maps.py props` 로 굽는다.
+- **방 키**: `left_door`/`right_door`(측벽문, 열림·목적지) · `front_doors`(뒷벽 정면문, 서로 가리켜야 함) · `props`(`{"tex", "x"}` 바닥 중심 — 접지 자동, `cy`/`fy` 로 벽걸이, `type` 으로 전력실 전용) ·
+  `lamps`(펜던트 램프 x 목록 — 그 열 천장에 매달림, 총으로 깨짐) · `fixtures`(장식 조명: 전력실 Lighting 6종 + 색) · `fx`(비상등·누수·전선·케이블·불·고인 물, 위치는 `x` + `cy` 천장 기준) ·
+  `monsters`/`spawn`(시작 배치·지속 스폰. `max` 0 = 없음, 2~5 = 적음, 9~14 = 위험). 자세한 설명은 `room_data.gd` 머리 주석.
+- **검사**: `godot --path . --headless --script res://tools/validate_map.gd` — 모양(조각 없는 셀), 문 연결(양방향), 정면문 위치, 프랍 벽 밖·겹침, 리소스 존재, 시작 방에서 전 방 도달, 테마·밀도 커버리지. 방마다 문자 지도를 찍는다.
+- **스크린샷**: `godot --path . --script res://tools/map_shots.gd -- [bright|lit]` → `user://shots/map/<방 id>_<모드>.png` 방 21장. 한 방은 `tools/room_shot.gd -- <방 id> [main|game|viewer]`.
 
 ## 확정 세팅
 
-카메라 **표준**, 불 **잉걸·검은 연기**, 배경 라이팅 **그라데이션 필**, 림라이트 **부드러운 중간**(폭 15px, 외곽선에서 안쪽으로 스며듦). 프리셋 전환 키와 HUD 는 제거했고 데이터(`PRESETS`)와 `set_*` 함수만 개발용으로 남겨 두었다.
+카메라 **표준**, 불 **잉걸·검은 연기**, 배경 라이팅 **그라데이션 필**, 림라이트 **부드러운 중간**(폭 15px, 외곽선에서 안쪽으로 스며듦) + 도달 범위 **이전(좁음)**(HUD 1번 — 5종 비교 후 확정, 림이 광원 감쇠 곡선을 그대로 따름), **렌더 "베이크 자산 · 풀해상도"**(1600×900 ×1 · zoom 0.5 · 4px 블록 베이크 자산 · 부드러운 광원 · 스냅 없음 — 2026-09-18 5종 비교 후 확정, 나머지 프리셋과 `assets_original/` 폐기), **반동 "라이트 (단발 40px)"**(`Player.RECOIL`, 미디엄·헤비 폐기). 프리셋 전환 키와 HUD 는 제거했고 데이터(`PRESETS`)와 `set_*` 함수만 개발용으로 남겨 두었다.
+
+비교 중인 것은 **공간감 프리셋**(F2, `scripts/depth_preset.gd`) 하나다 — 아래 "공간감: 층 분리" 참고.
 
 ## 카메라 (`scripts/game_camera.gd`)
 
@@ -94,17 +79,21 @@ Idle/앉기 중에는 발을 고정한 채 몸 스케일이 2.6초 주기로 잔
 
 ## 라이팅
 
-방마다 `CanvasModulate`(0.42, 0.43, 0.55 — 배경 색이 보이도록 0.26,0.28,0.40 에서 올림, `VFX_AMB` 환경변수로 실험 가능) 로 깔고, 타일 속 천장 램프 위치(`RoomData.TILE_LAMPS`: wall_b, wall_repeat)에 `LampLight`(PointLight2D, 반지름 560, energy 1.0, height 140) 를 단다. 램프는 미세하게 흔들리고 3~9초마다 0.2~0.55초 깜빡인다. 총구·탄착에도 짧은 PointLight2D 가 붙는다. 배경 밖은 완전한 검정.
+방마다 `CanvasModulate`(0.42, 0.43, 0.55 — 배경 색이 보이도록 0.26,0.28,0.40 에서 올림, `VFX_AMB` 환경변수로 실험 가능) 로 깔고, 방 데이터 `lamps` 의 x 자리(그 열의 천장 띠 아래)에 펜던트 램프 `LampLight`(PointLight2D, 반지름 560, energy 1.0, height 140) 를 단다. 램프는 미세하게 흔들리고 3~9초마다 0.2~0.55초 깜빡인다. 총구·탄착에도 짧은 PointLight2D 가 붙는다. 배경 밖은 완전한 검정.
 
 램프는 **총으로 깨진다**: 전구 60px 안에 탄착하면 0.22초 글리치 셰이더로 지직거리며 꺼지고(그 뒤 0.35초 잔상), 전구 픽셀 위에 어두운 커버가 덮이며 유리 파편이 쏟아진다(`LampLight.break_lamp`).
 
 ## 표면 라이팅: 강한 노멀 반응 + 림라이트 + 열 잔광 (`lit_common.gdshaderinc`)
 
-**림 도달 범위**: `light()` 에서 광원 텍스처 감쇠를 `pow(fall, rim_reach=0.4)` 로 펴서 림·프레넬에만 쓴다. 디퓨즈·스페큘러는 원래 감쇠 그대로라 광원 자체는 밝아지지 않고, 멀리 있는 사물의 외곽선만 광원 쪽으로 물든다 (빛의 공간감). 광원 텍스처 반경 밖은 여전히 림이 없다.
+**림 도달 범위 (확정 2026-09-18 — "이전 (좁음)", `Lighting.RIM`)**: 림은 광원 디퓨즈와 같은 감쇠 곡선으로 꺼진다(reach 0 · 반경 배율 1). Godot 의 `LIGHT_COLOR` 는 (라이트 색, 텍스처 알파 = 거리 감쇠)라 감쇠는 `.a` 에서 읽는다(`shaders/light_falloff.gdshaderinc`). F3 로 비교한 완만·넓게(×1.6)·아주 넓게(×2.2)·방 전체(×3) 프리셋은 폐기 — 결론은 림의 두께·범위가 아니라 **림 색의 블렌딩**이 어색함의 원인이라는 것.
 
 **바닥 조명**: 램프마다 바로 아래 바닥선에 납작한 풀 라이트(`LampLight.FloorPool`, 반경 400, 램프 밝기의 0.35, 램프와 함께 깜빡이고 깨지면 꺼짐) + 그라데이션 필 무드에 바닥선을 따라 700px 간격의 넓은 난색 바닥 라이트(energy 0.28).
 
-림은 실루엣 폭 `rim_width_px` 안에서 8방향×3링 알파 커버리지로 부드럽게 계산하고 `rim_falloff` 지수로 예리함을 정한다(예전 1px 이웃 비교는 너무 얇고 예리했다). 프리셋 3종은 `Lighting.RIM_PRESETS`, `Lighting.shader_material` 이 만든 머티리얼을 WeakRef 로 기억해 `apply_rim_preset` 으로 한 번에 바꾼다. 타일(0)·파편(0.6)처럼 개별 앰비언트 림을 정한 머티리얼은 `rim_ambient_fixed` 메타로 보호.
+**림 색 블렌딩 (확정 2026-09-18 — "명도 계단 3단", `Lighting.RIM_BLEND`)**: 림의 두께·범위가 아니라 **색**이 어색함의 원인이었다. 원래 방식은 두 겹이 전부 덧셈 — ① 광원색 × mix(표면색, 흰색, 35~60%) ② 광원과 무관한 고정 키 파랑 (0.40, 0.50, 0.74) — 이고 그 위에 CanvasModulate 앰비언트 (0.42, 0.43, 0.55) 가 라이트 기여분까지 곱해져 따뜻한 램프 림도 푸르게 탈색됐다. 확정 방식은 **색**을 표면색 × 광원 휘도로 잡아 색상·채도를 유지하고(광원 색조는 25% 만), **세기**를 `mix(3단 계단, 연속, 0.28)` 로 섞는다 — 연속 성분이 바닥에 깔려 약한 빛에서도 림이 보이고 (`rim_cont` 가 평소 가시성), 계단 성분이 문턱 `rim_knee` 를 넘으면 외곽이 확 켜진다. 고정 키 림은 앰비언트 파생색 × 표면색. F3 로 비교한 7종(덧셈·흰색 / 앰비언트 보정 / 덧셈·표면색 / 스크린 / 명도 부스트 / 광원색 치환 / 팔레트)과 계단 변형 3종(2단 · 2단 하드 · 2단 연속 강조)은 폐기했다.
+
+**캐릭터 림 (확정 2026-09-18 — "두껍게", `Lighting.CHAR_RIM`)**: 플레이어(몸·머리·팔)와 크롤러는 `Lighting.character_material()` 로 만든 머티리얼(`rim_character` 메타)이라 배경 값 위에 폭 24px · 감쇠 1.2 · 세기 1.8 · 흰색 60% · 고정 키 0.65 를 덮어쓴다. 폭은 플레이어 스케일 기준 텍스처 px 이고 크롤러(0.4 배)는 `rim_px_scale` 메타로 나눠 화면 두께를 맞춘다. 배경과 같음·굵고 선명·외곽선 강조 프리셋은 F4 비교 후 폐기.
+
+림은 실루엣 폭 `rim_width_px` 안에서 8방향×3링 알파 커버리지로 부드럽게 계산하고 `rim_falloff` 지수로 예리함을 정한다(예전 1px 이웃 비교는 너무 얇고 예리했다). 값은 `Lighting.RIM`(배경)·`Lighting.CHAR_RIM`(캐릭터), `Lighting.shader_material` 이 만든 머티리얼을 WeakRef 로 기억해 `apply_rim_preset` 으로 한 번에 다시 적용한다. 타일(0)·파편(0.6)처럼 개별 앰비언트 림을 정한 머티리얼은 `rim_ambient_fixed` 메타로 보호.
 
 타일·문·프랍·캐릭터(몸통·팔)·파편은 전부 `lit_surface` / `prop_surface` 셰이더로 그린다. 공용 코드는 `shaders/lit_common.gdshaderinc` 에 있고 `#include` 로 끌어온다.
 
@@ -115,7 +104,7 @@ Idle/앉기 중에는 발을 고정한 채 몸 스케일이 2.6초 주기로 잔
 
 ## 환경 연출 (`RoomData.ROOMS[...]["fx"]`)
 
-방 데이터의 `fx` 목록에 항목만 추가하면 `Room.build` 가 조립한다. 모두 공기층(Air, z 4: 프랍 앞·캐릭터 뒤)에 올라간다.
+방 데이터의 `fx` 목록에 항목만 추가하면 `Room.build` 가 조립한다. 모두 공기층(Air, z 4: 프랍 앞·캐릭터 뒤)에 올라간다. 부유 먼지는 근경 분리 프리셋에서 z 3(프랍 앞·빛 기둥 뒤)로 내려간다.
 
 | 종류 | 데이터 | 구현 |
 |---|---|---|
@@ -123,6 +112,7 @@ Idle/앉기 중에는 발을 고정한 채 몸 스케일이 2.6초 주기로 잔
 | 새는 수도관 `leak` | `pos`(균열), `dir`(분사 방향), `pressure` | `WaterLeak`. 압력 맥동하는 물줄기(초당 75방울)가 포물선으로 떨어져 바닥에서 3~6개로 사방으로 튀고, 균열 주위엔 미세 분무. 착지점을 미리 시뮬레이션해 그 자리에 **물웅덩이**(`puddle.gdshader`: 흐르는 결 + 물방울마다 파문 고리, 45초 동안 넓어짐)를 깐다. 물방울은 한 노드가 `_draw` 로 그린다 |
 | 끊긴 전선 `wire` | `pos`(천장 앵커), `length` | `BrokenWire`. 12 마디 **버렛 체인**(중력·감쇠·미풍, 제약 5회 반복, 바닥 통과 금지). 총알 궤적이 30px 안으로 스치면 그 방향으로 튀고, 탄착 240px 안이면 충격파로 밀리고(`apply_shot`), 플레이어가 지나가면 몸이 밀친다(`apply_body`, `Room._process`). 끝의 구리선에서 0.35~1.9초마다 **파란 아크**(지그재그 `Line2D`, 몇 프레임마다 갈아끼움) + 스파크 + `PointLight2D` 가 빠지직 튀고 방전 반동으로 끝이 살짝 튄다 |
 | 불 `fire` | `pos`(바닥 중심), `size` | `FireSource`. 절차 불꽃 `Polygon2D`(`fire.gdshader`: fbm 노이즈, 4px 양자화, 4단계 포스터라이즈, 발광 배율 2.4로 심이 글로우), 일렁이는 주황 라이트(반지름 600, height 110, 노이즈 흔들림) + 심 라이트, 떠오르는 불티(`_draw`), 타는 잔해 더미, 뒤 벽 **그을음**(`soot.gdshader`, 곱셈). **연기**는 `GPUParticles2D` 64개: `CanvasTexture`(연기 뭉치 디퓨즈 + **반구 노멀맵**)를 달고 `smoke.gdshader` 의 `light()` 가 래핑 디퓨즈+가장자리 산란으로 **주변 광원(불·램프·비상등)에 부피감 있게 반응**한다. 위로 80~135px/s 로 올라가 감쇠하며 천장 아래 고인다 |
+| 고인 물 `water` | `level`(수면선이 바닥선 위로 올라오는 px, 기본 26), `x0`/`x1`(선택 범위), `tint`(선택) | `WaterPool`. 수면선 아래 방 전체를 덮는 `Polygon2D` 하나에 `water_surface.gdshader`. **스크린 텍스처 반사**(`hint_screen_texture`, 이미 그려진 화면을 수면선 기준으로 뒤집어 샘플) + 물속 굴절(정수 뷰픽셀 좌우 흔들림, 4단계 포스터라이즈) + 수면선 1px 하이라이트 + `light()` 로 램프·비상등이 결 마스크를 따라 길게 비침. 인물·몬스터가 비쳐야 하므로 **인물 층 위(z6)** 에 올린다 — 발목 아래는 물에 잠겨 보인다. 수면선→화면 거리는 varying 의 `dFdy` 로 구해 카메라 줌·렌더 프리셋에 무관. CanvasModulate 로 두 번 어두워지는 반사상은 `ambient_inv`×`reflect_gain` 으로 되살린다. **스프링 수면**: 4px 간격 스프링 열(Hoffman, 60Hz 고정 스텝)의 높이를 N×1 RF 텍스처로 넘겨 수면선이 픽셀 단위로 오르내리고 기울기가 반사를 흔든다. 총알 착수·탄피·파편·수도관 물방울은 `splash`/`disturb`, 플레이어가 걸으면 `wake`. **총알 착수**(`bullet_splash`): 수면을 깊게 누르고 양옆을 들어 왕관 모양으로 되튀게 해 큰 파동이 멀리 가고, 4px 블록 물기둥(중심 1 + 옆 1~2, 총알 방향으로 기울음) + 흰 심 물방울 10 + 잔방울 22 + 좌우로 퍼지는 수면 물보라 점선. 총알은 `Bullet.Impact.WATER`(청백 납작 플래시·물색 라이트, 불꽃·파편 없음). 검증: `tools/water_shot.gd`(저수조실에서 빈 수면에 한 발 쏘고 N 프레임 뒤 저장). 다른 노드는 정적 `WaterPool.active` 로 찾는다. 로비 **테스트** 버튼이 물이 고인 저수조실(`RoomData.TEST_ROOM`)에서 시작한다. 다음 후보는 메타볼 체액 |
 
 먼지 레이어(`DustLayer`)는 이제 램프뿐 아니라 `light_info()` 를 제공하는 비상등·불·전선 아크도 광원으로 받아 **그 색으로** 먼지를 비춘다(붉은 비상등이 스치면 먼지가 붉게 드러남). 어둠 속에서도 `ambient` 0.10 으로 희미하게 떠다니는 엠비언트 먼지 + 큰 느린 알갱이 층이 추가됐다.
 
@@ -148,6 +138,7 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 | 프랍 표면 | lit_surface + **파츠 마스크**(깨진 셀 투명, 파단면 어둡게) + 붉은 피격 플래시 — `HitProp` 이 맞으면 **탄착점 반경 70px 만** 0.11초 붉게 번쩍. 탄착 PointLight2D(반지름 260, height 90)가 주변 노멀을 비춘다 | `prop_surface.gdshader` |
 | 비상등 광선 | 회전 부채꼴 볼류메트릭, 거리·각도 감쇠, 방 밖 클립 | `beacon_sweep.gdshader` |
 | 물웅덩이 | 반투명 물 + 흐르는 스페큘러 결 + 파문 고리 6개 | `puddle.gdshader` |
+| 고인 물 수면 | 스크린 텍스처 반사(수면선 기준 뒤집기) + 정수 픽셀 굴절 + 수면선 하이라이트 + `light()` 스페큘러 결 | `water_surface.gdshader` |
 | 불꽃 | fbm 절차 불꽃, 4px 양자화, 4단계 포스터라이즈 | `fire.gdshader` |
 | 연기 | 반구 노멀 + `light()` 래핑 디퓨즈 → 광원에 부피감 있게 반응, 알파 4단계 | `smoke.gdshader` |
 | 그을음 | 불 뒤 벽 곱셈 어둡힘, 위로 옅어짐 | `soot.gdshader` |
@@ -172,41 +163,53 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 
 | 항목 | 값 |
 |---|---|
-| 리소스 | `assets/character/ToxicTumorCrawler/<clip>/<clip>_NN.png` (543×756 셀, 4프레임 × walk 8fps·jump 8·death 10·attack 10). `Tools/build_crawler_frames.py` 가 GameReady 원본을 복사하며 **프레임별 발 밑 줄**(walk 550 · attack 520 · death 578~589 · jump 610~626 — 클립마다 baseline 이 달라 셀 하단을 그대로 쓰면 튄다)과 내용 영역을 `crawler_meta.json` 에 적는다. 노멀맵은 `build_normal_maps.py character/ToxicTumorCrawler` |
+| 리소스 | `assets/character/ToxicTumorCrawler/<clip>/<clip>_NN.png` (543×756 셀, 4프레임 × walk 8fps·jump 8·death 10·attack 10·roar 8). `Tools/build_crawler_frames.py` 가 GameReady 원본을 복사하며 **프레임별 발 밑 줄**(walk 550 · attack 520 · death 578~589 · jump 610~626 · roar 629 — 클립마다 baseline 이 달라 셀 하단을 그대로 쓰면 튄다)과 내용 영역을 `crawler_meta.json` 에 적는다. 노멀맵은 `build_normal_maps.py character/ToxicTumorCrawler` |
 | 체력 | 6발 (`MAX_HP`). 맞으면 탄착점 주변(텍스처 200px ≈ 월드 80px) 붉은 플래시(`prop_surface` 재사용) + 독액 방울 9개 + 초록 체액 7개가 탄 방향으로 + 탄 방향으로 26px 밀림 + **스케일 펀치**(1.30×0.72 로 눌렸다가 스프링 복귀) + 뒤 벽에 작은 체액 자국 |
 | 쫀득함 | 발 밑을 축으로 한 **스케일 스프링**(`_squash`, k 210 · 감쇠 13). 걷기: 프레임 2장마다 x −5%·y +8% 바운스. 점프: 웅크림 1.18×0.80 → 도약 0.82×1.24 → 착지 1.34×0.68. 공격 예비 0.92×1.10, 뱉을 때 1.12×0.92 반동 |
 | 이동 | 플레이어 쪽으로 270px/s 기어감(뒷걸음은 60%·역재생, 걷기 애니는 135px/s 기준 1배속이라 2배속으로 다리를 놀린다). 150px 앞에서 멈추고, 더 가까우면 물러난다. 착지·공격 뒤 0.35~0.9초 멈칫 |
+| 포효 | 걷는 중 7~14초마다 시도(플레이어가 220px 이상 떨어져 있을 때만) + 스폰 직후 45% 확률로 등장 포효. `roar` 재생 — 시작 1.10×0.90 웅크림, 입을 가장 크게 벌린 roar_03 에서 0.38초 **멈춰 몸을 떨며**(0.90×1.14 늘어남 + 스케일 지터) 이어서 재생. roar_02·03 으로 넘어갈 때 입(`ROAR_MOUTH`, 프레임별 위치)에서 **침 4·7방울**, 유지 중엔 0.045초마다 1방울씩 샌다(`SparkBurst` 재사용, 거의 흰 연두색 · 발광 0.45 로 독액보다 둔함). 900px 안이면 카메라가 거리 반비례로 0.4~2.2 울린다(`Crawler.roared` → `Room.monster_roared` → `Main`). 포효 중에도 맞는다. 끝나면 0.28~0.72초 멈칫 |
 | 점프 | 걷는 중 2.6~5.2초마다 시도. 플레이어가 260px 이상 떨어져 있으면 그쪽으로 300~560px 포물선(높이 110, 공중 0.62초). jump_01 웅크림 0.14초 → jump_02/03 공중 → jump_04 착지 0.18초 + 양옆 먼지 |
 | 공격 | 720px 안이면 `attack` 재생, attack_03 프레임에서 입(`MOUTH_LOCAL`)으로 **독액 `AcidGlob`** 을 뱉는다(쿨다운 1.5~2.6초). 독액은 플레이어 몸 중심(이동 예측 포함)으로 0.55초 포물선. 맞으면 `Room.player_hit` → 카메라 흔들림 7·색수차·플레이어 480px/s 밀림(`Player.knockback`, **구르기 중이면 회피**). 바닥에 떨어지면 튀며 4.5초 독 웅덩이 |
 | 죽음 | `death` 재생 + 1.55×0.55 펀치 + 독액 22개·**초록 체액 34개** 사방 분출(+짧은 라이트) + **육편 9조각**(`ChunkDebris` — 현재 프레임 텍스처를 90px 격자로 잘라 노멀맵째 **피격당한 쪽 반대편(탄 진행 방향) ±32° 부채꼴**로 날림, 바닥 튕김 후 3.2초 잔해) + **벽 체액 자국**(`BloodStain`, 탄 방향으로 길게 22방울 + 바닥선 8방울, 큰 방울은 1.5초 동안 흘러내림, 28초 뒤 페이드, 방당 최대 48개). 잔해(마지막 프레임)로 7초 남았다가 1.2초 페이드. 죽은 뒤엔 히트 박스가 꺼져 뒤의 벽이 맞는다 |
 | 피격 판정 | `Room.hit_at` 이 몬스터를 맨 먼저 검사. 히트 박스는 **현재 프레임 내용 영역**(공중에선 함께 뜬다). 탄착은 `Bullet.Impact.FLESH`(불꽃 적고 어두운 살점) |
 
-개발용: `AutoTest` 의 `aimm`(첫 살아 있는 몬스터 조준) · `mjump`(강제 점프) · `mattack`(강제 공격) 스텝으로 m0~m4 스크린샷을 찍는다.
+개발용: `AutoTest` 의 `aimm`(첫 살아 있는 몬스터 조준) · `mjump`(강제 점프) · `mattack`(강제 공격) · `mroar`(강제 포효 — 공격 중이면 끊는다) 스텝으로 m0~m5 스크린샷을 찍는다.
 
-## 방 연결
+## 맵 (방 21개 · 구역 4개)
+
+측벽문 ⇄ 은 같은 평면에서 걸어서 통과, 정면문 ↕ 은 뒷벽 문 앞에서 W 로 진입. 시작은 **에어록**.
 
 ```
-                 [숙소 Quarters]
-                 정면문0      정면문1
-                   ↕            ↕
-[작업실 Workshop] ⇄ [복도 Corridor] ⇄ [창고 Storage] ⇄ [격납고 Hangar] ⇄ [대형 정비 홀 Hall]
-   (측벽문)             (측벽문)             (측벽문)   폭 4416 — 카메라 스크롤   (측벽문)  3072×1024 — 모듈러 타일맵·높은 층고
+정비 구역     [에어록] ⇄ [서쪽 통로] ⇄ [작업실] ⇄ [대형 정비 홀] ⇄ [짧은 통로] ⇄ [격납고] ⇄ [창고]
+  workshop     7×5 안전    18×4 적음    14×5/7 적음   24×5/8/5 위험    5×4 안전    32×9→5 위험  13×4+9 적음
+                              ↕                          ↕                          ↕            ↕
+승무원 구역   [침실 A] ⇄ [숙소 복도] ⇄ [침실 B] ⇄ [식당·휴게실] ⇄ [세면실]          │            │
+  crew         9×5 안전   14×4 적음   14×6/4/6 적음  18×5/7/5 위험   7×4 적음(물)   │            │
+                              ↕                          ↕                          │            │
+전력 구역     [케이블 덕트] ⇄ [전력 릴레이실] ⇄ [축전기 저장고] ⇄ [비상 발전실]      │            │
+  power_relay  16×4 적음       14×8 적음        14×9/5 위험        9×5 안전         │            │
+                                                                                    ↕            ↕
+수경재배 구역 [재배실 전실] ⇄ [대형 재배실] ⇄ [급수 통로] ⇄ [저수조실] ⇄ [육묘실]
+  hydroponics  7×5 안전       30×5…9…5 위험    15×4/6/4 적음  12×6 적음(물)  9×5 안전
 ```
+
+몬스터 없는 방 6 · 적음 10 · 위험 5. 방 모양·연결·프랍·조명은 `scripts/room_data.gd`, 검사는 `tools/validate_map.gd`.
 
 ## 구조
 
 | 파일 | 역할 |
 |---|---|
-| `scripts/room_data.gd` | 방 정의 데이터(타일 순서, 프랍 좌표, 문 연결, 환경 연출 `fx`). 새 방은 여기에 항목만 추가 |
-| `scripts/room.gd` | 데이터로 타일·문·프랍을 조립. 레이어 순서: 타일 → 뒷벽 문 → 프랍 → 캐릭터 → 투사체 |
+| `scripts/room_data.gd` | 전체 맵 데이터 — 방 21개의 테마·열 프로필(모양)·문 연결·프랍·램프·조명 기구·환경 연출 `fx`·몬스터 밀도. 새 방은 여기에 항목만 추가 |
+| `scripts/room_theme.gd` / `scripts/room_tiles.gd` | 테마 표 + 실행 중 TileSet 캐시 / 열 프로필 → 타일맵(프레임 조각 이웃 판정, L-벤드, 조각 없는 셀 검사, 문자 지도) |
+| `scripts/room.gd` | 데이터로 타일맵·펜던트 램프·조명 기구·문·프랍(접지 자동)·fx 를 조립. 레이어 순서: 타일 → 뒷벽 문 → 프랍 → 캐릭터 → 투사체 |
 | `scripts/player.gd` | 캐릭터. `BodyPivot/Body`(머리 없는 몸통 애니) + `BodyPivot/HeadPivot/Head`(목 기준 회전하는 후드+마스크, 프레임별 텍스처) + `ArmPivot/Arm·Muzzle·Flash`(어깨 기준 회전하는 팔+총). 상태 Roll > Crouch > Walk > Idle |
 | `scripts/crawler.gd` | 몬스터 — 독성 종양 크롤러. 상태 IDLE/WALK/JUMP/ATTACK/DEAD, 프레임별 발 밑 보정, 히트 박스, 체력·피격·죽음 |
 | `scripts/blood_stain.gd` | 벽면 초록 체액 자국 — 방울 무리 `_draw`, 흘러내림, 장기 잔존 후 페이드 |
 | `scripts/acid_glob.gd` | 크롤러의 독액 — 포물선 비행, 플레이어 명중(구르기 회피)·바닥 웅덩이, `_draw` |
 | `scripts/bullet.gd` | 고속 탄환(10400px/s) — 총구→목표점 Line2D 궤적, 목표점에 정확히 탄착 후 스파크·궤적 페이드 |
 | `scripts/lighting.gd` | 라이트 공용 값·원형 감쇠 텍스처·노멀맵 `CanvasTexture`/셰이더 로더·발광 배율 |
-| `scripts/lamp_light.gd` | 천장 램프 PointLight2D — 미세 흔들림 + 랜덤 깜빡임, 램프 스프라이트(발광·글리치)·빛 기둥 관리 |
-| `scripts/glass_window.gd` | 타일 속 창문 유리 — 하이라이트, 피격 균열 |
+| `scripts/lamp_light.gd` | 천장 펜던트 램프(`assets/lights/pendant_lamp.png`) PointLight2D — 미세 흔들림 + 랜덤 깜빡임, 램프 스프라이트(발광·글리치)·빛 기둥·바닥 풀 관리. 근경 분리 시 배경 층 전용 + 인물 층 거울 라이트 |
+| `scripts/glass_window.gd` | 창문 유리 — 하이라이트, 피격 균열 (창문 타일이 있던 옛 스트립용. 모듈러 방에는 아직 창문이 없어 미사용) |
 | `scripts/dust_layer.gd` | 방 전체 엠비언트 먼지 레이어 (램프·비상등·불·아크 광원 색에 반응) |
 | `scripts/hit_prop.gd` | 피격 시 들썩이는 프랍 + 파츠 파괴(셀 마스크·조각 방출) + 붉은 피격 플래시 + 열 잔광 |
 | `scripts/heat_surface.gd` | 표면 열 잔광 관리자 (머티리얼별 탄착 UV 목록, `tick_all`) |
@@ -214,6 +217,7 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 | `scripts/spark_burst.gd` | 뜨거운 불꽃 알갱이 뭉치 (전구 파손·전선·비상등 공용, `_draw`) |
 | `scripts/emergency_light.gd` | 회전 비상등 (광선 라이트 + 볼류메트릭 팬 + 돔, 파손) |
 | `scripts/water_leak.gd` | 새는 수도관 (물줄기·튐·분무·웅덩이·파문) |
+| `scripts/water_pool.gd` | 고인 물 (fx `water`) — 수면선 아래 폴리곤 + `water_surface` 반사·굴절 셰이더. |
 | `scripts/broken_wire.gd` | 끊긴 전선 (버렛 체인 물리, 총알·플레이어 반응, 아크 방전) |
 | `scripts/fire_source.gd` | 불 (절차 불꽃·라이트·불티·잔해·그을음·부피감 연기 파티클). `STYLES` 3종 — 채도 낮춘 팔레트, 연기는 불의 붉은기로 시작해 검게 (`smoke.gdshader use_particle_color`) |
 | `scripts/shell_casing.gd` | 탄피 — 중력·바닥 튕김·회전, 1.6초 후 페이드 |
@@ -221,20 +225,31 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 | `scripts/mouse_recoil.gd` | 사격 반동을 실제 마우스 포인터에 적용 (`Viewport.warp_mouse`). 한 발 약 21px 사방 랜덤 방향(직전 방향과 60° 이상 벌림), 연사 heat 에 비례해 커지고 55% 는 자동 복귀. 포인터 잔떨림은 반올림 드리프트 때문에 두지 않음(카메라 흔들림·조준점 벌어짐이 담당) |
 | `scripts/game_camera.gd` | 동적 카메라 — 플레이어 추적 + 마우스·시선 리드, 감도 프리셋 3종, 방 한계, 사격 흔들림 |
 | `scripts/light_mood.gd` | 배경 라이팅 무드 프리셋 3종 (`PRESETS`, preload 로 사용) — 앰비언트 색 + 방 전체 보조 광원(채광 필 라이트 / LED 스트립·표시등·창문 외광). `Room.apply_mood` 가 얹는다 |
-| `scripts/lobby.gd` / `scripts/app_flow.gd` / `scripts/tile_viewer.gd` | 로비 UI(마우스 버튼) / 씬 흐름·시작 방 전달 / 타일 씬 뷰어 |
-| `scripts/room_tiles.gd` / `tools/build_workshop_tileset.gd` | 방 타일맵 씬 루트(라이팅 머티리얼·옛 스트립 숨김) / TileSet(터레인) 생성기 |
-| `tools/build_hall_room.gd` / `tools/room_shot.gd` | 대형 정비 홀 타일맵 씬 생성기(실루엣 → Frame 조각·오목 코너 자동 선택) / 방 한 장 스크린샷 도구 (`--script res://tools/room_shot.gd -- <방 id> [main\|viewer] [프레임]`) |
-| `scripts/main.gd` | 방 로딩·페이드 전환·카메라 프리셋 키 처리·HUD·입력 맵·마우스 → 월드 조준점·글로우 환경·후처리 |
+| `scripts/lobby.gd` / `scripts/app_flow.gd` / `scripts/map_viewer.gd` | 로비 UI(메인 게임·테스트·맵 뷰어) / 씬 흐름·시작 방 전달 / 맵 뷰어(방 통째 조립, [ ] 전환) |
+| `tools/validate_map.gd` / `tools/map_shots.gd` / `tools/room_shot.gd` | 맵 데이터 검사(헤드리스) / 방 21장 스크린샷 / 방 한 장 스크린샷 (`-- <방 id> [main\|game\|viewer] [프레임]`) |
+| `tools/build_theme_tile_sheets.py` | 테마별 타일 시트(3×2·3×3·L-벤드 4×1) 합성 + 펜던트 램프 추출 + 테마 프랍 복사 |
+| `scripts/crt_overlay.gd` (autoload `CrtFx`) / `scripts/crt_preset.gd` / `shaders/crt.gdshader` | 전역 CRT 모니터 후처리(루트 뷰포트 층 100 풀스크린) · 프리셋 표 · 셰이더. F4 순환, `user://crt.cfg` 저장, 환경 변수 `CRT_PRESET`. 스크린샷 `tools/crt_shot.gd` |
+| `scripts/main.gd` / `scripts/main_game.gd` | 방 로딩·페이드 전환·HUD·입력 맵·마우스 → 월드 조준점·글로우 환경·후처리·공간감 프리셋 F2 전환 / 메인 게임 HUD(구역·밀도·탐색 수) |
+| `scripts/depth_preset.gd` / `scripts/light_mirror.gd` / `scripts/foreground_layer.gd` | 공간감 프리셋 표(이전/근경 분리, 층 번호·인물 층 조명 비율) / 인물 층 전용 거울 라이트 / 근경 실루엣 층(배관·케이블·기둥·상자·트레이, 플레이어 기준 패럴랙스 1.045×, 윤곽 림) |
+| `scripts/foreground_lab.gd` / `tools/depth_ab_shot.gd` / `tools/foreground_lab_shot.gd` | 근경 랩 편집 오버레이 / 공간감 프리셋 A/B 스크린샷 도구 / 근경 랩 스모크 샷 |
 | `scripts/auto_test.gd` | 개발용 자동 테스트. `AutoTest.tscn` 을 실행하면 입력을 시뮬레이션하고 `user://shots/` 에 스크린샷 저장 |
 
 ## 가이드 적용 사항
 
-- **저해상도 픽셀아트 렌더링 (2026-09-17 전환)**: 월드는 `Main._setup_view` 가 만드는 534×300 `SubViewport`(Nearest · `snap_2d_transforms_to_pixel`) 에 그리고 `SubViewportContainer`(stretch_shrink 3, Nearest) 로 **정수 3배** 확대해 1600×900 창에 띄운다(1602×900, 좌우 1px 잘림). 카메라 zoom 0.25 → 가시 월드 2136×1200. **원본 4×4 픽셀 블록 = 뷰 1px = 화면 3px.** HUD(`UI` CanvasLayer)와 페이드는 바깥 풀해상도. 글로우 환경과 `PostFX` 는 SubViewport 안. `window/stretch/scale_mode=integer`. 이력: 800×450 ×2 → 534×300 ×3(4px 블록). 2026-09-18 에 8px 블록 ×6 "방식 B" 를 기존 그림의 수식 축소로 시험했다가 롤백 — 가는 요소가 뭉개져서, B 는 **네이티브 규격으로 직접 그린 자산**으로 간다(`Docs/ART_GUIDE.md` §10 규격·크기표).
+- **렌더링 확정 — "베이크 자산 · 풀해상도" (2026-09-18)**: 월드는 `Main._setup_view` 가 만드는 1600×900 `SubViewport`(×1, Nearest) 에 그리고 카메라 zoom 0.5 → 가시 월드 3200×1800. **그림은 4×4 월드 px 단색 블록으로 구운 픽셀 아트(아트 1px = 월드 4px = 화면 2px), 조명·파티클·이동은 풀해상도로 부드럽게**(`snap_2d_transforms_to_pixel` 끔, `Lighting.radial_texture` 는 부드러운 3점 그라데이션). 글로우 환경과 `PostFX` 는 SubViewport 안, HUD(`UI` CanvasLayer)와 페이드는 바깥. `window/stretch/scale_mode=integer`.
+  - 이력: 800×450 ×2 → 534×300 ×3(4px 블록, 계단형 5단계 광원) → 8px ×6 방식 B 시험·롤백 → 2026-09-18 프리셋 5종(픽셀레이트 이전 / 534×300 ×3 / 800×450 ×2 / 베이크 자산·풀해상도 / 원본 자산·2px 격자) 실시간 비교 후 **베이크 자산·풀해상도 확정**. `scripts/render_preset.gd`·`tools/render_ab_shot.gd`·`assets_original/`(314190d 에서 꺼낸 비교용 원본 143장) 는 폐기 — 원본은 `git show 314190d:` 로 언제든 꺼낼 수 있다. 8px 네이티브 규격은 `Docs/ART_GUIDE.md` §10.
   - **자산은 `Tools/bake_pixel_grid.py` 로 굽는다**: 각 4×4 블록(크롤러는 10×10 — scale 0.4)을 단색 하나(불투명 픽셀 평균에 가장 가까운 실제 색)로 채우고 알파를 다수결(50%)로 잘라 AA·잡티를 없앤다. 크기는 원본과 같아 타일셋·좌표는 그대로. 프랍·캐릭터는 블록 안 색 분산이 최소인 격자 오프셋을 찾고, 타일은 128px 이음새 때문에 오프셋 0. 멱등. **자산 파이프라인 순서**: `build_hooded_mechanic_split.py` → `build_hooded_mechanic_head_split.py` / `build_crawler_frames.py` → **`bake_pixel_grid.py`** → `build_normal_maps.py` → `godot --headless --import`.
-  - 조명은 `Lighting.radial_texture` 가 CONSTANT 그라데이션 5단계 고리(ART_GUIDE "단계적 픽셀 클러스터"). 램프 풀·총구·탄착 라이트가 모두 공유한다.
-  - 화면 px 상수는 **뷰 px(1/3)** 인지 **창 px** 인지 구분한다: 색수차(`ABERRATION_*`)·`post_fx` 는 뷰 px, 마우스 반동(`MouseRecoil.KICK_PX`)·카메라 `deadzone` 프리셋은 창 px(카메라가 `view_scale` 로 나눈다). 월드 px 로 그리는 것(조준점 `Crosshair`, 파편, 탄피)은 **4 의 배수**로 두어야 뷰 픽셀 한 칸에 맞는다.
-  - 월드 → 창 좌표는 `Main.world_to_screen()` (AutoTest 마우스 워프가 쓴다). AutoTest 는 `user://shots/lo/` 에 534×300 원본도 저장한다. 카메라가 2배 시절보다 1.5배 가까워져 작업실도 살짝 스크롤하며, AutoTest 의 첫 `aimm` 사격(0.9초)은 크롤러가 화면 밖이라 빗나간다(이후 처치는 정상).
-  - 아직 안 한 것: HUD 픽셀 폰트(안에 넣기), 크롤러 `crawler_meta.json` 발밑 줄 재측정(알파 컷으로 최대 10px 달라질 수 있음). 방식 B 전환 시: `VIEW_SIZE` 267×150 · `VIEW_SCALE` 6 · `CAMERA_ZOOM` 0.125 · `Crosshair` 상수 ×2 · 불 `pixel_step` ×2 · 색수차 절반 · bake 블록 8/20 (2026-09-18 시험에서 확인한 변경 목록).
+  - 화면 px = 뷰 px(×1). 색수차(`ABERRATION_*`)·`post_fx`·마우스 반동(`MouseRecoil.KICK_PX`)·카메라 `deadzone` 모두 창 px. 월드 px 로 그리는 것(조준점 `Crosshair` 굵기 4, 파편, 탄피)은 **4 의 배수**로 두어야 아트 격자에 맞는다.
+  - 월드 → 창 좌표는 `Main.world_to_screen()` (AutoTest 마우스 워프가 쓴다). AutoTest 의 첫 `aimm` 사격(0.9초)은 크롤러가 화면 밖이라 빗나간다(이후 처치는 정상).
+  - 아직 안 한 것: HUD 픽셀 폰트(안에 넣기), 크롤러 `crawler_meta.json` 발밑 줄 재측정(알파 컷으로 최대 10px 달라질 수 있음).
+- **CRT 모니터 후처리 (2026-09-18, F4 로 프리셋 선택, `scripts/crt_preset.gd`)**: autoload `CrtFx`(`scripts/crt_overlay.gd`) 가 루트 뷰포트 맨 위 CanvasLayer(100) 에 풀스크린 ColorRect + `shaders/crt.gdshader` 를 두어 로비·게임·맵 뷰어·근경 랩 **화면 전체(월드 + HUD)** 에 적용한다. 셰이더 요소: 배럴 굽힘(`curvature`)·둥근 모서리(`corner_radius`)·비네트 / 주사선(`scanline_count` 450 = 아트 1px 행마다 한 줄, 밝은 픽셀은 빔이 굵어져 줄이 얕음) / 형광체 마스크(`mask_type` 1 애퍼처 그릴 · 2 섀도 마스크 · 3 슬롯 마스크, `mask_px` 는 실제 화면 px) / 색 분리(`aberration`)·가로 번짐(`bleed`)·헐레이션 / 잡음·깜빡임·흐르는 밝기 띠 / 밝기·대비·채도·틴트(채도 0 + 틴트 = 단색 형광). 프리셋 7종: **1 끄기**(ColorRect 자체를 숨겨 비용 0) · **2 은은한 주사선**(평면, 픽셀 거의 그대로) · **3 아케이드 모니터**(기본 — 약한 굽힘·선명한 주사선·애퍼처 그릴·헐레이션) · **4 가정용 TV**(굽음·300줄·섀도 마스크·색 번짐·잡음·띠) · **5 낡은 모니터**(심한 굽힘·슬롯 마스크·강한 열화·탈색) · **6 녹색 단색 형광** · **7 호박색 단색 형광**. 선택은 `user://crt.cfg` 에 저장되고 환경 변수 `CRT_PRESET=<번호|id>` 가 우선한다. 토스트 라벨은 오버레이 위에 그려져 CRT 효과를 받지 않는다. 비교 스크린샷: `--script res://tools/crt_shot.gd -- <방 id> [번호,...] [대기 프레임]` → `user://shots/crt_<방>_p<번호>_<id>.png`.
+- **공간감: 층 분리 (2026-09-18, F2 로 이전/이후 A/B 비교 중)**: `scripts/depth_preset.gd` — 0 이전(평면) / 1 근경 분리(기본). 전환은 같은 방·플레이어 위치·카메라 프리셋을 `AppFlow.reload_in_place` 에 남기고 Main 을 다시 로드한다(층 구성이 `Room.build` 에서 정해지므로). 환경 변수 `DEPTH_PRESET=<0|1>` 로 시작 프리셋 고정, 검증 도구 `--script res://tools/depth_ab_shot.gd -- <방 id> [1,0] [프레임]` 이 `user://shots/depth_*.png` 저장.
+  - **층**: 타일 0 · 뒷벽 문 1 · 프랍 2 · **먼지 3** · 빛 기둥·환경 연출 4 │ 플레이어·몬스터 5 · 탄 6 │ **근경 7** · 조준점 20. 이전엔 먼지가 Air(4)+2 = z6 로 캐릭터까지 덮어 화면이 평평했다.
+  - **조명 분리** (`Lighting.split_by_depth`, `scripts/light_mirror.gd`): 벽 램프(+바닥 풀)·채광 필·바닥 라이트·비상등 광선/글로우·Power Relay 조명은 `range_z_max=4` 로 배경 층만 정면으로 비추고, 인물 층(z5~6)은 자식 `LightMirror`(원본의 energy·enabled·color 를 매 프레임 따라감, 램프 55% · 바닥 75%) 가 비춘다. 벽이 인물보다 밝아 실루엣이 앞으로 떠 보인다. 총구·탄착·불·아크·독액처럼 인물 층에 있는 광원은 분리하지 않는다(모든 층 그대로). PointLight2D 는 표면을 물들이는 방식이라 z 순서로는 앞뒤가 안 생기고, 이 방법으로만 층별 밝기 차가 난다.
+  - **근경 실루엣** (`scripts/foreground_layer.gd`, z7): 근경은 방 윤곽을 덮어 방을 바깥 어둠과 이어 주는 층이다 — 경계에서 짧게 끊기면 그 뒤로 배경 벽이 다시 보인다. 절차 생성 규칙(작업실 `foreground/workshop.json` 수작업 배치에서 뽑음): **천장선마다** 두께 48px 배관을 천장선 가운데에 깔고(마디 틈 28px + 플랜지·행거), 방 끝이나 옆 열이 더 낮은 쪽(위가 어둠)으로 320px 더 뻗음 · **바닥 밴드 하단선**에 두께 56~60px 트레이(양쪽 어둠으로 320px, 마디 틈 96~230px, 위에 잔해) · 실내 **기둥**(방 1300px 당 1, 폭 64~100, 그 열의 천장 위 44px ~ 바닥 밴드 아래 32px) · **상자 무리**(방 1100px 당 1, 바닥선 38px 아래에 닿음, 위에 작은 상자) · 가장 높은 천장 배관에서 처진 **케이블** 1~3. 기둥·상자·케이블은 램프·정면문·방 가운데·서로에서 200px 이상 떨어진 자리. 계단형 천장은 열별 천장(`col_ceilings`)으로 구간을 나눠 처리한다. 몸체는 `light_mask=0` 으로 라이트 제외, 색 (0.07,0.07,0.10) 에 앰비언트가 다시 곱해져 방 밖 순검정과 거의 구분되지 않는다(형체는 림이 알려준다). **윤곽 림**: 사각형 네 변에 4px 띠를 두르고 `shaders/foreground_rim.gdshader` 를 입힌다 — 정점 색에 담긴 변의 바깥 법선이 광원(`LIGHT_DIRECTION`)을 향할 때만 그 광원 색으로 밝아지고(`rim_strength` 0.8, 감쇠는 `pow(0.55)` 로 펴서 멀리서도 살짝), **방 밖(어둠)에 있는 띠와 가까운 방 경계(측벽·열별 천장·바닥 밴드 하단) 쪽을 향한 면은 경계 240px 안에서 림이 0** 이 된다(`room_factor`). 거울 라이트(`LightMirror`) 범위를 z7 까지 넓혀 램프·비상등 림이 닿고, 불·총구·아크는 원래 모든 층을 비춘다. 패럴랙스 기준은 **카메라 화면 중심**(사격 흔들림 `offset` 제외): 마우스·시선 리드로 카메라가 내다볼 때 근경이 반대로 밀리고, 걷기만 할 때는 카메라가 따라오는 만큼만 조금 반응한다. 이동의 **0.045배**, 지수 평활(5/s) 뒤 4px 격자에 한 칸 이상 벌어질 때만 옮기는 히스테리시스로 서 있을 때의 떨림을 막는다. (플레이어 X 기준·같은 방향은 시험 후 롤백) 모양은 방 id 시드로 고정.
+  - 글로우(스크린 공간 블룸)는 그대로 모든 층 위. 확정되면 프리셋 0 분기(`DepthPreset.enabled()`)와 F2·HUD 를 제거한다.
+  - **그림 근경** (`ForegroundLayer.SPRITES`): `assets/props/foreground_pipe_bracket_v2.png`(파이프 브래킷, 천장 배관에서 내려오는 세로관+밸브)·`foreground_utility_housing_v2.png`(바닥 유틸리티 하우징)를 kind `pipe_bracket`/`utility_housing` 으로 놓는다. 불투명 영역(region)을 항목 size 로 늘리고(기본 원본의 절반: 420×616 · 806×280), 실루엣과 같은 층·같은 어둠(라이트 제외, `SPRITE_TINT` 0.55 × 앰비언트). 시험 방(`SPRITE_ROOMS`: airlock·corr_west·workshop·tank_room)의 절차 생성에 하나씩 들어가고(브래킷은 가장 높은 천장 배관 아래, 하우징은 바닥선 38px 아래에 닿음), 작업실 저장 파일에도 둘을 추가했다. 랩에서 7·8 로 어느 방에나 놓을 수 있다.
+  - **근경 랩** (로비 → "근경 랩", `scripts/foreground_lab.gd`, `AppFlow.start_foreground_lab`): 실제 방·조명·플레이어 위에서 근경을 편집한다. 근경은 `ForegroundLayer.items = [{kind, pos, size}]` 데이터로 그려지고(kind: pipe·pillar·crate·tray·dark·cable), 방마다 `foreground/<방 id>.json` 이 있으면 그것을, 없으면 방 id 시드 절차 생성을 쓴다. 랩에서 **클릭·드래그 이동, 우하단 모서리 드래그 크기, 1~6 추가, Del 삭제, Tab 종류 순환, Q/E 그리기 순서, 방향키 4px(Shift 32px), Ctrl+D·Shift 드래그 복제, R 절차 생성 초기화, H 윤곽선, A/D 카메라, [ ] 방 전환, S 저장**. 저장 파일은 프로젝트 안(`foreground/`)이라 커밋된다. 스모크 테스트: `--script res://tools/foreground_lab_shot.gd -- <방 id>`.
 - 리소스는 원본 픽셀 기준(타일 128px, 월드 좌표 = 원본 px), Nearest 필터, 밉맵 없음
 - 타일: Bottom Left 피벗, 같은 Y, `X += 폭` 누적, 캡은 방 끝에만
 - 바닥선: 타일 상단 기준 Y = 486 — 캐릭터·프랍 접지 기준

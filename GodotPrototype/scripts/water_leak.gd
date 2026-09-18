@@ -24,6 +24,7 @@ var _puddle_x := 0.0
 var _fill := 0.0
 var _ripples := PackedVector4Array()
 var _t := 0.0
+var water: WaterPool = null       # 방에 고인 물이 있으면 물방울이 수면에 떨어진다 (Room 이 넣어준다)
 
 
 ## props_layer: 웅덩이를 올릴 레이어(캐릭터 뒤·프랍 앞). 분사 방향으로 착지점을 미리 계산해 웅덩이 위치를 잡는다.
@@ -98,8 +99,15 @@ func _process(delta: float) -> void:
 		v.y += GRAVITY * delta
 		var p: Vector2 = d["p"] + v * delta
 		var dead: bool = d["age"] >= d["life"]
-		if p.y >= floor_y and v.y > 0.0:
-			if d["splash"]:
+		var land_y := floor_y
+		if water != null and water.covers(p.x):
+			land_y = water.surface_at(p.x)
+		if p.y >= land_y and v.y > 0.0:
+			if water != null and water.covers(p.x):
+				# 고인 물 위: 물방울은 잠기고 수면에 작은 파문
+				dead = true
+				water.disturb(p.x, 0.07 if d["splash"] else 0.2, 5.0)
+			elif d["splash"]:
 				# 튄 물방울은 한 번 더 살짝 튕기고 사라진다
 				p.y = floor_y
 				v.y = -v.y * 0.25

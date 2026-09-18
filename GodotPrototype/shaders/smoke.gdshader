@@ -1,4 +1,5 @@
 shader_type canvas_item;
+#include "res://shaders/light_falloff.gdshaderinc"
 // 연기 파티클. 구 노멀맵(CanvasTexture)을 달고 light() 에서 주변 광원(램프·불·비상등)에
 // 부피감 있게 반응한다: 광원을 향한 면이 밝고 반대는 어둡게, 얇은 가장자리는 빛이 투과(래핑).
 // 알파는 3단계로 양자화해 청키 픽셀 느낌을 유지한다.
@@ -27,5 +28,5 @@ void light() {
 	// 가장자리 산란 (림): 광원 반대편 실루엣도 살짝 빛난다
 	float rim = pow(1.0 - clamp(N.z, 0.0, 1.0), 2.0) * 0.35;
 	vec3 lc = LIGHT_COLOR.rgb * LIGHT_ENERGY * light_gain;
-	LIGHT = vec4(lc * COLOR.rgb * (wrap + rim), LIGHT_COLOR.a);
+	LIGHT = vec4(lc * COLOR.rgb * (wrap + rim), diffuse_atten(LIGHT_COLOR.a));
 }

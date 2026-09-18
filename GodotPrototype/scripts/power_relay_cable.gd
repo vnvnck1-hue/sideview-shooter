@@ -27,7 +27,7 @@ func setup(length: float, floor_line: float, variant := "power_relay_cable_strai
 	_points.resize(SEGMENTS + 1)
 	_previous.resize(SEGMENTS + 1)
 	for i in range(SEGMENTS + 1):
-		var p := Vector2(sinf(_phase) * 18.0 * float(i) / SEGMENTS, _seg_length * float(i))
+		var p := Vector2(sin(_phase) * 18.0 * float(i) / SEGMENTS, _seg_length * float(i))
 		_points[i] = p
 		_previous[i] = p
 
@@ -40,6 +40,11 @@ func setup(length: float, floor_line: float, variant := "power_relay_cable_strai
 	_line.end_cap_mode = Line2D.LINE_CAP_ROUND
 	_line.default_color = Color.WHITE
 	add_child(_line)
+
+
+## DustLayer 광원 계약 — 케이블은 빛을 내지 않으므로 빈 사전(건너뜀)
+func light_info() -> Dictionary:
+	return {}
 
 
 func tip() -> Vector2:

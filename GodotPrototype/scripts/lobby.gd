@@ -1,14 +1,12 @@
 extends Control
 ## 로비: 시작 씬(project.godot run/main_scene). 마우스 버튼으로 고른다.
-##   방 드롭다운          아래 두 버튼이 쓰는 방. 타일맵 씬(scenes/rooms/<id>.tscn) 유무가 옆에 표시된다
-##   [게임 시작]           고른 방에서 플레이
-##   [타일 씬 보기]        고른 방의 타일 씬만 자유 카메라로 띄운다 (TileViewer). 에디터에서 저장 후 R 로 다시 읽기
+##   [메인 게임]   에어록에서 시작해 전체 맵(방 21개, 구역 4개)을 탐색한다 (scenes/MainGame.tscn)
+##   [테스트]      랜덤한 방에서 바로 시작 — 원버튼 (scenes/Main.tscn)
+##   [맵 뷰어]     방을 게임 없이 조립해 자유 카메라로 본다. [ ] 로 방 전환 (scenes/MapViewer.tscn)
+##   [CRT 모니터]  전역 CRT 후처리 프리셋 드롭다운 (scripts/crt_preset.gd · autoload CrtFx). 게임 안에서는 F4 / Shift+F4
 ##   [종료]
-## 게임·뷰어 안에서는 F1 로 이 로비로 돌아온다. 타일맵(룰타일) 편집 자체는 Godot 에디터에서 한다.
+## 게임·뷰어 안에서는 F1 로 이 로비로 돌아온다.
 
-var _room_pick: OptionButton
-var _room_ids: Array = []
-var _saved_label: Label
 var _font: Font
 
 
@@ -25,7 +23,7 @@ func _ready() -> void:
 
 	# 배경에 모듈러 타일 시안을 어둡게 깔아 분위기만 준다
 	var plate := TextureRect.new()
-	plate.texture = load("res://assets/tiles/workshop_modular/workshop_modular_background_sheet_3x2.png")
+	plate.texture = load(RoomTheme.sheet("workshop", "bg"))
 	plate.set_anchors_preset(Control.PRESET_FULL_RECT)
 	plate.stretch_mode = TextureRect.STRETCH_TILE
 	plate.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -43,50 +41,39 @@ func _ready() -> void:
 	var title := _label("Sideview Workshop Prototype", 44, Color(0.95, 0.92, 0.85))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	var sub := _label("로비 — 들어갈 모드를 클릭하세요", 22, Color(0.7, 0.72, 0.8))
+	var zones := {}
+	for id in RoomData.ROOMS.keys():
+		zones[RoomData.ROOMS[id]["zone"]] = true
+	var sub := _label("방 %d개 · 구역 %d개 — 들어갈 모드를 클릭하세요" % [RoomData.ROOMS.size(), zones.size()], 22, Color(0.7, 0.72, 0.8))
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(sub)
 	box.add_child(_spacer(16))
 
-	# 방 선택 (게임 시작·타일 씬 보기 공용)
-	var room_row := HBoxContainer.new()
-	room_row.add_theme_constant_override("separation", 12)
-	box.add_child(room_row)
-	var room_lbl := _label("방", 22, Color(0.85, 0.85, 0.9))
-	room_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	room_lbl.custom_minimum_size = Vector2(48, 0)
-	room_row.add_child(room_lbl)
-	_room_pick = OptionButton.new()
-	_room_pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_room_pick.custom_minimum_size = Vector2(0, 48)
-	_room_pick.add_theme_font_override("font", _font)
-	_room_pick.add_theme_font_size_override("font_size", 20)
-	for id in RoomData.ROOMS.keys():
-		_room_ids.append(id)
-		_room_pick.add_item(RoomData.ROOMS[id]["title"])
-	_room_pick.selected = 0
-	_room_pick.item_selected.connect(func(_i): _update_saved_label())
-	room_row.add_child(_room_pick)
-	_saved_label = _label("", 17, Color(0.62, 0.80, 0.86))
-	_saved_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	box.add_child(_saved_label)
-	_update_saved_label()
-	box.add_child(_spacer(6))
-
-	var play := _button("▶   게임 시작", "고른 방에서 플레이 시작. F1 로비")
-	play.pressed.connect(_start_game)
+	var play := _button("▶   메인 게임", "에어록에서 시작. 측벽문·정면문으로 전체 맵을 탐색한다. F1 로비")
+	play.pressed.connect(func(): AppFlow.start_main_game(get_tree()))
 	box.add_child(play)
 
-	var view := _button("▦   타일 씬 보기", "고른 방의 scenes/rooms/<id>.tscn 만 자유 카메라로 띄운다. Godot 에디터에서 저장 후 R 로 다시 읽기. F1 로비")
-	view.pressed.connect(_start_viewer)
+	var test := _button("⚙   테스트 — 저수조실(물)에서 시작", "물이 고인 저수조실에서 바로 플레이 (액체 셰이더 확인). F1 로비")
+	test.pressed.connect(func(): AppFlow.start_test(get_tree()))
+	box.add_child(test)
+
+	var view := _button("▦   맵 뷰어", "방을 게임 없이 조립해 자유 카메라로 본다. [ ] 방 전환 · 휠 줌 · WASD 이동 · F1 로비")
+	view.pressed.connect(func(): AppFlow.start_map_viewer(get_tree()))
 	box.add_child(view)
+
+	var lab := _button("✎   근경 랩 — 근경 실루엣 배치 편집", "실제 방·조명 위에서 근경(배관·기둥·상자·케이블)을 마우스로 옮기고 늘려 S 로 저장. [ ] 방 전환 · F1 로비")
+	lab.pressed.connect(func(): AppFlow.start_foreground_lab(get_tree(), "workshop"))
+	box.add_child(lab)
+
+	box.add_child(_spacer(6))
+	box.add_child(_crt_row())
 
 	box.add_child(_spacer(10))
 	var quit := _button("✕   종료", "")
 	quit.pressed.connect(func(): get_tree().quit())
 	box.add_child(quit)
 
-	var foot := _label("룰타일 편집: Godot 에디터 → scenes/rooms/<방 id>.tscn → TileMap 패널 [Terrains] 탭", 16, Color(0.5, 0.52, 0.6))
+	var foot := _label("맵 데이터: scripts/room_data.gd — 방 모양(열 프로필)·문·프랍·조명·몬스터. 검사: godot --headless --script res://tools/validate_map.gd", 16, Color(0.5, 0.52, 0.6))
 	foot.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	foot.offset_top = -44
 	foot.offset_left = 24
@@ -95,22 +82,6 @@ func _ready() -> void:
 	add_child(foot)
 
 	play.grab_focus()
-
-
-func _start_game() -> void:
-	AppFlow.start_game(get_tree(), _room_ids[_room_pick.selected])
-
-
-func _start_viewer() -> void:
-	AppFlow.start_tile_viewer(get_tree(), _room_ids[_room_pick.selected])
-
-
-func _update_saved_label() -> void:
-	var id: String = _room_ids[_room_pick.selected]
-	if RoomTiles.exists(id):
-		_saved_label.text = "타일맵 씬 있음: scenes/rooms/%s.tscn" % id
-	else:
-		_saved_label.text = "타일맵 씬 없음 — Godot 에디터에서 scenes/rooms/workshop.tscn 을 복제해 %s.tscn 으로 저장" % id
 
 
 func _label(text: String, size: int, color: Color) -> Label:
@@ -145,6 +116,37 @@ func _button(text: String, tooltip: String) -> Button:
 	b.add_theme_stylebox_override("focus", sbh)
 	b.add_theme_stylebox_override("pressed", sbh)
 	return b
+
+
+## "CRT 모니터  [드롭다운]" 한 줄. 바꾸면 즉시 전역 오버레이(CrtFx)에 적용되고 저장된다.
+func _crt_row() -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	var l := _label("▣   CRT 모니터", 24, Color(0.85, 0.83, 0.78))
+	l.custom_minimum_size = Vector2(230, 0)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(l)
+	var opt := OptionButton.new()
+	opt.custom_minimum_size = Vector2(0, 50)
+	opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	opt.add_theme_font_override("font", _font)
+	opt.add_theme_font_size_override("font_size", 22)
+	opt.get_popup().add_theme_font_override("font", _font)
+	opt.get_popup().add_theme_font_size_override("font_size", 22)
+	for i in CrtPreset.count():
+		var p: Dictionary = CrtPreset.get_preset(i)
+		opt.add_item("%d  %s" % [i + 1, p["name"]], i)
+		opt.set_item_tooltip(i, p["desc"])
+	opt.select(CrtFx.index)
+	opt.tooltip_text = CrtFx.current()["desc"]
+	opt.item_selected.connect(func(i: int):
+		CrtFx.set_preset(i, false)
+		opt.tooltip_text = CrtFx.current()["desc"])
+	var follow := func(i: int): opt.select(i)                     # F4 로 바꿔도 드롭다운이 따라온다
+	CrtFx.preset_changed.connect(follow)
+	opt.tree_exiting.connect(func(): CrtFx.preset_changed.disconnect(follow))   # 로비가 사라지면 끊는다 (autoload 는 남으므로)
+	row.add_child(opt)
+	return row
 
 
 func _spacer(h: int) -> Control:

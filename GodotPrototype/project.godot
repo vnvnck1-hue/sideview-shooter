@@ -17,6 +17,10 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon/icon.png"
 config/windows_native_icon="res://icon/icon.ico"
 
+[autoload]
+
+CrtFx="*res://scripts/crt_overlay.gd"
+
 [display]
 
 window/size/viewport_width=1600
@@ -33,3 +37,10 @@ project/assembly_name="Sideview Workshop Prototype"
 
 textures/canvas_textures/default_texture_filter=0
 environment/defaults/default_clear_color=Color(0, 0, 0, 1)
+
+[shader_globals]
+
+light_range_mul={
+"type": "float",
+"value": 1.0
+}

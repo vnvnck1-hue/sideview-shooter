@@ -66,6 +66,7 @@ static func apply(room: Node2D, layer: Node2D, ambient: CanvasModulate, i: int) 
 			l.height = f["height"]
 			l.position = Vector2(width * (k + 0.5) / n, f["y"])
 			mood.add_child(l)
+			Lighting.split_by_depth(l)             # 채광은 벽 정면, 인물 층은 55%
 
 	if p.has("floor"):
 		var fl: Dictionary = p["floor"]
@@ -80,6 +81,7 @@ static func apply(room: Node2D, layer: Node2D, ambient: CanvasModulate, i: int) 
 			l.height = fl["height"]
 			l.position = Vector2(width * (k + 0.5) / n, room_floor + float(fl["dy"]))
 			mood.add_child(l)
+			Lighting.split_by_depth(l, DepthPreset.ACTOR_FLOOR_LIGHT_RATIO)
 
 	if p.has("strip"):
 		var s: Dictionary = p["strip"]

@@ -1,0 +1,111 @@
+{
+  "formatVersion": 2,
+  "theme": "Hydroponics",
+  "source": {
+    "path": "Assets/Generated/Environments/hydroponics_empty_background_plate_v2.png",
+    "purpose": "clean canonical plate; fixed props and fixtures are intentionally not part of repeat tiles"
+  },
+  "coordinateSystem": "top-left, +x right, +y down",
+  "cellSizePx": 128,
+  "backgroundLayer": {
+    "folder": "Background",
+    "tileCount": 6,
+    "repeatAxes": [
+      "x",
+      "y"
+    ],
+    "sheet": "hydroponics_modular_background_sheet_3x2.png",
+    "tiles": [
+      "hydroponics_bg_fill_a",
+      "hydroponics_bg_fill_b",
+      "hydroponics_bg_fill_c",
+      "hydroponics_bg_fill_d",
+      "hydroponics_bg_fill_e",
+      "hydroponics_bg_fill_f"
+    ]
+  },
+  "frameLayer": {
+    "folder": "Frame",
+    "overlay": true,
+    "sheet": "hydroponics_modular_frame_sheet_4x2.png",
+    "tiles": [
+      "hydroponics_frame_top_left",
+      "hydroponics_frame_top",
+      "hydroponics_frame_top_right",
+      "hydroponics_frame_left",
+      "hydroponics_frame_right",
+      "hydroponics_frame_bottom_left",
+      "hydroponics_frame_bottom",
+      "hydroponics_frame_bottom_right"
+    ],
+    "assembly": "one-cell perimeter: corners once, top/bottom edges repeat on x, left/right edges repeat on y",
+    "innerCorners": {
+      "folder": "Frame/InnerCorners",
+      "sheet": "hydroponics_modular_frame_inner_corners_sheet_4x1.png",
+      "tiles": [
+        "hydroponics_frame_inner_top_left",
+        "hydroponics_frame_inner_top_right",
+        "hydroponics_frame_inner_bottom_left",
+        "hydroponics_frame_inner_bottom_right"
+      ],
+      "purpose": "concave corners for recessed/notched wall lines and RuleTile inside-corner states",
+      "rules": [
+        {
+          "tile": "hydroponics_frame_inner_top_left",
+          "openQuadrant": "top_left",
+          "visibleBands": [
+            "bottom",
+            "right"
+          ],
+          "pattern": "X X X / X * . / X . ."
+        },
+        {
+          "tile": "hydroponics_frame_inner_top_right",
+          "openQuadrant": "top_right",
+          "visibleBands": [
+            "bottom",
+            "left"
+          ],
+          "pattern": "X X X / . * X / . . X"
+        },
+        {
+          "tile": "hydroponics_frame_inner_bottom_left",
+          "openQuadrant": "bottom_left",
+          "visibleBands": [
+            "top",
+            "right"
+          ],
+          "pattern": "X . . / X * . / X X X"
+        },
+        {
+          "tile": "hydroponics_frame_inner_bottom_right",
+          "openQuadrant": "bottom_right",
+          "visibleBands": [
+            "top",
+            "left"
+          ],
+          "pattern": ". . X / . * X / X X X"
+        }
+      ]
+    }
+  },
+  "preview": {
+    "file": "Assets/GameReady/Validation/hydroponics_modular_12x6_preview.png",
+    "innerCornersFile": "Assets/GameReady/Validation/hydroponics_modular_inner_corners_preview.png",
+    "interiorCells": {
+      "width": 12,
+      "height": 6
+    },
+    "footprintCells": {
+      "width": 14,
+      "height": 8
+    }
+  },
+  "import": {
+    "filter": "nearest/point",
+    "compression": "lossless or none",
+    "mipmaps": false,
+    "alpha": "frame layer preserves transparency",
+    "pivot": "top-left for Godot Sprite2D / bottom-left equivalent when using the legacy guide"
+  }
+}

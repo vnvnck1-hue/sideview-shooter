@@ -1,0 +1,111 @@
+{
+  "formatVersion": 2,
+  "theme": "Corridor",
+  "source": {
+    "path": "Assets/Generated/Environments/empty_connector_corridor_block_v1.png",
+    "purpose": "clean canonical plate; fixed props and fixtures are intentionally not part of repeat tiles"
+  },
+  "coordinateSystem": "top-left, +x right, +y down",
+  "cellSizePx": 128,
+  "backgroundLayer": {
+    "folder": "Background",
+    "tileCount": 6,
+    "repeatAxes": [
+      "x",
+      "y"
+    ],
+    "sheet": "corridor_modular_background_sheet_3x2.png",
+    "tiles": [
+      "corridor_bg_fill_a",
+      "corridor_bg_fill_b",
+      "corridor_bg_fill_c",
+      "corridor_bg_fill_d",
+      "corridor_bg_fill_e",
+      "corridor_bg_fill_f"
+    ]
+  },
+  "frameLayer": {
+    "folder": "Frame",
+    "overlay": true,
+    "sheet": "corridor_modular_frame_sheet_4x2.png",
+    "tiles": [
+      "corridor_frame_top_left",
+      "corridor_frame_top",
+      "corridor_frame_top_right",
+      "corridor_frame_left",
+      "corridor_frame_right",
+      "corridor_frame_bottom_left",
+      "corridor_frame_bottom",
+      "corridor_frame_bottom_right"
+    ],
+    "assembly": "one-cell perimeter: corners once, top/bottom edges repeat on x, left/right edges repeat on y",
+    "innerCorners": {
+      "folder": "Frame/InnerCorners",
+      "sheet": "corridor_modular_frame_inner_corners_sheet_4x1.png",
+      "tiles": [
+        "corridor_frame_inner_top_left",
+        "corridor_frame_inner_top_right",
+        "corridor_frame_inner_bottom_left",
+        "corridor_frame_inner_bottom_right"
+      ],
+      "purpose": "concave corners for recessed/notched wall lines and RuleTile inside-corner states",
+      "rules": [
+        {
+          "tile": "corridor_frame_inner_top_left",
+          "openQuadrant": "top_left",
+          "visibleBands": [
+            "bottom",
+            "right"
+          ],
+          "pattern": "X X X / X * . / X . ."
+        },
+        {
+          "tile": "corridor_frame_inner_top_right",
+          "openQuadrant": "top_right",
+          "visibleBands": [
+            "bottom",
+            "left"
+          ],
+          "pattern": "X X X / . * X / . . X"
+        },
+        {
+          "tile": "corridor_frame_inner_bottom_left",
+          "openQuadrant": "bottom_left",
+          "visibleBands": [
+            "top",
+            "right"
+          ],
+          "pattern": "X . . / X * . / X X X"
+        },
+        {
+          "tile": "corridor_frame_inner_bottom_right",
+          "openQuadrant": "bottom_right",
+          "visibleBands": [
+            "top",
+            "left"
+          ],
+          "pattern": ". . X / . * X / X X X"
+        }
+      ]
+    }
+  },
+  "preview": {
+    "file": "Assets/GameReady/Validation/corridor_modular_12x6_preview.png",
+    "innerCornersFile": "Assets/GameReady/Validation/corridor_modular_inner_corners_preview.png",
+    "interiorCells": {
+      "width": 12,
+      "height": 6
+    },
+    "footprintCells": {
+      "width": 14,
+      "height": 8
+    }
+  },
+  "import": {
+    "filter": "nearest/point",
+    "compression": "lossless or none",
+    "mipmaps": false,
+    "alpha": "frame layer preserves transparency",
+    "pivot": "top-left for Godot Sprite2D / bottom-left equivalent when using the legacy guide"
+  }
+}

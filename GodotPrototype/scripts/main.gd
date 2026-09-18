@@ -1,31 +1,22 @@
 extends Node2D
-## 방 로딩·전환, 카메라, HUD 를 담당하는 메인 씬.
+## 방 로딩·전환, 카메라, HUD 를 담당하는 플레이 씬. scenes/Main.tscn(테스트: 랜덤 방) 과 scenes/MainGame.tscn(main_game.gd, 전체 맵) 이 쓴다.
 
 const LightMood := preload("res://scripts/light_mood.gd")
 const MouseRecoil := preload("res://scripts/mouse_recoil.gd")
 
-const START_ROOM := "workshop"
-const START_X := 1840.0 - 96.0 + 120.0      # 검증 이미지의 캐릭터 위치(발 중심)
 const WALL_MARGIN := 110.0                   # 캡 타일 안쪽 벽까지의 여유
 const DOOR_PASS_MARGIN := 60.0              # 열린 측벽문으로 들어갈 때 허용되는 초과 거리
 const SIDE_PAD := 180.0                      # 카메라가 방 밖 어두운 여백을 보여주는 폭
 const FADE_TIME := 0.11
-## 저해상도 렌더링: 월드는 534×300 SubViewport 에 그리고 Nearest 로 정수 3배 확대해 1600×900 창에 띄운다
-## (534×3 = 1602 → 좌우 1px 씩 창 밖으로 잘린다). 라이트·파티클·셰이더·스프라이트가 모두 같은 3px 격자에 스냅된다.
-## HUD 는 바깥(풀해상도). 카메라 zoom 0.25 → 원본 4×4 픽셀 블록(Tools/bake_pixel_grid.py 가 단색으로 굽는다) = 뷰 1px = 화면 3px.
-## 가시 월드 2136×1200. (8px 블록 ×6 "방식 B" 는 267×150 / zoom 0.125 — 네이티브 자산이 준비되면 전환. ART_GUIDE §10)
-const VIEW_SIZE := Vector2i(534, 300)
-const VIEW_SCALE := 3
-const CAMERA_ZOOM := 0.25
-const NATIVE8_VIEW_SIZE := Vector2i(267, 150)
-const NATIVE8_VIEW_SCALE := 6
-const NATIVE8_CAMERA_ZOOM := 0.125
+## 렌더 확정 (2026-09-18, "베이크 자산 · 풀해상도"): 월드는 1600×900 SubViewport ×1 에 그리고 카메라 zoom 0.5 —
+## 그림은 4px 블록 베이크 자산(아트 1px = 월드 4px = 화면 2px), 조명·파티클·이동은 부드럽게(스냅 없음).
+## 저해상도 뷰포트(534×300 ×3 등)·계단형 광원·원본 자산 프리셋은 비교 후 폐기. 글로우·후처리는 SubViewport 안, HUD 는 바깥.
+const VIEW_SIZE := Vector2i(1600, 900)
+const VIEW_SCALE := 1
+const CAMERA_ZOOM := 0.5
+var depth_label: Label                     # 우상단: 공간감 프리셋 A/B (F2)
 
-var view_size := VIEW_SIZE
-var view_scale := VIEW_SCALE
-var camera_zoom := CAMERA_ZOOM
-
-var world_vp: SubViewport                  # 저해상도 월드 뷰포트
+var world_vp: SubViewport                  # 월드 뷰포트
 var world: Node2D                          # 방·플레이어·탄 등 월드 노드의 부모 (world_vp 안)
 var current_room: Room
 var player: Player
@@ -36,7 +27,6 @@ var title_label: Label
 var hint_label: Label
 var prompt_label: Label
 var ammo_label: Label
-var recoil_label: Label                    # 반동 프리셋 비교용 (선택 후 제거)
 var crosshair: Node2D
 var transitioning := false
 var _post_mat: ShaderMaterial
@@ -45,17 +35,17 @@ var _recoil := MouseRecoil.new()          # 사격 반동 → 실제 마우스 �
 
 const SHAKE_PER_SHOT := 3.5
 const PLAYER_HIT_KNOCKBACK := 480.0   # 독액에 맞았을 때 밀리는 속도 (px/s)
-const ABERRATION_PER_SHOT := 1.1      # 사격 시 색수차 (저해상도 뷰 px — 화면으로는 ×VIEW_SCALE)
-const ABERRATION_CAP := 3.0
-const ABERRATION_PLAYER_HIT := 1.75
+## 색수차 (화면 px = 뷰 px, 풀해상도)
+const ABERRATION_PER_SHOT := 3.3
+const ABERRATION_CAP := 9.0
+const ABERRATION_PLAYER_HIT := 5.25
 const ABERRATION_DECAY := 18.0
 
 
 func _ready() -> void:
-	if AppFlow.start_room == "power_relay":
-		view_size = NATIVE8_VIEW_SIZE
-		view_scale = NATIVE8_VIEW_SCALE
-		camera_zoom = NATIVE8_CAMERA_ZOOM
+	var room_id := AppFlow.start_room if RoomData.ROOMS.has(AppFlow.start_room) else RoomData.START_ROOM
+	DepthPreset.activate()
+	Lighting.apply_light_range()
 	_setup_input_map()
 	_setup_view()
 	_setup_environment()
@@ -75,10 +65,10 @@ func _ready() -> void:
 
 	camera = GameCamera.new()
 	camera.name = "Camera"
-	camera.zoom = Vector2(camera_zoom, camera_zoom)
+	camera.zoom = Vector2(CAMERA_ZOOM, CAMERA_ZOOM)
 	camera.target = player
 	camera.base_y = RoomData.TILE_HEIGHT * 0.5
-	camera.view_scale = float(view_scale)
+	camera.view_scale = float(VIEW_SCALE)
 
 	crosshair = Crosshair.new()
 	crosshair.name = "Crosshair"
@@ -89,12 +79,43 @@ func _ready() -> void:
 	world.add_child(bullets)
 	world.add_child(crosshair)
 	world.add_child(camera)
-	var room_id := AppFlow.start_room if RoomData.ROOMS.has(AppFlow.start_room) else START_ROOM
-	var spawn_x := START_X if room_id == START_ROOM else RoomData.room_width(room_id) * 0.5
-	_load_room(room_id, spawn_x, 1)
+	var spawn_x := RoomData.room_width(room_id) * 0.5
+	var face_dir := 1
+	var cam_preset := GameCamera.DEFAULT_PRESET
+	if AppFlow.resume_x >= 0.0:                 # 프리셋 전환(재로드) 뒤 이어서
+		spawn_x = AppFlow.resume_x
+		face_dir = AppFlow.resume_facing
+		if AppFlow.resume_camera_preset >= 0:
+			cam_preset = AppFlow.resume_camera_preset
+		AppFlow.resume_x = -1.0
+		AppFlow.resume_camera_preset = -1
+	_load_room(room_id, spawn_x, face_dir)
 	camera.make_current()
-	camera.set_preset(GameCamera.DEFAULT_PRESET)
+	camera.set_preset(cam_preset)
 	camera.snap()
+	if AppFlow.lab_mode:
+		_setup_lab()
+
+
+## 근경 랩: 플레이어 입력·몬스터·조준점을 끄고 ForegroundLab 편집 오버레이를 근경 층에 붙인다. 안내는 하단 힌트 라벨에.
+func _setup_lab() -> void:
+	player.input_enabled = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	crosshair.visible = false
+	ammo_label.visible = false
+	current_room.disable_monsters()
+	if current_room.foreground == null:
+		hint_label.text = "근경 랩: 이 프리셋에는 근경 층이 없습니다 (F2 로 근경 분리 프리셋으로)"
+		return
+	var lab := ForegroundLab.new()
+	lab.name = "ForegroundLab"
+	lab.status_changed.connect(func(t: String): hint_label.text = t)
+	current_room.foreground.add_child(lab)
+	lab.setup(current_room.foreground, player)
+	hint_label.position = Vector2(24, 900 - 24 - 110)
+	hint_label.size = Vector2(1552, 110)
+	hint_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	title_label.text += "   ·   근경 랩"
 
 
 func _process(_delta: float) -> void:
@@ -107,9 +128,10 @@ func _process(_delta: float) -> void:
 		AppFlow.go_lobby(get_tree())
 		return
 
-	# 반동 프리셋 비교 (P) — 선택 후 제거 예정
-	if Input.is_action_just_pressed("recoil_cycle"):
-		set_recoil_preset(Player.recoil_index + 1)
+	# 공간감 프리셋 A/B (F2): 이전(평면) ↔ 근경 분리. 같은 방·위치에서 씬을 다시 로드한다
+	if not transitioning and current_room != null and Input.is_action_just_pressed("depth_toggle"):
+		_switch_depth_preset(DepthPreset.toggle_index())
+		return
 
 	if current_room == null:
 		return
@@ -117,7 +139,7 @@ func _process(_delta: float) -> void:
 	# 사격 반동: 포인터를 실제로 밀어 올린다 (창 좌표 기준 — 루트 뷰포트)
 	_recoil.tick(get_viewport(), _delta)
 
-	# 조준: 마우스 포인터의 월드 좌표가 곧 탄착 지점 (SubViewportContainer 가 좌표를 1/VIEW_SCALE 로 넘겨준다)
+	# 조준: 마우스 포인터의 월드 좌표가 곧 탄착 지점
 	var mouse_world := world.get_global_mouse_position()
 	crosshair.position = mouse_world
 	crosshair.heat = player.spread_ratio()
@@ -159,6 +181,7 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	current_room.build(id)
 	current_room.player = player
 	current_room.player_hit.connect(_on_player_hit)
+	current_room.monster_roared.connect(_on_monster_roared)
 	world.add_child(current_room)
 	world.move_child(current_room, 0)
 
@@ -170,7 +193,8 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	player.face(face_dir)
 
 	_apply_camera_limits()
-	title_label.text = RoomData.get_room(id)["title"]
+	var data := RoomData.get_room(id)
+	title_label.text = "%s  ›  %s" % [data["zone"], data["title"]]
 
 
 func _apply_camera_limits() -> void:
@@ -194,10 +218,7 @@ func _on_front_door_requested() -> void:
 	if fd.is_empty():
 		return
 	var target: String = fd["target"]
-	var tmp := Room.new()
-	tmp.build(target)
-	var spawn_x := tmp.front_door_spawn_x(fd["target_door"])
-	tmp.free()
+	var spawn_x := RoomData.front_door_center(target, int(fd["target_door"]))
 	_transition(target, spawn_x, player.facing)
 
 
@@ -223,7 +244,14 @@ func _on_player_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 	b.floor_y = player.position.y
 	# 무엇을 맞췃나: 램프·비상등은 깨지고(유리 파편·스파크), 프랍은 흔들리며 조각나고, 벽은 붉게 달아오른다
 	var hit := current_room.hit_at(target_pos)
+	# 고인 물 위의 바닥을 맞히면 착수 — 물기둥이 튀고 수면이 파인다 (벽 열 잔광은 없음)
+	if (hit["kind"] == "wall" or hit["kind"] == "none") and current_room.water != null and current_room.water.contains(target_pos):
+		hit = {"kind": "water", "node": current_room.water}
 	match hit["kind"]:
+		"water":
+			hit["node"].bullet_splash(target_pos.x, signf(target_pos.x - muzzle_pos.x))
+			b.impact_kind = Bullet.Impact.WATER
+			camera.add_shake(1.0)
 		"monster":
 			hit["node"].hit(target_pos, signf(target_pos.x - muzzle_pos.x))
 			b.impact_kind = Bullet.Impact.FLESH
@@ -270,6 +298,24 @@ func _on_player_hit(_point: Vector2, dir: float) -> void:
 	player.knockback(dir * PLAYER_HIT_KNOCKBACK)
 
 
+## 몬스터 포효: 가까울수록 카메라가 낮게 울린다 (플레이어 피격 7 대비 최대 2.2)
+func _on_monster_roared(pos: Vector2) -> void:
+	var d := absf(pos.x - player.position.x)
+	if d < Crawler.ROAR_SHAKE_RANGE:
+		camera.add_shake(lerpf(2.2, 0.4, d / Crawler.ROAR_SHAKE_RANGE))
+
+
+## 공간감 프리셋 전환 — 방·플레이어 위치·시선·카메라 프리셋을 남기고 Main 을 다시 로드한다
+## (층 구성·라이트 분리·근경은 Room.build 에서 정해지므로 방을 새로 조립한다. 스폰된 몬스터는 초기화된다)
+func _switch_depth_preset(preset: int) -> void:
+	if preset == DepthPreset.index:
+		return
+	DepthPreset.index = preset
+	transitioning = true
+	player.input_enabled = false
+	AppFlow.reload_in_place(get_tree(), current_room.room_id, player.position.x, player.facing, camera.preset_index)
+
+
 ## 불 스타일 (확정: 잉걸·검은 연기). 개발용 호출만 남긴다.
 func set_fire_style(index: int) -> void:
 	FireSource.style_index = wrapi(index, 0, FireSource.STYLES.size())
@@ -285,9 +331,10 @@ func set_light_mood(index: int) -> void:
 		current_room.apply_mood(LightMood.index)
 
 
-## 림라이트 프리셋 (확정: 부드러운 중간). 개발용 호출만 남긴다.
-func set_rim_preset(index: int) -> void:
-	Lighting.apply_rim_preset(index)
+func _update_depth_label() -> void:
+	if depth_label == null:
+		return
+	depth_label.text = "공간감 (F2 A/B)  %s\n%s" % [DepthPreset.hud_line(), DepthPreset.current()["desc"]]
 
 
 func _on_shell_ejected(pos: Vector2, dir: int) -> void:
@@ -296,25 +343,24 @@ func _on_shell_ejected(pos: Vector2, dir: int) -> void:
 	bullets.add_child(sc)
 
 
-## 저해상도 월드 뷰포트. SubViewportContainer(1602×900, stretch_shrink 3) 안의 SubViewport(534×300).
-## 컨테이너가 마우스 이벤트를 1/3 좌표로 넘겨주므로 world 안의 노드는 get_global_mouse_position() 을 그대로 쓴다.
+## 월드 뷰포트. SubViewportContainer(1600×900) 안의 SubViewport(1600×900, ×1) — 글로우 환경·후처리를 월드에만 걸기 위해 분리한다.
+## 컨테이너가 마우스 이벤트를 그대로 넘겨주므로 world 안의 노드는 get_global_mouse_position() 을 그대로 쓴다.
 func _setup_view() -> void:
 	var container := SubViewportContainer.new()
 	container.name = "View"
 	container.stretch = true
-	container.stretch_shrink = view_scale
-	container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST     # 정수 확대 시 픽셀 선명하게
-	var win := Vector2(1600, 900)
-	container.size = Vector2(view_size * view_scale)
-	container.position = ((win - container.size) * 0.5).floor()      # 1602×900 → x = -1 (가운데 정렬, 넘치는 1px 은 잘림)
+	container.stretch_shrink = VIEW_SCALE
+	container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	container.size = Vector2(VIEW_SIZE * VIEW_SCALE)
+	container.position = Vector2.ZERO
 	add_child(container)
 
 	world_vp = SubViewport.new()
 	world_vp.name = "World"
-	world_vp.size = view_size
+	world_vp.size = VIEW_SIZE
 	world_vp.disable_3d = true
 	world_vp.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
-	world_vp.snap_2d_transforms_to_pixel = true                        # 카메라 보간·서브픽셀 이동을 뷰 픽셀에 스냅
+	world_vp.snap_2d_transforms_to_pixel = false                     # 이동·조명은 부드럽게 (그림만 픽셀)
 	world_vp.use_hdr_2d = ProjectSettings.get_setting("rendering/viewport/hdr_2d", false)
 	world_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	container.add_child(world_vp)
@@ -327,7 +373,7 @@ func _setup_view() -> void:
 ## 월드 좌표 → 창(루트 뷰포트) 좌표. AutoTest 의 마우스 워프 등에 쓴다.
 func world_to_screen(p: Vector2) -> Vector2:
 	var container := world_vp.get_parent() as Control
-	return Vector2(world_vp.get_canvas_transform() * p) * float(view_scale) + container.position
+	return Vector2(world_vp.get_canvas_transform() * p) * float(VIEW_SCALE) + container.position
 
 
 ## 글로우(WorldEnvironment) + 풀스크린 후처리(색수차·비네트). 둘 다 저해상도 월드 뷰포트 안에 둔다.
@@ -385,7 +431,7 @@ func _setup_ui() -> void:
 	layer.add_child(title_label)
 
 	hint_label = Label.new()
-	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입    R 재장전    P 반동 프리셋    F11 전체화면"
+	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입    R 재장전    F2 공간감 A/B    F4 CRT 모니터    F11 전체화면"
 	hint_label.position = Vector2(24, 860)
 	hint_label.add_theme_font_override("font", font)
 	hint_label.add_theme_font_size_override("font_size", 20)
@@ -403,17 +449,17 @@ func _setup_ui() -> void:
 	prompt_label.visible = false
 	layer.add_child(prompt_label)
 
-	# 우상단: 반동 프리셋 (비교 중)
-	recoil_label = Label.new()
-	recoil_label.position = Vector2(1600 - 24 - 900, 18)
-	recoil_label.size = Vector2(900, 60)
-	recoil_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	recoil_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	recoil_label.add_theme_font_override("font", font)
-	recoil_label.add_theme_font_size_override("font_size", 20)
-	recoil_label.add_theme_color_override("font_color", Color(0.86, 0.80, 0.62))
-	layer.add_child(recoil_label)
-	set_recoil_preset(Player.recoil_index)
+	# 우상단: 공간감 프리셋 (이전/이후 A/B 비교 중 — 확정되면 제거)
+	depth_label = Label.new()
+	depth_label.position = Vector2(1600 - 24 - 1400, 18)
+	depth_label.size = Vector2(1400, 200)
+	depth_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	depth_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	depth_label.add_theme_font_override("font", font)
+	depth_label.add_theme_font_size_override("font_size", 20)
+	depth_label.add_theme_color_override("font_color", Color(0.62, 0.84, 0.86))
+	layer.add_child(depth_label)
+	_update_depth_label()
 
 	# 우하단: 탄창
 	ammo_label = Label.new()
@@ -434,16 +480,6 @@ func _setup_ui() -> void:
 	layer.add_child(fade)
 
 
-## 반동 프리셋 (비교 중). 선택되면 Player.recoil_index 기본값만 남기고 제거
-func set_recoil_preset(index: int) -> void:
-	Player.recoil_index = wrapi(index, 0, Player.RECOIL_PRESETS.size())
-	var names := PackedStringArray()
-	for i in range(Player.RECOIL_PRESETS.size()):
-		var n: String = Player.RECOIL_PRESETS[i]["name"]
-		names.append(("[%d %s]" if i == Player.recoil_index else " %d %s ") % [i + 1, n])
-	recoil_label.text = "반동 (P)  %s\n%s" % [" ".join(names), Player.recoil_preset()["desc"]]
-
-
 func _setup_input_map() -> void:
 	_add_action("move_left", [KEY_A, KEY_LEFT])
 	_add_action("move_right", [KEY_D, KEY_RIGHT])
@@ -455,7 +491,7 @@ func _setup_input_map() -> void:
 	_add_action("toggle_fullscreen", [KEY_F11])
 	_add_action("reload", [KEY_R])
 	_add_action("to_lobby", [KEY_F1])
-	_add_action("recoil_cycle", [KEY_P])    # 반동 프리셋 비교 (임시)
+	_add_action("depth_toggle", [KEY_F2])   # 공간감 프리셋 이전/이후 A/B (비교 중)
 
 
 func _add_mouse_action(action: String, button: MouseButton) -> void:

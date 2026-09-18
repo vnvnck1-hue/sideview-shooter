@@ -1,20 +1,29 @@
 param(
     [string]$WorkspaceRoot = (Split-Path -Parent $PSScriptRoot),
-    [string]$SourcePath = ''
+    [string]$SourcePath = '',
+    [ValidateSet('Workshop','Corridor','Hydroponics','CrewQuarters')]
+    [string]$Theme = 'Workshop'
 )
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
 $generatedRoot = Join-Path $WorkspaceRoot 'Assets\Generated\Environments'
-$gameRoot = Join-Path $WorkspaceRoot 'Assets\GameReady\Tiles\Workshop_Modular'
+$assetPrefix = $Theme.ToLowerInvariant()
+$gameRoot = Join-Path $WorkspaceRoot ("Assets\GameReady\Tiles\{0}_Modular" -f $Theme)
 $backgroundRoot = Join-Path $gameRoot 'Background'
 $frameRoot = Join-Path $gameRoot 'Frame'
 $innerFrameRoot = Join-Path $gameRoot 'Frame\InnerCorners'
 $validationRoot = Join-Path $WorkspaceRoot 'Assets\GameReady\Validation'
 
 if ([string]::IsNullOrWhiteSpace($SourcePath)) {
-    $SourcePath = Join-Path $generatedRoot 'workshop_empty_background_plate_v1.png'
+    $sourceFile = switch ($Theme) {
+        'Workshop' { 'workshop_empty_background_plate_v1.png' }
+        'Corridor' { 'empty_connector_corridor_block_v1.png' }
+        'Hydroponics' { 'hydroponics_empty_background_plate_v2.png' }
+        'CrewQuarters' { 'crew_quarters_empty_background_plate_v2.png' }
+    }
+    $SourcePath = Join-Path $generatedRoot $sourceFile
 }
 
 @($gameRoot, $backgroundRoot, $frameRoot, $innerFrameRoot, $validationRoot) | ForEach-Object {
@@ -189,12 +198,12 @@ try {
     # These six samples keep the distressed surface while excluding fixed lamps,
     # vents, props, and the outer frame.
     $backgroundDefinitions = @(
-        @{ Name='workshop_bg_fill_a'; X=250; Y=430; FlipX=$false; FlipY=$false },
-        @{ Name='workshop_bg_fill_b'; X=390; Y=430; FlipX=$false; FlipY=$false },
-        @{ Name='workshop_bg_fill_c'; X=540; Y=430; FlipX=$true;  FlipY=$false },
-        @{ Name='workshop_bg_fill_d'; X=820; Y=430; FlipX=$false; FlipY=$false },
-        @{ Name='workshop_bg_fill_e'; X=1010; Y=430; FlipX=$true; FlipY=$false },
-        @{ Name='workshop_bg_fill_f'; X=1230; Y=430; FlipX=$false; FlipY=$true }
+        @{ Name=($assetPrefix + '_bg_fill_a'); X=250; Y=430; FlipX=$false; FlipY=$false },
+        @{ Name=($assetPrefix + '_bg_fill_b'); X=390; Y=430; FlipX=$false; FlipY=$false },
+        @{ Name=($assetPrefix + '_bg_fill_c'); X=540; Y=430; FlipX=$true;  FlipY=$false },
+        @{ Name=($assetPrefix + '_bg_fill_d'); X=820; Y=430; FlipX=$false; FlipY=$false },
+        @{ Name=($assetPrefix + '_bg_fill_e'); X=1010; Y=430; FlipX=$true; FlipY=$false },
+        @{ Name=($assetPrefix + '_bg_fill_f'); X=1230; Y=430; FlipX=$false; FlipY=$true }
     )
     foreach ($definition in $backgroundDefinitions) {
         Export-BackgroundTile -Source $source -Name $definition.Name -SourceX $definition.X -SourceY $definition.Y -FlipX $definition.FlipX -FlipY $definition.FlipY
@@ -203,14 +212,14 @@ try {
     # Source room frame bounds: x=145..1517, top=184..228, side=145..197 / 1469..1517,
     # floor/base=658..710. Each exported frame tile is a transparent overlay.
     $frameDefinitions = @(
-        @{ Name='workshop_frame_top_left';     X=145;  Y=184; Kind='top_left' },
-        @{ Name='workshop_frame_top';          X=273;  Y=184; Kind='top' },
-        @{ Name='workshop_frame_top_right';    X=1389; Y=184; Kind='top_right' },
-        @{ Name='workshop_frame_left';         X=145;  Y=312; Kind='left' },
-        @{ Name='workshop_frame_right';        X=1389; Y=312; Kind='right' },
-        @{ Name='workshop_frame_bottom_left';  X=145;  Y=582; Kind='bottom_left' },
-        @{ Name='workshop_frame_bottom';       X=273;  Y=582; Kind='bottom' },
-        @{ Name='workshop_frame_bottom_right'; X=1389; Y=582; Kind='bottom_right' }
+        @{ Name=($assetPrefix + '_frame_top_left');     X=145;  Y=184; Kind='top_left' },
+        @{ Name=($assetPrefix + '_frame_top');          X=273;  Y=184; Kind='top' },
+        @{ Name=($assetPrefix + '_frame_top_right');    X=1389; Y=184; Kind='top_right' },
+        @{ Name=($assetPrefix + '_frame_left');         X=145;  Y=312; Kind='left' },
+        @{ Name=($assetPrefix + '_frame_right');        X=1389; Y=312; Kind='right' },
+        @{ Name=($assetPrefix + '_frame_bottom_left');  X=145;  Y=582; Kind='bottom_left' },
+        @{ Name=($assetPrefix + '_frame_bottom');       X=273;  Y=582; Kind='bottom' },
+        @{ Name=($assetPrefix + '_frame_bottom_right'); X=1389; Y=582; Kind='bottom_right' }
     )
     foreach ($definition in $frameDefinitions) {
         Export-FrameTile -Source $source -Name $definition.Name -SourceX $definition.X -SourceY $definition.Y -Kind $definition.Kind
@@ -218,31 +227,41 @@ try {
 }
 finally { $source.Dispose() }
 
-$backgroundNames = @('workshop_bg_fill_a','workshop_bg_fill_b','workshop_bg_fill_c','workshop_bg_fill_d','workshop_bg_fill_e','workshop_bg_fill_f')
-$frameNames = @('workshop_frame_top_left','workshop_frame_top','workshop_frame_top_right','workshop_frame_left','workshop_frame_right','workshop_frame_bottom_left','workshop_frame_bottom','workshop_frame_bottom_right')
-$innerCornerNames = @('workshop_frame_inner_top_left','workshop_frame_inner_top_right','workshop_frame_inner_bottom_left','workshop_frame_inner_bottom_right')
-$innerCornerRules = @(
-    [ordered]@{ tile='workshop_frame_inner_top_left'; openQuadrant='top_left'; visibleBands=@('bottom','right'); pattern='X X X / X * . / X . .' },
-    [ordered]@{ tile='workshop_frame_inner_top_right'; openQuadrant='top_right'; visibleBands=@('bottom','left'); pattern='X X X / . * X / . . X' },
-    [ordered]@{ tile='workshop_frame_inner_bottom_left'; openQuadrant='bottom_left'; visibleBands=@('top','right'); pattern='X . . / X * . / X X X' },
-    [ordered]@{ tile='workshop_frame_inner_bottom_right'; openQuadrant='bottom_right'; visibleBands=@('top','left'); pattern='. . X / . * X / X X X' }
+$backgroundNames = @(
+    ($assetPrefix + '_bg_fill_a'), ($assetPrefix + '_bg_fill_b'), ($assetPrefix + '_bg_fill_c'),
+    ($assetPrefix + '_bg_fill_d'), ($assetPrefix + '_bg_fill_e'), ($assetPrefix + '_bg_fill_f')
 )
-Build-Sheet -Root $backgroundRoot -SheetName 'workshop_modular_background_sheet_3x2.png' -Names $backgroundNames -Columns 3
-Build-Sheet -Root $frameRoot -SheetName 'workshop_modular_frame_sheet_4x2.png' -Names $frameNames -Columns 4
+$frameNames = @(
+    ($assetPrefix + '_frame_top_left'), ($assetPrefix + '_frame_top'), ($assetPrefix + '_frame_top_right'),
+    ($assetPrefix + '_frame_left'), ($assetPrefix + '_frame_right'), ($assetPrefix + '_frame_bottom_left'),
+    ($assetPrefix + '_frame_bottom'), ($assetPrefix + '_frame_bottom_right')
+)
+$innerCornerNames = @(
+    ($assetPrefix + '_frame_inner_top_left'), ($assetPrefix + '_frame_inner_top_right'),
+    ($assetPrefix + '_frame_inner_bottom_left'), ($assetPrefix + '_frame_inner_bottom_right')
+)
+$innerCornerRules = @(
+    [ordered]@{ tile=$innerCornerNames[0]; openQuadrant='top_left'; visibleBands=@('bottom','right'); pattern='X X X / X * . / X . .' },
+    [ordered]@{ tile=$innerCornerNames[1]; openQuadrant='top_right'; visibleBands=@('bottom','left'); pattern='X X X / . * X / . . X' },
+    [ordered]@{ tile=$innerCornerNames[2]; openQuadrant='bottom_left'; visibleBands=@('top','right'); pattern='X . . / X * . / X X X' },
+    [ordered]@{ tile=$innerCornerNames[3]; openQuadrant='bottom_right'; visibleBands=@('top','left'); pattern='. . X / . * X / X X X' }
+)
+Build-Sheet -Root $backgroundRoot -SheetName ($assetPrefix + '_modular_background_sheet_3x2.png') -Names $backgroundNames -Columns 3
+Build-Sheet -Root $frameRoot -SheetName ($assetPrefix + '_modular_frame_sheet_4x2.png') -Names $frameNames -Columns 4
 
 # Concave/inside corners for RuleTile notches and rooms with recessed wall lines.
 # The name describes the missing/open quadrant; the visible bands occupy the
 # opposite two edges (e.g. inner_top_left = bottom + right).
-Export-InnerCornerTile -Name 'workshop_frame_inner_top_left' -HorizontalEdge 'workshop_frame_bottom' -VerticalEdge 'workshop_frame_right'
-Export-InnerCornerTile -Name 'workshop_frame_inner_top_right' -HorizontalEdge 'workshop_frame_bottom' -VerticalEdge 'workshop_frame_left'
-Export-InnerCornerTile -Name 'workshop_frame_inner_bottom_left' -HorizontalEdge 'workshop_frame_top' -VerticalEdge 'workshop_frame_right'
-Export-InnerCornerTile -Name 'workshop_frame_inner_bottom_right' -HorizontalEdge 'workshop_frame_top' -VerticalEdge 'workshop_frame_left'
-Build-Sheet -Root $innerFrameRoot -SheetName 'workshop_modular_frame_inner_corners_sheet_4x1.png' -Names $innerCornerNames -Columns 4
+Export-InnerCornerTile -Name $innerCornerNames[0] -HorizontalEdge $frameNames[6] -VerticalEdge $frameNames[4]
+Export-InnerCornerTile -Name $innerCornerNames[1] -HorizontalEdge $frameNames[6] -VerticalEdge $frameNames[3]
+Export-InnerCornerTile -Name $innerCornerNames[2] -HorizontalEdge $frameNames[1] -VerticalEdge $frameNames[4]
+Export-InnerCornerTile -Name $innerCornerNames[3] -HorizontalEdge $frameNames[1] -VerticalEdge $frameNames[3]
+Build-Sheet -Root $innerFrameRoot -SheetName ($assetPrefix + '_modular_frame_inner_corners_sheet_4x1.png') -Names $innerCornerNames -Columns 4
 
 # Validation preview: 12x6 background cells surrounded by the separate frame layer.
 $previewWidth = 14 * $Cell
 $previewHeight = 8 * $Cell
-$previewPath = Join-Path $validationRoot 'workshop_modular_12x6_preview.png'
+$previewPath = Join-Path $validationRoot ($assetPrefix + '_modular_12x6_preview.png')
 $preview = New-ArgbBitmap -Width $previewWidth -Height $previewHeight
 $graphics = [System.Drawing.Graphics]::FromImage($preview)
 try {
@@ -262,23 +281,23 @@ try {
         }
     }
 
-    Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot 'workshop_frame_top_left.png') -X 0 -Y 0
-    Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot 'workshop_frame_top_right.png') -X (13 * $Cell) -Y 0
-    Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot 'workshop_frame_bottom_left.png') -X 0 -Y (7 * $Cell)
-    Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot 'workshop_frame_bottom_right.png') -X (13 * $Cell) -Y (7 * $Cell)
+    Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot ($frameNames[0] + '.png')) -X 0 -Y 0
+    Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot ($frameNames[2] + '.png')) -X (13 * $Cell) -Y 0
+    Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot ($frameNames[5] + '.png')) -X 0 -Y (7 * $Cell)
+    Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot ($frameNames[7] + '.png')) -X (13 * $Cell) -Y (7 * $Cell)
     for ($x = $Cell; $x -lt (13 * $Cell); $x += $Cell) {
-        Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot 'workshop_frame_top.png') -X $x -Y 0
-        Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot 'workshop_frame_bottom.png') -X $x -Y (7 * $Cell)
+        Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot ($frameNames[1] + '.png')) -X $x -Y 0
+        Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot ($frameNames[6] + '.png')) -X $x -Y (7 * $Cell)
     }
     for ($y = $Cell; $y -lt (7 * $Cell); $y += $Cell) {
-        Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot 'workshop_frame_left.png') -X 0 -Y $y
-        Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot 'workshop_frame_right.png') -X (13 * $Cell) -Y $y
+        Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot ($frameNames[3] + '.png')) -X 0 -Y $y
+        Draw-Tile -Graphics $graphics -Path (Join-Path $frameRoot ($frameNames[4] + '.png')) -X (13 * $Cell) -Y $y
     }
     Save-Png -Bitmap $preview -Path $previewPath
 }
 finally { $graphics.Dispose(); $preview.Dispose() }
 
-$innerPreviewPath = Join-Path $validationRoot 'workshop_modular_inner_corners_preview.png'
+$innerPreviewPath = Join-Path $validationRoot ($assetPrefix + '_modular_inner_corners_preview.png')
 $innerPreview = New-ArgbBitmap -Width (4 * $Cell) -Height $Cell
 $innerGraphics = [System.Drawing.Graphics]::FromImage($innerPreview)
 try {
@@ -290,7 +309,7 @@ try {
     $innerGraphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::None
     for ($i = 0; $i -lt $innerCornerNames.Count; $i++) {
         $x = $i * $Cell
-        Draw-Tile -Graphics $innerGraphics -Path (Join-Path $backgroundRoot 'workshop_bg_fill_a.png') -X $x -Y 0
+        Draw-Tile -Graphics $innerGraphics -Path (Join-Path $backgroundRoot ($backgroundNames[0] + '.png')) -X $x -Y 0
         Draw-Tile -Graphics $innerGraphics -Path (Join-Path $innerFrameRoot ($innerCornerNames[$i] + '.png')) -X $x -Y 0
     }
     Save-Png -Bitmap $innerPreview -Path $innerPreviewPath
@@ -299,44 +318,44 @@ finally { $innerGraphics.Dispose(); $innerPreview.Dispose() }
 
 $manifest = [ordered]@{
     formatVersion = 2
-    theme = 'Workshop'
-    source = [ordered]@{ path = 'Assets/Generated/Environments/workshop_empty_background_plate_v1.png'; purpose = 'clean canonical plate; fixed props and fixtures are intentionally not part of repeat tiles' }
+    theme = $Theme
+    source = [ordered]@{ path = ('Assets/Generated/Environments/' + (Split-Path -Leaf $SourcePath)); purpose = 'clean canonical plate; fixed props and fixtures are intentionally not part of repeat tiles' }
     coordinateSystem = 'top-left, +x right, +y down'
     cellSizePx = 128
     backgroundLayer = [ordered]@{
         folder = 'Background'
         tileCount = 6
         repeatAxes = @('x','y')
-        sheet = 'workshop_modular_background_sheet_3x2.png'
+        sheet = ($assetPrefix + '_modular_background_sheet_3x2.png')
         tiles = $backgroundNames
     }
     frameLayer = [ordered]@{
         folder = 'Frame'
         overlay = $true
-        sheet = 'workshop_modular_frame_sheet_4x2.png'
+        sheet = ($assetPrefix + '_modular_frame_sheet_4x2.png')
         tiles = $frameNames
         assembly = 'one-cell perimeter: corners once, top/bottom edges repeat on x, left/right edges repeat on y'
         innerCorners = [ordered]@{
             folder = 'Frame/InnerCorners'
-            sheet = 'workshop_modular_frame_inner_corners_sheet_4x1.png'
+            sheet = ($assetPrefix + '_modular_frame_inner_corners_sheet_4x1.png')
             tiles = $innerCornerNames
             purpose = 'concave corners for recessed/notched wall lines and RuleTile inside-corner states'
             rules = $innerCornerRules
         }
     }
-    preview = [ordered]@{ file = 'Assets/GameReady/Validation/workshop_modular_12x6_preview.png'; innerCornersFile = 'Assets/GameReady/Validation/workshop_modular_inner_corners_preview.png'; interiorCells = [ordered]@{ width = 12; height = 6 }; footprintCells = [ordered]@{ width = 14; height = 8 } }
+    preview = [ordered]@{ file = ('Assets/GameReady/Validation/' + $assetPrefix + '_modular_12x6_preview.png'); innerCornersFile = ('Assets/GameReady/Validation/' + $assetPrefix + '_modular_inner_corners_preview.png'); interiorCells = [ordered]@{ width = 12; height = 6 }; footprintCells = [ordered]@{ width = 14; height = 8 } }
     import = [ordered]@{ filter = 'nearest/point'; compression = 'lossless or none'; mipmaps = $false; alpha = 'frame layer preserves transparency'; pivot = 'top-left for Godot Sprite2D / bottom-left equivalent when using the legacy guide' }
 }
-$manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $gameRoot 'workshop_modular_tiles_v2.json') -Encoding UTF8
+$manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $gameRoot ($assetPrefix + '_modular_tiles_v2.json')) -Encoding UTF8
 $ruleTileSpec = [ordered]@{
     formatVersion = 1
-    tile = 'Workshop_Modular_Frame_RuleTile'
+    tile = ($Theme + '_Modular_Frame_RuleTile')
     grid = 'rectangular'
     requiredUnityPackages = @('com.unity.2d.tilemap', 'com.unity.2d.tilemap.extras')
     analysis = [ordered]@{ method = '3x3 alpha/connection grid'; center = '*'; thisNeighbor = '.'; dontCareNeighbor = 'X'; note = 'Patterns are top-to-bottom and map the visible bands to connected frame neighbors.' }
     insideCornerRules = $innerCornerRules
 }
-$ruleTileSpec | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $gameRoot 'workshop_modular_ruletile_rules_v2.json') -Encoding UTF8
+$ruleTileSpec | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $gameRoot ($assetPrefix + '_modular_ruletile_rules_v2.json')) -Encoding UTF8
 
-Write-Output "Workshop modular tiles: $gameRoot"
+Write-Output "$Theme modular tiles: $gameRoot"
 Write-Output "Validation preview: $previewPath"

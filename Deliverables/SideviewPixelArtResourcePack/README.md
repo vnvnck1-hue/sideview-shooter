@@ -20,6 +20,9 @@
 - `04_Characters/Source/`: 캐릭터 애니메이션 생성 원본 시트
 - `05_Tiles/Workshop/`: 긴 작업실을 조립하는 세로 매크로 배경 타일
 - `05_Tiles/Workshop_Modular/`: X/Y 확장용 128px 배경 셀 + 투명 외곽 프레임 타일
+- `05_Tiles/Corridor_Modular/`: 복도용 X/Y 확장 배경 셀 + 프레임 + 오목 코너
+- `05_Tiles/Hydroponics_Modular/`: 수경재배실용 X/Y 확장 배경 셀 + 프레임 + 오목 코너
+- `05_Tiles/CrewQuarters_Modular/`: 숙소용 X/Y 확장 배경 셀 + 프레임 + 오목 코너
 - `05_Tiles/Corridor/`: 빈 연결 복도 타일
 - `05_Tiles/Hydroponics/`: 수경재배실 빈 배경 타일
 - `05_Tiles/CrewQuarters/`: 승무원 숙소 빈 배경 타일
@@ -66,6 +69,8 @@
 - 룰타일 패턴: `05_Tiles/Workshop_Modular/workshop_modular_ruletile_rules_v2.json`
 
 배경을 원하는 셀 수만큼 먼저 채우고, 네 모서리와 반복 가능한 상·하·좌·우 프레임을 한 셀 외곽에 오버레이한다. 램프·환기구·문·프랍은 반복 타일에서 분리해 별도 장식 레이어로 유지한다.
+
+네 테마 전체 리소스 재생성 스크립트는 `08_Tools/build_all_modular_room_tiles.ps1`다.
 
 ## 프랍 투영 기준
 

@@ -39,6 +39,12 @@
       "frames": 4,
       "suggestedFps": 10,
       "loop": false
+    },
+    {
+      "name": "roar",
+      "frames": 4,
+      "suggestedFps": 8,
+      "loop": false
     }
   ],
   "frames": [
@@ -289,6 +295,70 @@
       "rect": {
         "x": 1629,
         "y": 2268,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "roar",
+      "frame": 1,
+      "file": "Frames/roar/toxic_tumor_crawler_roar_01.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "roar",
+      "frame": 2,
+      "file": "Frames/roar/toxic_tumor_crawler_roar_02.png",
+      "rect": {
+        "x": 543,
+        "y": 0,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "roar",
+      "frame": 3,
+      "file": "Frames/roar/toxic_tumor_crawler_roar_03.png",
+      "rect": {
+        "x": 1086,
+        "y": 0,
+        "width": 543,
+        "height": 756
+      },
+      "pivot": {
+        "x": 0.5,
+        "y": 0.0
+      },
+      "baselineY": 755
+    },
+    {
+      "clip": "roar",
+      "frame": 4,
+      "file": "Frames/roar/toxic_tumor_crawler_roar_04.png",
+      "rect": {
+        "x": 1629,
+        "y": 0,
         "width": 543,
         "height": 756
       },

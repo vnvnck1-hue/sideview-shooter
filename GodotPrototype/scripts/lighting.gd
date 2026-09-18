@@ -42,37 +42,97 @@ const FIRE_LIGHT := Color(1.0, 0.55, 0.22)
 const ARC_BLUE := Color(0.70, 0.82, 1.0)
 const WATER := Color(0.55, 0.75, 1.0)
 
-## 림라이트 프리셋 3종 (R 키 순환). lit_surface / prop_surface 머티리얼 전부에 적용된다.
-##   width  : 실루엣 안쪽으로 번지는 폭(px)   falloff : 감쇠 지수(클수록 가장자리에 몰림)
-##   strength : 광원 림 세기   ambient : 고정 키 림 세기   white : 림 색의 흰색 비율
-const RIM_PRESETS := [
-	{"id": "fine", "name": "가는 실선", "desc": "폭 2.5px, 예리한 감쇠 — 기존 느낌을 살짝만 다듬음",
-		"width": 2.5, "falloff": 1.8, "strength": 1.0, "ambient": 0.38, "white": 0.5},
-	{"id": "soft", "name": "부드러운 중간", "desc": "폭 15px, 완만한 감쇠 — 외곽선에서 안쪽으로 넓게 스며듦 (확정, 5px 의 3배)",
-		"width": 15.0, "falloff": 1.0, "strength": 0.9, "ambient": 0.32, "white": 0.35},
-	{"id": "glow", "name": "넓은 글로우", "desc": "폭 9px, 아주 완만 — 실루엣 전체가 광원 쪽으로 물듦",
-		"width": 9.0, "falloff": 0.8, "strength": 0.7, "ambient": 0.26, "white": 0.3},
-]
-const RIM_DEFAULT := 1
-static var rim_index := RIM_DEFAULT
-static var _lit_materials: Array = []          # WeakRef — 런타임 프리셋 전환용
+## 림라이트 (확정 2026-09-18 — "이전 (좁음)"). lit_surface / prop_surface / foreground_rim 머티리얼 전부에 적용된다.
+##   reach 0 · range 1 : 림이 광원 디퓨즈와 같은 감쇠 곡선으로 꺼진다 (반경 65% 에서 18%, 라이트 가장자리에서 0).
+##   도달 범위 프리셋 5종(완만·넓게 ×1.6·아주 넓게 ×2.2·방 전체 ×3)은 F3 비교 후 폐기 — 두께·범위가 아니라 림 **색**이 문제였다.
+##   width  : 실루엣 안쪽으로 번지는 폭(px)   falloff : 폭 안 감쇠 지수   strength : 광원 림 세기   ambient : 고정 키 림 세기   white : 림 색의 흰색 비율
+const RIM := {"id": "legacy", "name": "이전 (좁음)", "desc": "림이 광원 디퓨즈와 같은 곡선으로 꺼짐",
+	"reach": 0.0, "range": 1.0,
+	"width": 15.0, "falloff": 1.0, "strength": 0.9, "ambient": 0.32, "white": 0.35}
+static var _lit_materials: Array = []          # WeakRef — 런타임 재적용용
+static var _fg_rim_materials: Array = []       # WeakRef — foreground_rim (reach 만 받는다)
 
 static func rim_preset() -> Dictionary:
-	return RIM_PRESETS[wrapi(rim_index, 0, RIM_PRESETS.size())]
+	return RIM
+
+## 라이트 반경 배율 (scale_for_radius 가 곱한다). 확정 1.0 — light_falloff.gdshaderinc 의 diffuse_atten 은 이때 항등이다.
+static func light_range_mul() -> float:
+	return float(RIM["range"])
+
+## 캐릭터(플레이어·몬스터) 전용 림 (확정 2026-09-18 — "두껍게"). 배경보다 한 단계 두껍고 밝은 외곽.
+## "배경과 같음"·"굵고 선명"·"외곽선 강조" 는 F4 비교 후 폐기. character_material() 로 만든 머티리얼만 이 값으로 덮어쓴다.
+##   width 는 플레이어 스케일(1.0) 기준 텍스처 px — 크롤러(0.4 배)처럼 축소된 스프라이트는 rim_px_scale 메타로 나눠 화면 두께를 맞춘다.
+const CHAR_RIM := {"id": "thick", "name": "두껍게", "desc": "폭 24px · 세기 1.8 · 흰색 60% · 고정 키 0.65",
+	"width": 24.0, "falloff": 1.2, "strength": 1.8, "ambient": 0.65, "white": 0.6}
+
+static func char_rim_preset() -> Dictionary:
+	return CHAR_RIM
+
+## 림 색 블렌딩 (확정 2026-09-18 — "명도 계단 3단"). 림의 두께·범위가 아니라 **색**이 어색함의 원인이었다.
+## 원래 방식은 광원색 × (표면색→흰색 35%) 덧셈 + 광원과 무관한 파란 고정 키였고, 그 위에 CanvasModulate 앰비언트가
+## 라이트 기여분까지 곱해져 따뜻한 램프 림도 파스텔로 탈색됐다. 확정 방식은:
+##   색   : 표면색 × 광원 휘도 (색상·채도 유지). 광원 색조는 25% 만 섞는다.
+##   세기 : mix(계단, 연속, cont) — 연속 성분(28%)이 바닥에 깔려 약한 빛에서도 림이 보이고, 3단 계단이 문턱을 넘으면 확 켜진다.
+##   고정 키 : 앰비언트 색에서 파생한 색 × 표면색 (파란 고정색 폐기).
+## F3 로 비교한 7종(덧셈·흰색 / 앰비언트 보정 / 덧셈·표면색 / 스크린 / 명도 부스트 / 광원색 치환 / 팔레트)과
+## 계단 변형 3종(2단 · 2단 하드 · 2단 연속 강조)은 폐기했다.
+const RIM_BLEND := {
+	"id": "step3", "name": "명도 계단 3단",
+	"steps": 3, "soft": 0.05, "knee": 0.10, "hue": 0.25, "gain": 2.2, "cont": 0.28,
+	"key_surface": 1.0,
+}
+
+## 고정 키 림 색: 앰비언트(CanvasModulate) 색을 밝게 정규화한 것 — 원래의 고정 파랑 (0.40, 0.50, 0.74) 은 폐기
+static func rim_key_color() -> Color:
+	var a := AMBIENT
+	var m := maxf(a.r, maxf(a.g, a.b))
+	return Color(a.r / m, a.g / m, a.b / m) * 0.9
+
+## 캐릭터용 라이팅 머티리얼: 배경 프리셋 위에 캐릭터 림 프리셋을 덮어쓴다.
+## px_scale = 스프라이트 스케일 (0.4 면 텍스처 px 가 화면에서 0.4 배 → 폭을 1/0.4 배로 키운다)
+static func character_material(shader_name := "lit_surface", px_scale := 1.0) -> ShaderMaterial:
+	var m := shader_material(shader_name)
+	m.set_meta("rim_character", true)
+	m.set_meta("rim_px_scale", px_scale)
+	_apply_rim_to(m, rim_preset())
+	return m
 
 static func _apply_rim_to(m: ShaderMaterial, p: Dictionary) -> void:
 	m.set_shader_parameter("rim_width_px", p["width"])
 	m.set_shader_parameter("rim_falloff", p["falloff"])
 	m.set_shader_parameter("rim_strength", p["strength"])
 	m.set_shader_parameter("rim_white_mix", p["white"])
+	m.set_shader_parameter("rim_reach", p["reach"])
+	m.set_shader_parameter("rim_ambient", rim_key_color())
+	m.set_shader_parameter("rim_key_mul", 1.0)
+	m.set_shader_parameter("rim_key_surface", float(RIM_BLEND["key_surface"]))
+	m.set_shader_parameter("rim_steps", int(RIM_BLEND["steps"]))
+	m.set_shader_parameter("rim_step_soft", float(RIM_BLEND["soft"]))
+	m.set_shader_parameter("rim_knee", float(RIM_BLEND["knee"]))
+	m.set_shader_parameter("rim_hue_mix", float(RIM_BLEND["hue"]))
+	m.set_shader_parameter("rim_step_gain", float(RIM_BLEND["gain"]))
+	m.set_shader_parameter("rim_cont", float(RIM_BLEND["cont"]))
 	# 타일(0)·파편(0.6)처럼 개별로 정한 앰비언트 림은 유지, 기본값을 쓰는 곳만 갱신
 	if not m.has_meta("rim_ambient_fixed"):
 		m.set_shader_parameter("rim_ambient_strength", p["ambient"])
+	if m.has_meta("rim_character"):
+		var c := char_rim_preset()
+		if float(c["width"]) > 0.0:
+			var px_scale: float = m.get_meta("rim_px_scale", 1.0)
+			m.set_shader_parameter("rim_width_px", float(c["width"]) / maxf(px_scale, 0.05))
+			m.set_shader_parameter("rim_falloff", c["falloff"])
+			m.set_shader_parameter("rim_strength", c["strength"])
+			m.set_shader_parameter("rim_white_mix", c["white"])
+			m.set_shader_parameter("rim_ambient_strength", c["ambient"])
 
-## 모든 살아 있는 라이팅 머티리얼에 프리셋 적용
-static func apply_rim_preset(i: int) -> void:
-	rim_index = wrapi(i, 0, RIM_PRESETS.size())
+## 라이트 반경 배율을 셰이더 전역 유니폼에 올린다 (Main 시작·프리셋 전환 시)
+static func apply_light_range() -> void:
+	RenderingServer.global_shader_parameter_set("light_range_mul", light_range_mul())
+
+## 모든 살아 있는 라이팅 머티리얼에 확정 림 값을 다시 적용 (개발용 — 값을 바꿔 보며 확인할 때)
+static func apply_rim_preset(_i := 0) -> void:
 	var p := rim_preset()
+	apply_light_range()
 	var alive: Array = []
 	for w in _lit_materials:
 		var m = w.get_ref()
@@ -80,6 +140,13 @@ static func apply_rim_preset(i: int) -> void:
 			_apply_rim_to(m, p)
 			alive.append(w)
 	_lit_materials = alive
+	alive = []
+	for w in _fg_rim_materials:
+		var m = w.get_ref()
+		if m != null:
+			m.set_shader_parameter("rim_reach", p["reach"])
+			alive.append(w)
+	_fg_rim_materials = alive
 
 static var _radial: GradientTexture2D
 static var _canvas_cache := {}
@@ -91,18 +158,15 @@ static var _smoke_tex: CanvasTexture
 static var _beam: ImageTexture
 
 
-## 원형 감쇠 텍스처 (모든 PointLight2D 가 공유). ART_GUIDE "빛은 부드러운 그라데이션 대신 단계적인 픽셀 클러스터" —
-## 계단형(CONSTANT) 그라데이션으로 5단계 고리. 고리 경계는 저해상도 뷰포트가 픽셀로 잘라 준다.
+## 원형 감쇠 텍스처 (모든 PointLight2D 가 공유). 부드러운 3점 그라데이션 — 렌더는 풀해상도(베이크 자산·풀해상도 확정)라
+## 그림만 4px 블록이고 조명은 부드럽게 간다. (계단형 5단계 고리는 저해상도 뷰포트 프리셋과 함께 폐기)
 static func radial_texture() -> GradientTexture2D:
 	if _radial == null:
 		var g := Gradient.new()
-		g.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
 		g.set_color(0, Color(1, 1, 1, 1))
 		g.set_color(1, Color(1, 1, 1, 0))
-		g.add_point(0.22, Color(1, 1, 1, 0.66))
-		g.add_point(0.42, Color(1, 1, 1, 0.40))
-		g.add_point(0.62, Color(1, 1, 1, 0.20))
-		g.add_point(0.82, Color(1, 1, 1, 0.08))
+		g.add_point(0.30, Color(1, 1, 1, 0.6))
+		g.add_point(0.65, Color(1, 1, 1, 0.18))
 		var t := GradientTexture2D.new()
 		t.gradient = g
 		t.width = TEX_SIZE
@@ -114,9 +178,23 @@ static func radial_texture() -> GradientTexture2D:
 	return _radial
 
 
-## 반지름(px)에 맞는 texture_scale
+## 반지름(px)에 맞는 texture_scale. 림 프리셋의 반경 배율이 곱해진다 — 셰이더(light_falloff.diffuse_atten)가
+## 디퓨즈는 원래 반경 곡선으로 되돌리므로 보이는 광원 범위는 그대로, 림만 커진 반경까지 닿는다.
 static func scale_for_radius(radius: float) -> float:
-	return radius * 2.0 / TEX_SIZE
+	return radius * 2.0 / TEX_SIZE * light_range_mul()
+
+
+## 층별 조명 분리 (DepthPreset "근경 분리" 일 때만). 이 라이트는 배경 층(타일·문·프랍·먼지·빛 기둥, z≤4)만 비추고,
+## 인물 층(플레이어·몬스터·탄, z5~6)은 ratio 배로 약한 거울 라이트(LightMirror, 자식)가 비춘다.
+## 근경 층(z7)은 light_mask 0 이라 어느 라이트도 받지 않는다. 벽이 인물보다 밝게 빛나 실루엣이 앞으로 떠 보인다.
+## 총구·탄착·불·아크처럼 인물 층에 있는 광원은 부르지 않는다 (모든 층을 그대로 비춘다).
+static func split_by_depth(light: PointLight2D, ratio := DepthPreset.ACTOR_LIGHT_RATIO) -> void:
+	if not DepthPreset.enabled():
+		return
+	light.range_z_max = DepthPreset.Z_BACK_MAX
+	var m := LightMirror.new()
+	m.setup(light, ratio)
+	light.add_child(m)
 
 
 ## res://assets/<group>/<name>.png 를 노멀맵이 붙은 CanvasTexture 로. 노멀맵이 없으면 원본 텍스처.
@@ -125,9 +203,9 @@ static func textured(path: String) -> Texture2D:
 	if _canvas_cache.has(path):
 		return _canvas_cache[path]
 	var diffuse: Texture2D = load(path)
-	var normal_path := path.replace("res://assets/", NORMAL_DIR)
+	var normal_path := NORMAL_DIR + path.trim_prefix("res://assets/")
 	var result: Texture2D = diffuse
-	if normal_path != path and ResourceLoader.exists(normal_path):
+	if path.begins_with("res://assets/") and ResourceLoader.exists(normal_path):
 		var ct := CanvasTexture.new()
 		ct.diffuse_texture = diffuse
 		ct.normal_texture = load(normal_path)
@@ -147,6 +225,9 @@ static func shader_material(name: String) -> ShaderMaterial:
 	if name == "lit_surface" or name == "prop_surface":
 		_apply_rim_to(m, rim_preset())
 		_lit_materials.append(weakref(m))
+	elif name == "foreground_rim":
+		m.set_shader_parameter("rim_reach", rim_preset()["reach"])
+		_fg_rim_materials.append(weakref(m))
 	return m
 
 

@@ -7,7 +7,8 @@ crawler_meta.json 에 적는다. 게임(scripts/crawler.gd)은 그 값으로 스
 
 실행: python Tools/build_crawler_frames.py   (저장소 루트에서)
 출력: GodotPrototype/assets/character/ToxicTumorCrawler/<clip>/<clip>_NN.png + crawler_meta.json
-그 뒤 python Tools/build_normal_maps.py 로 노멀맵을 만든다.
+그 뒤 python Tools/bake_pixel_grid.py character/ToxicTumorCrawler 로 10px 블록에 굽고(게임 안 표시 배율에 맞춘 픽셀아트화),
+python Tools/build_normal_maps.py character/ToxicTumorCrawler 로 노멀맵을 만든다.
 """
 from pathlib import Path
 import json
@@ -18,7 +19,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "Assets" / "GameReady" / "Characters" / "ToxicTumorCrawler"
 DST = ROOT / "GodotPrototype" / "assets" / "character" / "ToxicTumorCrawler"
-CLIPS = ["walk", "jump", "death", "attack"]
+CLIPS = ["walk", "jump", "death", "attack", "roar"]
 ALPHA_MIN = 8        # 이보다 옅은 픽셀은 잡음으로 본다
 ROW_MIN = 6          # 한 줄에 이만큼 이상 불투명 픽셀이 있어야 '내용'
 

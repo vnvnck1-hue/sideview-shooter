@@ -13,6 +13,7 @@ var vel := Vector2.ZERO
 var spin := 0.0
 var floor_y := 0.0
 var _t := 0.0
+var _wet := false                 # 고인 물에 한 번 첨벙
 var _rect: ColorRect
 var _shine: ColorRect
 
@@ -42,8 +43,14 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	vel.y += GRAVITY * delta
+	var prev_y := position.y
 	position += vel * delta
 	rotation += spin * delta
+	if not _wet and WaterPool.active != null and WaterPool.active.crossed(position.x, prev_y, position.y):
+		_wet = true
+		WaterPool.active.splash(position.x, 0.35)
+		vel *= 0.35                       # 물이 받아준다
+		spin *= 0.3
 
 	if position.y >= floor_y:
 		position.y = floor_y

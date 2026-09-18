@@ -22,6 +22,8 @@ signal request_front_door()
 
 const FRAME_SIZE := 320
 const SPLIT_DIR := "res://assets/character/Split/"
+const ACTION_DIR := "res://assets/character/Action/"
+const ACTION_FRAME_COUNT := 6
 const CLIPS := {
 	"idle":   {"fps": 1.0, "loop": true,  "frames": 1},
 	"walk":   {"fps": 16.0, "loop": true,  "frames": 4},
@@ -61,21 +63,11 @@ const HEAT_DECAY := 2.2             # 초당
 #   head_px / head_rad : 머리 뒤로 밀림(목 기준 X) / 회전 (최소)
 #   body_px : 상체가 뒤로 밀리는 픽셀 — 발은 고정(마찰)이고 몸이 발 위에서 기울어지는 전단(skew)으로 표현
 #   body_squat : 반동 순간 몸이 눌리는 비율 (scale.y, 발 고정)
-const RECOIL_PRESETS := [
-	{"id": "light", "name": "라이트 (단발 40px)", "desc": "팔 40px·머리 10px·상체 16px 단발 펄스, 튕김 없음. 발 고정",
-		"arm": Vector3(2600.0, 102.0, 0.0), "arm_imp": 139.0, "arm_px": 40.0, "arm_rad": 0.04,
-		"head": Vector3(1400.0, 75.0, 0.02), "head_imp": 102.0, "head_rad": 0.02, "head_px": 10.0,
-		"body": Vector3(900.0, 60.0, 0.04), "body_imp": 82.0, "body_px": 16.0, "body_squat": 0.03},
-	{"id": "medium", "name": "미디엄 (단발 60px)", "desc": "팔 60px·머리 16px·상체 26px. 조금 느린 단발 펄스",
-		"arm": Vector3(1800.0, 85.0, 0.0), "arm_imp": 115.0, "arm_px": 60.0, "arm_rad": 0.05,
-		"head": Vector3(900.0, 60.0, 0.03), "head_imp": 82.0, "head_rad": 0.03, "head_px": 16.0,
-		"body": Vector3(500.0, 45.0, 0.05), "body_imp": 61.0, "body_px": 26.0, "body_squat": 0.045},
-	{"id": "heavy", "name": "헤비 (단발 80px)", "desc": "팔 80px·머리 22px·상체 36px. 무겁고 느린 단발 펄스",
-		"arm": Vector3(1100.0, 66.0, 0.0), "arm_imp": 90.0, "arm_px": 80.0, "arm_rad": 0.06,
-		"head": Vector3(550.0, 47.0, 0.04), "head_imp": 64.0, "head_rad": 0.04, "head_px": 22.0,
-		"body": Vector3(300.0, 35.0, 0.07), "body_imp": 47.0, "body_px": 36.0, "body_squat": 0.06},
-]
-static var recoil_index := 0
+# 확정: "라이트 (단발 40px)". 미디엄(60px)·헤비(80px) 프리셋은 2026-09-18 비교 후 폐기.
+const RECOIL := {"id": "light", "name": "라이트 (단발 40px)", "desc": "팔 40px·머리 10px·상체 16px 단발 펄스, 튕김 없음. 발 고정",
+	"arm": Vector3(2600.0, 102.0, 0.0), "arm_imp": 139.0, "arm_px": 40.0, "arm_rad": 0.04,
+	"head": Vector3(1400.0, 75.0, 0.02), "head_imp": 102.0, "head_rad": 0.02, "head_px": 10.0,
+	"body": Vector3(900.0, 60.0, 0.04), "body_imp": 82.0, "body_px": 16.0, "body_squat": 0.03}
 const RELOAD_ARM_DROP := 1.05       # 재장전 중 팔이 내려가는 각도 (rad)
 const AIM_SMOOTH := 80.0            # 팔 회전 보간 속도 (클수록 즉각적)
 
@@ -138,6 +130,8 @@ var arm: Sprite2D
 var muzzle: Marker2D
 var flash: Sprite2D
 var muzzle_light: PointLight2D
+var action_visual: AnimatedSprite2D
+var _action_clip := ""
 
 
 func _ready() -> void:
@@ -153,7 +147,7 @@ func _ready() -> void:
 	body.centered = false
 	body.offset = Vector2(-FRAME_SIZE * 0.5, -FRAME_SIZE + BODY_CENTER_Y)   # 발 밑이 Player 원점
 	body.sprite_frames = _build_frames()
-	body.material = Lighting.lit_material()            # 노멀맵 라이팅 + 림라이트
+	body.material = Lighting.character_material()      # 노멀맵 라이팅 + 캐릭터 림라이트 (CHAR_RIM_PRESETS)
 	body_pivot.add_child(body)
 	body.animation_finished.connect(_on_animation_finished)
 	body.play("idle")
@@ -165,7 +159,7 @@ func _ready() -> void:
 	head = Sprite2D.new()
 	head.name = "Head"
 	head.centered = false
-	head.material = Lighting.lit_material()
+	head.material = Lighting.character_material()
 	head_pivot.add_child(head)
 	_load_head_textures()
 
@@ -181,7 +175,7 @@ func _ready() -> void:
 	arm.name = "Arm"
 	arm.centered = false
 	arm.texture = Lighting.textured(SPLIT_DIR + "arm_gun.png")
-	arm.material = Lighting.lit_material()
+	arm.material = Lighting.character_material()
 	arm.offset = Vector2(-sh[0], -sh[1])          # 어깨가 원점
 	arm_pivot.add_child(arm)
 
@@ -210,6 +204,18 @@ func _ready() -> void:
 	muzzle_light.position = muzzle.position
 	muzzle_light.enabled = false
 	arm_pivot.add_child(muzzle_light)
+
+	# 전신 액션 클립: 기존 분리형 몸통·머리·팔을 가리는 오버레이로만
+	# 재장전/구르기 동안 사용한다. 판정·이동 로직은 기존 값을 유지한다.
+	action_visual = AnimatedSprite2D.new()
+	action_visual.name = "ActionVisual"
+	action_visual.centered = false
+	action_visual.offset = Vector2(-FRAME_SIZE * 0.5, -FRAME_SIZE)
+	action_visual.sprite_frames = _build_action_frames()
+	action_visual.material = Lighting.character_material()
+	action_visual.z_index = 0
+	action_visual.visible = false
+	add_child(action_visual)
 
 	_update_arm(0.0, true)
 
@@ -253,8 +259,63 @@ func _build_frames() -> SpriteFrames:
 	return sf
 
 
+func _build_action_frames() -> SpriteFrames:
+	var sf := SpriteFrames.new()
+	sf.remove_animation("default")
+	var durations := {"reload": RELOAD_TIME, "roll": ROLL_TIME}
+	for clip_name in durations.keys():
+		sf.add_animation(clip_name)
+		sf.set_animation_speed(clip_name, float(ACTION_FRAME_COUNT) / float(durations[clip_name]))
+		sf.set_animation_loop(clip_name, false)
+		for i in range(1, ACTION_FRAME_COUNT + 1):
+			var path := "%s%s/%s_%02d.png" % [ACTION_DIR, clip_name, clip_name, i]
+			if ResourceLoader.exists(path):
+				sf.add_frame(clip_name, Lighting.textured(path))
+			else:
+				push_warning("액션 프레임을 찾을 수 없음: %s" % path)
+	return sf
+
+
+func _show_action_clip(clip_name: String, frame_index := 0, should_play := true) -> void:
+	if action_visual == null or action_visual.sprite_frames == null:
+		return
+	if not action_visual.sprite_frames.has_animation(clip_name):
+		return
+	_action_clip = clip_name
+	action_visual.flip_h = facing < 0
+	action_visual.animation = clip_name
+	action_visual.frame = clampi(frame_index, 0, ACTION_FRAME_COUNT - 1)
+	action_visual.visible = true
+	if should_play:
+		action_visual.play()
+	else:
+		action_visual.pause()
+	body.visible = false
+	head.visible = false
+	arm_pivot.visible = false
+
+
+func _hide_action_clip() -> void:
+	_action_clip = ""
+	if action_visual == null:
+		return
+	action_visual.stop()
+	action_visual.visible = false
+	body.visible = true
+	head.visible = true
+	arm_pivot.visible = true
+
+
+func _resume_reload_action() -> void:
+	if not reloading:
+		return
+	var progress := clampf(_reload_t / RELOAD_TIME, 0.0, 0.999)
+	var frame_index := mini(int(progress * ACTION_FRAME_COUNT), ACTION_FRAME_COUNT - 1)
+	_show_action_clip("reload", frame_index, true)
+
+
 static func recoil_preset() -> Dictionary:
-	return RECOIL_PRESETS[wrapi(recoil_index, 0, RECOIL_PRESETS.size())]
+	return RECOIL
 
 
 ## 2차 스프링 한 스텝: s = (값, 속도), p = (k, 감쇠, _)
@@ -292,6 +353,8 @@ func _update_reload(delta: float) -> void:
 		reloading = false
 		ammo = MAG_SIZE
 		ammo_changed.emit(ammo, MAG_SIZE, false)
+		if state != State.ROLL:
+			_hide_action_clip()
 
 
 func start_reload() -> void:
@@ -301,6 +364,7 @@ func start_reload() -> void:
 	_reload_t = 0.0
 	_body_rc.y -= 6.0          # 탄창 빼는 몸짓 — 살짝 앞으로 숙임
 	ammo_changed.emit(ammo, MAG_SIZE, true)
+	_show_action_clip("reload")
 
 
 func _process(delta: float) -> void:
@@ -390,6 +454,10 @@ func _process(delta: float) -> void:
 ## 머리 위치·회전 갱신. 몸 프레임에 맞는 머리 텍스처를 고르고 목 앵커에 붙인 뒤,
 ## 조준 방향으로 HEAD_MAX_ANGLE 안에서만 기울인다. 구르기 중엔 기울이지 않는다(몸과 함께 회전).
 func _update_head(delta: float, snap := false) -> void:
+	if action_visual != null and action_visual.visible:
+		head.visible = false
+		action_visual.flip_h = facing < 0
+		return
 	var key := "%s_%02d" % [body.animation, body.frame + 1]
 	var tex: Texture2D = _head_tex.get(key)
 	head.visible = tex != null
@@ -478,6 +546,10 @@ func spread_ratio() -> float:
 
 ## 어깨 위치·팔 회전 갱신. 몸 애니 프레임에 맞춰 어깨 앵커를 따라간다.
 func _update_arm(delta: float, snap := false) -> void:
+	if action_visual != null and action_visual.visible:
+		arm_pivot.visible = false
+		action_visual.flip_h = facing < 0
+		return
 	if state == State.ROLL:
 		arm_pivot.visible = false
 		return
@@ -521,6 +593,7 @@ func _start_roll(dir: int) -> void:
 	facing = _roll_dir
 	body.flip_h = facing < 0
 	body.speed_scale = 1.0
+	_show_action_clip("roll")
 	body.play("crouch")
 	body.frame = 3                   # 웅크린 프레임으로 구른다
 	body.pause()
@@ -556,6 +629,8 @@ func _process_roll(delta: float) -> void:
 		velocity_x = _roll_dir * SPEED * ROLL_EXIT_SPEED    # 구르기 끝에 관성이 남아 미끄러지며 이어진다
 		_slide_t = ROLL_SLIDE_TIME
 		body.play("idle")
+		_hide_action_clip()
+		_resume_reload_action()
 
 
 func _on_animation_finished() -> void:

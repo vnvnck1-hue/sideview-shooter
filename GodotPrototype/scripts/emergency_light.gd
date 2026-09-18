@@ -31,12 +31,13 @@ func setup(air_layer: Node2D, room_rect: Rect2, floor_line: float) -> void:
 	_beam = PointLight2D.new()
 	_beam.name = "Beam"
 	_beam.texture = Lighting.beam_texture()
-	_beam.texture_scale = BEAM_RADIUS * 2.0 / 256.0
+	_beam.texture_scale = BEAM_RADIUS * 2.0 / 256.0 * Lighting.light_range_mul()   # 림 범위 배율 (셰이더가 디퓨즈는 되돌린다)
 	_beam.color = Lighting.EMERGENCY_RED
 	_beam.energy = 1.7
 	_beam.height = 110.0
 	_beam.shadow_enabled = false
 	add_child(_beam)
+	Lighting.split_by_depth(_beam)                 # 벽을 훑는 광선은 배경 정면, 인물은 55%
 
 	# 돔 주변 은은한 붉은 글로우 (회전 방향과 무관하게 맥동)
 	_glow = PointLight2D.new()
@@ -47,6 +48,7 @@ func setup(air_layer: Node2D, room_rect: Rect2, floor_line: float) -> void:
 	_glow.energy = 0.55
 	_glow.height = 60.0
 	add_child(_glow)
+	Lighting.split_by_depth(_glow)
 
 	# 발광 돔 (글로우에 잡히도록 발광 배율)
 	_dome = ColorRect.new()

@@ -46,6 +46,7 @@ func _ready() -> void:
 	height = Lighting.LAMP_HEIGHT
 	_phase = randf() * TAU
 	_next_flicker = randf_range(2.0, 6.0)
+	Lighting.split_by_depth(self)                  # 벽 정면, 인물 층은 55%
 
 
 ## 전구 픽셀을 덮을 커버 (깨진 뒤 보임). parent 는 타일 위 레이어.
@@ -115,6 +116,7 @@ func attach_cone(parent: Node2D, floor_y: float) -> void:
 	_pool.shadow_enabled = false
 	_pool.position = Vector2(0.0, floor_y + 8.0 - global_position.y)
 	add_child(_pool)
+	Lighting.split_by_depth(_pool, DepthPreset.ACTOR_FLOOR_LIGHT_RATIO)   # 발 밑 바닥 빛은 인물에도 조금 더
 
 
 func is_hit(point: Vector2) -> bool:

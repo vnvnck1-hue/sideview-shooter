@@ -18,6 +18,9 @@
 
 - `Tiles/Workshop/`: 작업실 좌우 캡, 중앙 벽 변형, 좌우 반전 변형
 - `Tiles/Workshop_Modular/`: 128px X/Y 배경 셀과 별도 외곽 프레임 오버레이
+- `Tiles/Corridor_Modular/`: 복도용 128px X/Y 배경 셀, 외곽 프레임, 오목 코너
+- `Tiles/Hydroponics_Modular/`: 수경재배실용 128px X/Y 배경 셀, 외곽 프레임, 오목 코너
+- `Tiles/CrewQuarters_Modular/`: 숙소용 128px X/Y 배경 셀, 외곽 프레임, 오목 코너
 - `Tiles/Corridor/`: 빈 연결 복도 좌우 캡과 중앙 벽 변형
 - `Tiles/Hydroponics/`: 수경재배실 빈 배경 타일
 - `Tiles/CrewQuarters/`: 승무원 숙소 빈 배경 타일
@@ -72,6 +75,8 @@
 - 반복되는 벽 무늬는 벽 변형 및 좌우 반전 타일로 분산한다.
 - 복도·수경재배실·승무원 숙소도 작업실과 동일한 560px 높이, 256px 중앙 타일, 160px 좌우 캡 규격을 사용한다.
 - 작업실 확장형 리소스는 `Tiles/Workshop_Modular/`에 별도로 제공한다. 128×128 배경 셀을 X/Y로 반복한 뒤 8종 투명 프레임 타일을 한 셀 외곽에 오버레이한다.
+- Corridor, Hydroponics, CrewQuarters도 같은 128×128 규격으로 확장형 리소스를 제공하며, 각 세트에 `Frame/InnerCorners/` 오목 코너 4종과 RuleTile 연결 패턴 JSON을 포함한다.
+- 네 테마를 한 번에 재생성하려면 `Tools/build_all_modular_room_tiles.ps1`를 실행한다.
 - 수경재배실과 숙소는 빈 배경 타일과 투명 프랍을 분리해 원본 구성을 다시 만들거나 새로운 배치를 만들 수 있다.
 - 구체적인 타일 순서와 오브젝트 좌표는 `Validation/workshop_long_room_tile_prop_validation.json`에 기록돼 있다.
 

@@ -1,6 +1,6 @@
 extends SceneTree
-## 방 스크린샷 도구: 고른 방을 게임(Main) 또는 타일 뷰어(TileViewer)로 띄워 N 프레임 뒤 한 장 저장하고 종료한다.
-## 실행:  godot --path . --script res://tools/room_shot.gd -- <방 id> [main|viewer] [대기 프레임=90]
+## 방 스크린샷 도구: 고른 방을 플레이 씬(main) · 메인 게임 씬(game) · 맵 뷰어(viewer)로 띄워 N 프레임 뒤 한 장 저장하고 종료한다.
+## 실행:  godot --path . --script res://tools/room_shot.gd -- <방 id> [main|game|viewer] [대기 프레임=90]
 ## 저장:  user://shots/<방 id>_<모드>.png   (Windows: %APPDATA%\Godot\app_userdata\Sideview Workshop Prototype\shots\)
 ## 헤드리스로는 렌더가 없어 창을 띄운 채로 돈다. 방 배치·층고·카메라 프레이밍을 빠르게 확인하는 용도.
 
@@ -21,7 +21,10 @@ func _initialize() -> void:
 		return
 	AppFlow.start_room = room
 	_out = "user://shots/%s_%s.png" % [room, mode]
-	change_scene_to_file(AppFlow.MAIN_SCENE if mode == "main" else AppFlow.TILE_VIEWER_SCENE)
+	match mode:
+		"game": change_scene_to_file(AppFlow.MAIN_GAME_SCENE)
+		"viewer": change_scene_to_file(AppFlow.MAP_VIEWER_SCENE)
+		_: change_scene_to_file(AppFlow.TEST_SCENE)
 
 
 func _process(_delta: float) -> bool:

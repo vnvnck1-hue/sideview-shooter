@@ -149,6 +149,10 @@ func apply_style(index: int) -> void:
 	var sh: Dictionary = style["shader"]
 	for k in sh.keys():
 		_flame_mat.set_shader_parameter(k, sh[k])
+	# 양자화 픽셀 (풀해상도 렌더라 배율 없음). 1.0(양자화 없음)은 그대로.
+	var step: float = sh.get("pixel_step", 1.0)
+	if step > 1.0:
+		_flame_mat.set_shader_parameter("pixel_step", step)
 	var m: float = style["modulate"]
 	_flame.modulate = Color(m, m, m, 1.0)
 	_light.color = style["light_color"]

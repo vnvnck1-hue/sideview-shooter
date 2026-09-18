@@ -1,4 +1,5 @@
 shader_type canvas_item;
+#include "res://shaders/light_falloff.gdshaderinc"
 // 바닥 물웅덩이 — 어두운 반투명 물 + 흐르는 스페큘러 결 + 물방울 파문 고리. UV.x 가로, UV.y 세로(얇은 타원).
 
 uniform float fill : hint_range(0.0, 1.0) = 1.0;         // 웅덩이 확장 정도
@@ -39,4 +40,9 @@ void fragment() {
 	col += vec3(0.9, 0.95, 1.0) * rings * 0.8;
 	float a = m * (0.55 + sheen * 0.3 + rings * 0.4);
 	COLOR = vec4(col, a);
+}
+
+// 기본 라이트 패스와 같은 결과(라이트 색 × 표면색)에 거리 감쇠만 원래 반경 곡선으로 되돌린다 (림 범위 프리셋의 반경 배율 보정)
+void light() {
+	LIGHT = vec4(LIGHT_COLOR.rgb * LIGHT_ENERGY * COLOR.rgb, diffuse_atten(LIGHT_COLOR.a));
 }

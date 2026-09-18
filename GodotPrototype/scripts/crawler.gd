@@ -5,6 +5,8 @@ extends Node2D
 ##        (Tools/build_crawler_frames.py 가 만든 프레임별 발 밑 줄·내용 영역 — 클립마다 baseline 이 달라 보정 필수).
 ## 행동: 플레이어를 향해 기어가다(WALK) 사거리에 들면 독액을 뱉는다(ATTACK, attack_03 프레임에서 AcidGlob 발사).
 ##       걷는 중 가끔(JUMP_INTERVAL) 포물선 점프로 성큼 다가간다. 착지·공격 뒤엔 잠깐 멈칫한다(IDLE).
+##       걷는 중 가끔(ROAR_INTERVAL) 멈춰 서서 포효한다(ROAR) — 입을 가장 크게 벌린 roar_03 에서 잠깐 머물며 몸을 떨고,
+##       입에서 침(SparkBurst 재사용, 옅은 연두빛)이 튄다. 포효 중에도 맞으며, 가까이서 포효하면 카메라가 살짝 울린다(roared).
 ## 피격: 총알이 히트 박스(현재 프레임 내용 영역) 안에 닿으면 HP -1, 붉은 플래시(prop_surface) + 독액 방울 + 살짝 밀림
 ##       + 스케일 펀치(옆으로 눌리고 스프링으로 복귀) + 뒤 벽에 작은 체액 자국(BloodStain).
 ##       HP 0 → 죽음 클립 + 육편(ChunkDebris, 프레임 텍스처 조각)이 사방으로 튀고 초록 체액 분출, 벽에 큰 자국.
@@ -13,6 +15,7 @@ extends Node2D
 
 signal died(pos: Vector2)
 signal spat(glob: Node2D)
+signal roared(pos: Vector2)
 
 const DIR := "res://assets/character/ToxicTumorCrawler/"
 const SCALE := 0.4                    # 원본(543×756 셀)의 40% — 60% 축소. 플레이어 무릎 높이 정도
@@ -35,6 +38,21 @@ const JUMP_HEIGHT := 110.0            # 월드 px
 const JUMP_AIR_TIME := 0.62
 const JUMP_CROUCH := 0.14             # 도약 전 웅크림 (jump_01)
 const JUMP_LAND := 0.18               # 착지 자세 유지 (jump_04)
+
+const ROAR_INTERVAL := Vector2(7.0, 14.0)     # 걷는 중 포효 시도 간격 (초)
+const ROAR_MIN_DIST := 220.0          # 플레이어가 이보다 가까우면 포효 안 함 (코앞에서 멈추면 시시하다)
+const ROAR_SPAWN_CHANCE := 0.45       # 스폰 페이드 직후 등장 포효 확률
+const ROAR_HOLD := 0.38               # 입을 가장 크게 벌린 roar_03 에서 머무는 추가 시간
+const ROAR_HOLD_FRAME := 2            # roar_03 (0-based)
+const ROAR_TREMBLE := 0.035           # 포효 유지 중 스케일 떨림 진폭
+const ROAR_SHAKE_RANGE := 900.0       # 이 거리 안이면 카메라 흔들림 (가까울수록 크게)
+# 입 위치 (발 밑 기준 셀 px, 오른쪽 방향). 프레임마다 머리 높이가 달라 따로 잡는다. 월드는 ×SCALE
+const ROAR_MOUTH := {1: Vector2(128.0, -190.0), 2: Vector2(124.0, -284.0)}
+const SALIVA_DIR := {1: Vector2(1.0, -0.35), 2: Vector2(1.0, -0.75)}   # 벌린 입이 향하는 방향
+const SALIVA_TRICKLE := 0.045         # 유지 중 침 방울이 새는 간격 (초)
+const SALIVA_HOT := Color(0.96, 1.0, 0.92)    # 침 — 거의 흰색에 연두 기운 (독액보다 훨씬 덜 빛남)
+const SALIVA_COLD := Color(0.70, 0.84, 0.62)
+const SALIVA_GLOW := 0.45
 
 const IDLE_TIME := Vector2(0.35, 0.9)
 const HIT_KNOCKBACK := 26.0           # 한 발당 밀리는 거리 (px)
@@ -59,11 +77,13 @@ const JUMP_CROUCH_SQUASH := Vector2(1.18, 0.80)
 const JUMP_STRETCH := Vector2(0.82, 1.24)     # 도약 순간 늘어남
 const LAND_SQUASH := Vector2(1.34, 0.68)
 const ATTACK_ANTICIPATION := Vector2(0.92, 1.10)
+const ROAR_ANTICIPATION := Vector2(1.10, 0.90)   # 포효 시작: 살짝 웅크림
+const ROAR_STRETCH := Vector2(0.90, 1.14)        # 입 벌리는 순간 위로 늘어남
 const WALK_BOB := Vector2(0.05, 0.08)         # 걷기 바운스 진폭 (x 줄고 y 늘어남)
 const CHUNK_CELL := 90.0              # 죽음 육편 조각 크기 (텍스처 px)
 const CHUNK_COUNT := 9
 
-enum State { IDLE, WALK, JUMP, ATTACK, DEAD }
+enum State { IDLE, WALK, JUMP, ATTACK, ROAR, DEAD }
 
 var room: Node2D                      # Room — player·바닥·경계 참조
 var floor_y := 0.0
@@ -84,6 +104,12 @@ var _idle_t := 0.0
 var _turn_t := 0.0
 var _attack_cd := 1.0
 var _jump_timer := 0.0
+var _roar_timer := 0.0
+var _roar_hold := 0.0                 # >0 이면 roar_03 에서 멈춰 있는 중
+var _roar_held := false               # 이번 포효에서 유지 구간을 이미 지났나
+var _roar_last_frame := -1            # 침 분출을 프레임 전환마다 한 번만
+var _saliva_t := 0.0
+var _roar_pending := false            # 스폰 페이드가 끝나면 등장 포효
 var _spat := false
 var _knock := 0.0
 var _knock_dir := 0.0
@@ -110,6 +136,7 @@ func setup(room_node: Node2D, x: float, floor_line: float, left: float, right: f
 	position = Vector2(clampf(x, min_x, max_x), floor_y)
 	facing = face_dir
 	_jump_timer = randf_range(JUMP_INTERVAL.x, JUMP_INTERVAL.y) * 0.6
+	_roar_timer = randf_range(ROAR_INTERVAL.x, ROAR_INTERVAL.y) * 0.5
 	_attack_cd = randf_range(0.8, 1.6)
 
 
@@ -120,10 +147,8 @@ func _ready() -> void:
 	_sprite.centered = false
 	_sprite.scale = Vector2(SCALE, SCALE)
 	_sprite.sprite_frames = _build_frames()
-	_mat = Lighting.shader_material("prop_surface")      # lit_surface + 피격 플래시 (파츠 마스크는 흰색 그대로)
+	_mat = Lighting.character_material("prop_surface", SCALE)   # lit_surface + 피격 플래시 (파츠 마스크는 흰색 그대로) + 캐릭터 림 프리셋 (폭은 0.4 배 스케일 보정)
 	_mat.set_shader_parameter("grid", Vector2(1, 1))
-	_mat.set_shader_parameter("rim_ambient_strength", 0.5)
-	_mat.set_meta("rim_ambient_fixed", true)             # 림 프리셋 전환 시 이 값은 유지
 	_sprite.material = _mat
 	_sprite.frame_changed.connect(_apply_frame_offset)
 	_sprite.animation_finished.connect(_on_animation_finished)
@@ -159,6 +184,7 @@ func _build_frames() -> SpriteFrames:
 	var clips: Dictionary = _meta.get("clips", {
 		"walk": {"fps": 8, "loop": true, "frames": 4}, "jump": {"fps": 8, "loop": false, "frames": 4},
 		"death": {"fps": 10, "loop": false, "frames": 4}, "attack": {"fps": 10, "loop": false, "frames": 4},
+		"roar": {"fps": 8, "loop": false, "frames": 4},
 	})
 	for clip_name in clips.keys():
 		var cfg: Dictionary = clips[clip_name]
@@ -208,6 +234,7 @@ func _target() -> Node2D:
 func spawn_in() -> void:
 	_spawn_t = 0.0
 	modulate.a = 0.0
+	_roar_pending = randf() < ROAR_SPAWN_CHANCE
 	if is_inside_tree():
 		_spawn_burst()
 	else:
@@ -250,6 +277,9 @@ func _process(delta: float) -> void:
 		modulate.a = clampf(_spawn_t / SPAWN_FADE, 0.0, 1.0)
 		if _spawn_t >= SPAWN_FADE:
 			_spawn_t = -1.0
+			if _roar_pending and (state == State.IDLE or state == State.WALK):
+				_start_roar()          # 등장 포효
+			_roar_pending = false
 	if _flash > 0.0:
 		_flash = maxf(_flash - delta / HIT_FLASH_TIME, 0.0)
 		_mat.set_shader_parameter("flash", HIT_FLASH_PEAK * _flash * _flash)
@@ -275,6 +305,9 @@ func _process(delta: float) -> void:
 			_attack_cd = maxf(_attack_cd - delta, 0.0)
 			if not _spat and _sprite.frame >= SPIT_FRAME:
 				_spit()
+		State.ROAR:
+			_attack_cd = maxf(_attack_cd - delta, 0.0)
+			_process_roar(delta)
 
 
 ## 플레이어와의 거리로 다음 행동을 고른다
@@ -331,6 +364,13 @@ func _process_walk(delta: float) -> void:
 	if dist <= ATTACK_MAX and _attack_cd <= 0.0:
 		_start_attack()
 		return
+	# 가끔 멈춰 서서 포효한다 (플레이어가 코앞이면 건너뛴다)
+	_roar_timer -= delta
+	if _roar_timer <= 0.0:
+		_roar_timer = randf_range(ROAR_INTERVAL.x, ROAR_INTERVAL.y)
+		if dist >= ROAR_MIN_DIST:
+			_start_roar()
+			return
 	# 가끔 점프로 성큼 다가간다
 	_jump_timer -= delta
 	if _jump_timer <= 0.0:
@@ -377,9 +417,65 @@ func _spit() -> void:
 	spat.emit(glob)
 
 
+func _start_roar() -> void:
+	state = State.ROAR
+	_face_target()
+	_roar_hold = 0.0
+	_roar_held = false
+	_roar_last_frame = -1
+	_saliva_t = 0.0
+	_punch(ROAR_ANTICIPATION)
+	_sprite.speed_scale = 1.0
+	_sprite.play("roar")
+	_apply_frame_offset()
+
+
+## 포효 진행: roar_02·03 으로 넘어갈 때 침을 한 움큼 뿜고, roar_03 에서는 ROAR_HOLD 동안 멈춰 몸을 떨며 침이 샌다
+func _process_roar(delta: float) -> void:
+	var f := _sprite.frame
+	if f != _roar_last_frame:
+		_roar_last_frame = f
+		if ROAR_MOUTH.has(f):
+			_spit_saliva(f, 7 if f == ROAR_HOLD_FRAME else 4, 1.0)
+		if f == ROAR_HOLD_FRAME and not _roar_held:
+			_roar_held = true
+			_roar_hold = ROAR_HOLD
+			_sprite.pause()
+			_punch(ROAR_STRETCH)
+			roared.emit(position)
+	if _roar_hold > 0.0:
+		_roar_hold -= delta
+		# 몸 떨림: 스프링 목표는 그대로 두고 현재값만 살짝 흔든다
+		_squash += Vector2(randf_range(-1, 1), randf_range(-1, 1)) * ROAR_TREMBLE
+		_saliva_t -= delta
+		if _saliva_t <= 0.0:
+			_saliva_t = SALIVA_TRICKLE
+			_spit_saliva(ROAR_HOLD_FRAME, 1, 0.55)
+		if _roar_hold <= 0.0:
+			_sprite.play("roar")          # 멈춘 자리(roar_03)에서 이어서 재생
+
+
+## 입에서 침 방울. frame: 입 위치 기준 프레임, strength: 속도·크기 배율 (트리클은 약하게)
+func _spit_saliva(frame: int, count: int, strength: float) -> void:
+	var local: Vector2 = ROAR_MOUTH.get(frame, ROAR_MOUTH[ROAR_HOLD_FRAME])
+	var mouth := position + Vector2(local.x * facing, local.y - _air_y / SCALE) * SCALE
+	var dir: Vector2 = SALIVA_DIR.get(frame, SALIVA_DIR[ROAR_HOLD_FRAME])
+	dir.x *= facing
+	var sb := _burst_node()
+	sb.burst(mouth, count, dir, 0.55, Vector2(90, 260) * strength, SALIVA_HOT, SALIVA_COLD,
+		Vector2(0.35, 0.8), 1500.0, 3.0 * lerpf(0.8, 1.0, strength), false, SALIVA_GLOW)
+
+
+## 개발용: 지금 바로 포효 (공격 중이면 끊고 포효 — 스크린샷 타이밍이 스폰 난수에 흔들리지 않게)
+func force_roar() -> void:
+	if state == State.DEAD or state == State.JUMP or state == State.ROAR:
+		return
+	_start_roar()
+
+
 ## 개발용: 지금 바로 독액 공격
 func force_attack() -> void:
-	if state == State.DEAD or state == State.JUMP or state == State.ATTACK:
+	if state == State.DEAD or state == State.JUMP or state == State.ATTACK or state == State.ROAR:
 		return
 	_start_attack()
 
@@ -569,5 +665,7 @@ func _on_animation_finished() -> void:
 			if not _spat:
 				_spit()
 			_enter_idle(randf_range(IDLE_TIME.x, IDLE_TIME.y))
+		State.ROAR:
+			_enter_idle(randf_range(IDLE_TIME.x, IDLE_TIME.y) * 0.8)
 		State.DEAD:
 			pass      # 마지막 프레임(잔해) 유지

@@ -1,4 +1,5 @@
 shader_type canvas_item;
+#include "res://shaders/light_falloff.gdshaderinc"
 // 몬스터 체액(벽 자국·바닥 웅덩이) 전용. 젖은 유기물이라 빛을 흡수해 광원에 둔하게 반응한다:
 // 램프·불·비상등이 비쳐도 light_response 만큼만 밝아지고, 스페큘러·림은 없다.
 // _draw 로 그린 사각형(버텍스 컬러)을 그대로 쓰므로 TEXTURE 는 샘플하지 않는다.
@@ -17,5 +18,5 @@ void light() {
 	vec3 lc = LIGHT_COLOR.rgb * LIGHT_ENERGY;
 	float llum = dot(lc, vec3(0.299, 0.587, 0.114));
 	lc = mix(vec3(llum), lc, 0.5);
-	LIGHT = vec4(lc * COLOR.rgb * light_response, LIGHT_COLOR.a);
+	LIGHT = vec4(lc * COLOR.rgb * light_response, diffuse_atten(LIGHT_COLOR.a));
 }
