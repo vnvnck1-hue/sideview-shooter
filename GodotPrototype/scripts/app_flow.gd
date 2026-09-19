@@ -38,9 +38,15 @@ static func start_main_game(tree: SceneTree) -> void:
 	tree.change_scene_to_file(MAIN_GAME_SCENE)
 
 
-## 테스트: 물이 고인 저수조실(RoomData.TEST_ROOM)에서 바로 시작 (원버튼). 액체 셰이더 작업 중이라 고정.
-static func start_test(tree: SceneTree) -> void:
+## 테스트: 기본은 물이 고인 저수조실(RoomData.TEST_ROOM). room 을 주면 그 방에서 바로 시작한다
+## (센트리건이 있는 작업실처럼 특정 연출을 바로 보고 싶을 때 — 로비 버튼이 쓴다).
+static func start_test(tree: SceneTree, room := "") -> void:
 	lab_mode = false
+	if RoomData.ROOMS.has(room):
+		start_room = room
+		resume_x = -1.0
+		tree.change_scene_to_file(TEST_SCENE)
+		return
 	start_room = RoomData.TEST_ROOM if RoomData.ROOMS.has(RoomData.TEST_ROOM) else RoomData.random_id()
 	tree.change_scene_to_file(TEST_SCENE)
 

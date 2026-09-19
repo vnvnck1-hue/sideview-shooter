@@ -62,6 +62,8 @@ func set_bright(v: bool) -> void:
 	bright = v
 	if room and room._ambient:
 		room._ambient.color = Color.WHITE if bright else Lighting.AMBIENT
+	if room and room.wall_shadow:
+		room.wall_shadow.visible = not bright        # 모양 확인 중에는 벽 바깥 어둠도 걷는다
 
 
 ## 방 전체가 화면에 들어오게 줌·위치를 맞춘다

@@ -1,0 +1,50 @@
+{
+  "id": "sentry_turret_weapon_split_v3",
+  "description": "센트리 상부 무기부를 조준경, 전방 발사 모듈, 중앙 몸체의 세 리소스로 분리한 구성.",
+  "parts": {
+    "optic": {
+      "resource": "sentry_turret_optic_v3.png",
+      "native_size": [96, 64],
+      "game_size": [384, 256],
+      "pivot_native": [48, 52],
+      "role": "upper_aiming_sensor",
+      "notes": "센서 핀, 광학 하우징, amber 렌즈 포함. 몸체 상단 브래킷에 결합한다."
+    },
+    "front": {
+      "resource": "sentry_turret_front_v3.png",
+      "native_size": [128, 64],
+      "game_size": [512, 256],
+      "pivot_native": [12, 32],
+      "role": "forward_rotary_firing_module",
+      "notes": "두 개의 병렬 총열, 청동 고정 링, 통풍 슬롯, 다공성 총구 포함. 좌측 커넥터를 몸체 앞단에 맞춘다."
+    },
+    "body": {
+      "resource": "sentry_turret_body_v3.png",
+      "native_size": [128, 96],
+      "game_size": [512, 384],
+      "pivot_native": [44, 72],
+      "role": "central_weapon_receiver",
+      "notes": "중앙 장갑 리시버, 후방 브래킷, 상태등, 하부 회전 피벗, 발사부 연결 소켓 포함."
+    },
+    "body_core": {
+      "resource": "sentry_turret_body_core_v3.png",
+      "native_size": [128, 64],
+      "game_size": [512, 256],
+      "pivot_native": [44, 36],
+      "role": "upper_central_weapon_receiver_without_lower_pivot",
+      "notes": "하부 원형 피벗, 하부 실린더, 하부 브래킷을 제거한 중앙 몸통. 전방 발사부 결합 소켓만 유지한다."
+    }
+  },
+  "assembly": {
+    "root": "body_core",
+    "children": ["optic", "front"],
+    "rotation": "rotate body as the weapon root; keep optic and front attached to the body transform",
+    "front_socket": "body front connector to front pivot_native",
+    "optic_socket": "body upper sensor bracket to optic pivot_native"
+  },
+  "style": {
+    "palette": ["dark_graphite", "warm_gunmetal", "restrained_bronze", "amber_indicator"],
+    "surface": "clean maintained composite armor; minimal rust, blood, grime, and decay",
+    "rendering": "hard-edged chunky pixel art, native 4px blocks, transparent background"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "source": "sentry_turret_deploy_direct_v1_sheet.png",
+  "frame_size": [
+    416,
+    468
+  ],
+  "frame_count": 8,
+  "fps": 10,
+  "anchor": [
+    208,
+    440
+  ],
+  "pivot": [
+    -30,
+    -226
+  ],
+  "base_offset": [
+    -189,
+    -244
+  ],
+  "head_offset": [
+    -105,
+    -197
+  ],
+  "head_size": [
+    343,
+    247
+  ],
+  "base_size": [
+    376,
+    244
+  ],
+  "muzzles": [
+    [
+      222,
+      -96
+    ],
+    [
+      218,
+      -62
+    ]
+  ],
+  "eject": [
+    86,
+    -20
+  ],
+  "cut": {
+    "y": 196,
+    "hose_x": 128,
+    "hose_y": 264
+  }
+}

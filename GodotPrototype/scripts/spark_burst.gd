@@ -65,6 +65,9 @@ func _process(delta: float) -> void:
 		var v: Vector2 = s["v"]
 		v.y += s["g"] * delta
 		var p: Vector2 = s["p"] + v * delta
+		var hit := RoomSolid.bounce_walls(p, v, s["bounce"])
+		p = hit[0]
+		v = hit[1]
 		if p.y >= floor_y and v.y > 0.0:
 			p.y = floor_y
 			v.y = -v.y * s["bounce"]

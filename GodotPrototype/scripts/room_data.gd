@@ -12,7 +12,8 @@ extends RefCounted
 ##   front_doors              [{"x": 문 왼쪽 x, "target": 방 id, "target_door": 상대 방의 정면문 번호}]. 양쪽이 서로 가리켜야 한다.
 ##   props                    바닥 프랍 {"tex": assets/props/<이름>.png 또는 res:// 경로, "x": 바닥 중심 x} — y 는 실제 불투명 픽셀이 바닥에 닿게 자동.
 ##                            벽걸이는 "cy"(그 열 천장 상단에서 아래로) 또는 "fy"(바닥선에서 위로) 를 주면 그 높이에 붙는다.
-##                            전력실 전용 {"type": "cabinet"(파츠 파괴)|"capacitor"|"cart"|"breaker"(벽걸이, cy/fy)}.
+##                            특수 {"type": "cabinet"(파츠 파괴)|"capacitor"|"cart"|"breaker"(벽걸이, cy/fy)|"sentry"(바닥 격납 센트리건)}.
+##                            sentry 는 평소 바닥 해치로 묻혀 있다가 W/↑ 로 전개·조종한다 (SentryTurret). 받침 폭 376px · 높이 440px 자리를 비워 둘 것.
 ##   lamps                    [x, ...] 천장 펜던트 램프(LampLight — 총으로 깨짐, 빛 기둥, 바닥 풀). 그 열의 천장 띠 아래에 매달린다.
 ##   fixtures                 장식 조명 [{"file": power_relay Lighting 이름, "x", "cy"|"fy", "radius", "color"(선택)}] — PointLight2D + 스프라이트.
 ##                            ceiling_lamp · dangling_lamp · fluorescent_lamp · wall_lamp · floor_work_light · indicator_beacon
@@ -98,6 +99,7 @@ const ROOMS := {
 		"props": [
 			{"tex": "workshop_locker_game_scale", "x": 260},
 			{"tex": "workshop_workbench_game_scale", "x": 760},
+			{"type": "sentry", "x": 1230},
 			{"tex": "workshop_armchair_game_scale", "x": 1500},
 		],
 		"lamps": [420, 900, 1380],
@@ -175,6 +177,7 @@ const ROOMS := {
 			{"tex": "workshop_armchair_game_scale", "x": 1950},
 			{"tex": "workshop_locker_game_scale", "x": 2700},
 			{"tex": "workshop_workbench_game_scale", "x": 3150},
+			{"type": "sentry", "x": 3495},
 			{"tex": "workshop_locker_game_scale", "x": 3800},
 		],
 		"lamps": [500, 1200, 1900, 2600, 3300, 3900],

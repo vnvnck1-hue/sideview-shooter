@@ -29,6 +29,7 @@ var prompt_label: Label
 var ammo_label: Label
 var crosshair: Node2D
 var transitioning := false
+var controlled_turret: SentryTurret     # 조종 중인 센트리건 (없으면 null) — 그동안 플레이어 입력은 꺼진다
 var _post_mat: ShaderMaterial
 var _aberration := 0.0
 var _recoil := MouseRecoil.new()          # 사격 반동 → 실제 마우스 포인터 이동
@@ -146,6 +147,12 @@ func _process(_delta: float) -> void:
 	if not transitioning:
 		player.aim_target = mouse_world
 
+	# 센트리건 조종 중: 마우스가 포신을 끌고, W/↑ 한 번 더 누르면 놓는다 (플레이어 입력은 꺼져 있다)
+	if controlled_turret != null:
+		controlled_turret.aim_target = mouse_world
+		if not transitioning and Input.is_action_just_pressed("interact"):
+			controlled_turret.set_controlled(false)
+
 	# 카메라 추적·마우스/시선 리드·흔들림은 GameCamera 가 스스로 처리한다
 	# 사격 색수차: 흔들림과 같은 리듬으로 빠르게 빠진다
 	_aberration = maxf(_aberration - ABERRATION_DECAY * _delta * maxf(_aberration, 0.4), 0.0)
@@ -162,7 +169,12 @@ func _process(_delta: float) -> void:
 	elif current_room.left_door_open and player.position.x <= 10:
 		_go_to_room(current_room.left_target, "right")
 
-	# 정면문 안내 문구
+	# 안내 문구: 센트리건이 먼저(같은 W/↑ 키를 쓴다), 없으면 정면문
+	var turret := current_room.sentry_near(player.position.x)
+	if turret != null:
+		prompt_label.visible = true
+		prompt_label.text = turret.prompt_text()
+		return
 	var fd := current_room.front_door_near(player.position.x)
 	prompt_label.visible = not fd.is_empty()
 	if not fd.is_empty():
@@ -170,6 +182,8 @@ func _process(_delta: float) -> void:
 
 
 func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
+	if controlled_turret != null:
+		_on_turret_control(false, controlled_turret)     # 방을 떠나면 조종은 풀린다
 	if current_room:
 		current_room.queue_free()
 	for b in bullets.get_children():
@@ -184,6 +198,12 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	current_room.monster_roared.connect(_on_monster_roared)
 	world.add_child(current_room)
 	world.move_child(current_room, 0)
+	for t in current_room.sentries:
+		t.shoot_fired.connect(_on_turret_shoot)
+		t.shell_ejected.connect(_on_shell_ejected)
+		t.ammo_changed.connect(_on_turret_ammo)
+		t.shake_requested.connect(camera.add_shake)
+		t.control_changed.connect(_on_turret_control.bind(t))
 
 	# 이동 한계: 닫힌 쪽은 벽 앞에서 멈추고, 열린 쪽은 문을 지나갈 수 있게 조금 더 허용
 	var left_limit := -DOOR_PASS_MARGIN if current_room.left_door_open else WALL_MARGIN
@@ -214,6 +234,11 @@ func _go_to_room(target: String, enter_side: String) -> void:
 func _on_front_door_requested() -> void:
 	if transitioning or current_room == null:
 		return
+	# 같은 키(W/↑)로 센트리건을 먼저 잡는다 — 옆에 서 있으면 전개·조종
+	var turret := current_room.sentry_near(player.position.x)
+	if turret != null:
+		turret.activate()
+		return
 	var fd := current_room.front_door_near(player.position.x)
 	if fd.is_empty():
 		return
@@ -239,6 +264,24 @@ func _transition(target: String, spawn_x: float, face_dir: int) -> void:
 
 
 func _on_player_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
+	_spawn_shot(muzzle_pos, target_pos)
+	camera.add_shake(SHAKE_PER_SHOT)
+	_aberration = minf(_aberration + ABERRATION_PER_SHOT, ABERRATION_CAP)
+	crosshair.kick()
+	_recoil.kick(float(player.facing))
+
+
+## 센트리건 사격 — 탄·탄착은 플레이어와 같은 경로, 흔들림은 센트리건이 따로 요청한다(더 묵직).
+func _on_turret_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
+	_spawn_shot(muzzle_pos, target_pos)
+	_aberration = minf(_aberration + ABERRATION_PER_SHOT * 1.3, ABERRATION_CAP)
+	crosshair.kick()
+
+
+## 한 발이 방에 미치는 결과 — 탄 생성 · 탄착 반응 · 전선 튕김 (플레이어·센트리건 공용)
+func _spawn_shot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
+	# 벽은 실제로 막혀 있다 — 조준점이 벽 너머(어둠·옆방)라도 탄은 벽면에서 멈춘다
+	target_pos = current_room.clip_shot(muzzle_pos, target_pos)
 	var b := Bullet.new()
 	b.setup(muzzle_pos, target_pos)
 	b.floor_y = player.position.y
@@ -275,10 +318,6 @@ func _on_player_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 			b.impact_kind = Bullet.Impact.PROP
 	bullets.add_child(b)
 	current_room.notify_shot(muzzle_pos, target_pos)      # 전선 등 물리 반응
-	camera.add_shake(SHAKE_PER_SHOT)
-	_aberration = minf(_aberration + ABERRATION_PER_SHOT, ABERRATION_CAP)
-	crosshair.kick()
-	_recoil.kick(float(player.facing))
 
 
 func _on_ammo_changed(ammo: int, mag: int, reloading: bool) -> void:
@@ -289,6 +328,33 @@ func _on_ammo_changed(ammo: int, mag: int, reloading: bool) -> void:
 		ammo_label.text = "%d / %d" % [ammo, mag]
 		var low := ammo <= mag / 4
 		ammo_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.35) if low else Color(0.95, 0.9, 0.8))
+
+
+## 센트리건 탄띠 (조종 중일 때만 HUD 를 가져간다)
+func _on_turret_ammo(ammo: int, belt: int, reloading: bool) -> void:
+	if controlled_turret == null:
+		return
+	if reloading:
+		ammo_label.text = "급탄 중…   %d" % belt
+		ammo_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.4))
+	else:
+		ammo_label.text = "%d / %d  탄띠" % [ammo, belt]
+		ammo_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.35) if ammo <= belt / 4 else Color(0.95, 0.9, 0.8))
+
+
+## 조종 시작/해제 — 조종 중엔 플레이어가 움직이지도 쏘지도 않는다(같은 마우스로 포신을 돌린다)
+func _on_turret_control(active: bool, turret: SentryTurret) -> void:
+	if active:
+		if controlled_turret != null and controlled_turret != turret:
+			controlled_turret.set_controlled(false)
+		controlled_turret = turret
+		player.input_enabled = false
+		player.velocity_x = 0.0
+	elif controlled_turret == turret:
+		controlled_turret = null
+		if not transitioning and not AppFlow.lab_mode:
+			player.input_enabled = true
+		_on_ammo_changed(player.ammo, Player.MAG_SIZE, player.reloading)
 
 
 ## 몬스터 독액에 맞음: 카메라 흔들림 + 색수차 + 플레이어 밀림 (체력은 아직 없음)

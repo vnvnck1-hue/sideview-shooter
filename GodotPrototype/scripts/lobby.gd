@@ -1,7 +1,8 @@
 extends Control
 ## 로비: 시작 씬(project.godot run/main_scene). 마우스 버튼으로 고른다.
 ##   [메인 게임]   에어록에서 시작해 전체 맵(방 21개, 구역 4개)을 탐색한다 (scenes/MainGame.tscn)
-##   [테스트]      랜덤한 방에서 바로 시작 — 원버튼 (scenes/Main.tscn)
+##   [테스트]      저수조실에서 바로 시작 — 원버튼 (scenes/Main.tscn)
+##   [센트리건]    작업실에서 바로 시작 — 바닥 격납형 센트리건(SentryTurret) 전개·조종 확인
 ##   [맵 뷰어]     방을 게임 없이 조립해 자유 카메라로 본다. [ ] 로 방 전환 (scenes/MapViewer.tscn)
 ##   [CRT 모니터]  전역 CRT 후처리 프리셋 드롭다운 (scripts/crt_preset.gd · autoload CrtFx). 게임 안에서는 F4 / Shift+F4
 ##   [종료]
@@ -56,6 +57,10 @@ func _ready() -> void:
 	var test := _button("⚙   테스트 — 저수조실(물)에서 시작", "물이 고인 저수조실에서 바로 플레이 (액체 셰이더 확인). F1 로비")
 	test.pressed.connect(func(): AppFlow.start_test(get_tree()))
 	box.add_child(test)
+
+	var sentry := _button("⌖   센트리건 테스트 — 작업실에서 시작", "작업실 바닥의 센트리건 해치 옆에서 W/↑ 로 전개하고 마우스로 조준·사격한다. F1 로비")
+	sentry.pressed.connect(func(): AppFlow.start_test(get_tree(), "workshop"))
+	box.add_child(sentry)
 
 	var view := _button("▦   맵 뷰어", "방을 게임 없이 조립해 자유 카메라로 본다. [ ] 방 전환 · 휠 줌 · WASD 이동 · F1 로비")
 	view.pressed.connect(func(): AppFlow.start_map_viewer(get_tree()))

@@ -52,6 +52,11 @@ func _process(delta: float) -> void:
 		vel *= 0.35                       # 물이 받아준다
 		spin *= 0.3
 
+	# 좌우 벽·천장 (바닥은 아래에서 따로)
+	var hit := RoomSolid.bounce_walls(position, vel, BOUNCE)
+	position = hit[0]
+	vel = hit[1]
+
 	if position.y >= floor_y:
 		position.y = floor_y
 		if absf(vel.y) > 90.0:

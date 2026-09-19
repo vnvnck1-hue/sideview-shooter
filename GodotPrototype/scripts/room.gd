@@ -3,6 +3,8 @@ extends Node2D
 ## RoomData 정의를 읽어 모듈러 타일맵(테마 × 열 프로필)·램프·조명 기구·프랍·문·환경 연출(fx)을 조립하는 방 노드.
 ## 레이어 순서(뒤→앞): Tiles(타일맵) → Lights(램프 스프라이트·기구·그을음·비상등) → Back-wall Doors → Floor Props(+웅덩이·파편)
 ##                     → Air(빛 기둥 · 비상등 팬 · 불꽃 · 연기 · 물줄기 · 전선 · 먼지) → (Character) → Water(고인 물, 반사) → Front Effects
+##                     → WallShadow(벽 바깥 어둠, 모든 층 위)
+## 벽은 RoomSolid(열 프로필에서 뽑은 충돌 기하)로 실제로 막혀 있다 — 탄·파편·독액이 벽 너머 어둠으로 넘어가지 못한다.
 ## 문·프랍은 노멀맵이 붙은 CanvasTexture + lit_surface/prop_surface 셰이더로 그려 라이트에 입체·림으로 반응한다.
 
 const LightMood := preload("res://scripts/light_mood.gd")
@@ -29,8 +31,11 @@ var fires: Array = []         # FireSource
 var water: WaterPool          # 고인 물 (fx "water", 방마다 최대 하나)
 var foreground: ForegroundLayer   # 근경 실루엣 층 (DepthPreset "근경 분리" 일 때만)
 var monsters: Array = []      # Crawler
+var sentries: Array = []      # SentryTurret (바닥 격납형 센트리건 — Main 이 조종을 잡는다)
 var player: Node2D            # Main 이 넣어준다 (전선 밀치기)
 var room_tiles: RoomTiles     # 테마 타일맵 (RoomTiles.build — 실행 중 생성)
+var solid: RoomSolid          # 벽 충돌 기하 (사격 클리핑 · 자유 물체 가두기)
+var wall_shadow: WallShadow   # 벽 바깥 어둠 층 (맵 뷰어의 "전체 밝게" 에서 끈다)
 var heights: Array = []       # 열별 높이(셀)
 
 var _ambient: CanvasModulate
@@ -63,6 +68,11 @@ func build(id: String) -> void:
 	heights = RoomData.heights(id)
 	width = RoomData.room_width(id)
 	floor_y = float(RoomData.floor_y(id))
+
+	# 0. 벽 충돌 기하 — 타일을 찍기 전에 만들어 둔다 (프랍·탄피 등이 바로 참조한다)
+	solid = RoomSolid.new()
+	solid.build(heights, floor_y)
+	RoomSolid.active = solid
 
 	# 1. 테마 타일맵 — 열 프로필로 실루엣을 찍는다 (배경 무늬는 방 id 시드로 고정)
 	var tiles := Node2D.new()
@@ -220,6 +230,8 @@ func build(id: String) -> void:
 			avoid.append(lamp.position.x)
 		for fd in front_doors:
 			avoid.append(fd["center"].x)
+		for t in sentries:
+			avoid.append(t.position.x)          # 근경 기둥이 센트리건 앞을 가리지 않게
 		foreground = ForegroundLayer.new()
 		foreground.name = "Foreground"
 		foreground.z_index = DepthPreset.Z_FOREGROUND
@@ -228,6 +240,14 @@ func build(id: String) -> void:
 		for c in range(heights.size()):
 			cols.append(ceiling_at(c * RoomTheme.CELL + RoomTheme.CELL * 0.5))
 		foreground.build(id, float(width), floor_y, room_rect.position.y, avoid, cols, room_rect.end.y)
+
+	# 8. 벽 바깥 어둠 (z8) — 모든 층 위. 실루엣 밖을 덮고 벽 가장자리를 어둠으로 잇는다.
+	#    비상등 부채꼴·램프 빛·근경이 벽 너머로 새지 않게 하는 시각 마감이다.
+	wall_shadow = WallShadow.new()
+	wall_shadow.name = "WallShadow"
+	wall_shadow.z_index = DepthPreset.Z_FOREGROUND + 1
+	add_child(wall_shadow)
+	wall_shadow.build(solid, heights)
 
 
 ## 근경 랩용: 몬스터를 모두 치우고 스폰을 멈춘다
@@ -366,7 +386,7 @@ static func _ground_margin(path: String) -> int:
 	return margin
 
 
-## 전력 릴레이실 전용 프랍: cabinet(파츠 파괴 PowerRelayProp) · capacitor · cart · breaker(벽걸이)
+## 특수 프랍: cabinet(파츠 파괴 PowerRelayProp) · capacitor · cart · breaker(벽걸이) · sentry(바닥 격납 센트리건)
 func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 	var x := float(prop["x"])
 	match prop.get("type", ""):
@@ -387,6 +407,13 @@ func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 			hp.setup(tex, top_left, shadow)
 			parent.add_child(hp)
 			props_hit.append(hp)
+		"sentry":
+			# 바닥 격납형 센트리건. 프랍 층 맨 앞(z3)에 두어 다른 프랍보다 앞, 인물(z5) 보다는 뒤에 선다.
+			var turret := SentryTurret.new()
+			turret.z_index = 1
+			turret.setup(x, floor_y, self)
+			parent.add_child(turret)
+			sentries.append(turret)
 		"breaker":
 			var breaker := Sprite2D.new()
 			breaker.centered = false
@@ -503,6 +530,14 @@ func _trim_stains() -> void:
 			old.queue_free()
 
 
+## 사격 선분을 벽면까지 자른다 — 벽 너머(어둠·옆방)로는 탄이 나가지 않는다.
+## 총구가 벽 띠 안이어도(벽에 붙어 쏠 때) 벽을 빠져나온 뒤부터 본다.
+func clip_shot(from: Vector2, to: Vector2) -> Vector2:
+	if solid == null:
+		return to
+	return solid.clip_ray(from, to)
+
+
 ## 탄착점이 무엇을 맞췃는지. {"kind": "monster"|"lamp"|"beacon"|"glass"|"prop"|"wall"|"none", "node": ...}
 ## 몬스터가 맨 앞이라 먼저 본다. 죽은 몬스터·프랍의 부서진 구멍은 통과해 뒤의 벽이 맞는다.
 func hit_at(point: Vector2) -> Dictionary:
@@ -561,9 +596,25 @@ func _add_side_door(parent: Node2D, center_x: float, is_open: bool, flip: bool) 
 	_doors.append({"sprite": s, "rect": Rect2(s.position, s.texture.get_size()), "heat": HeatSurface.new(dm)})
 
 
+## 플레이어가 조종할 수 있는 거리에 있는 센트리건 (없으면 null). 조종 중인 쪽을 먼저 돌려준다.
+func sentry_near(px: float) -> SentryTurret:
+	for t in sentries:
+		if is_instance_valid(t) and t.controlled:
+			return t
+	for t in sentries:
+		if is_instance_valid(t) and t.can_interact(px):
+			return t
+	return null
+
+
 ## 플레이어가 상호작용 가능한 정면문 반환(없으면 빈 Dictionary)
 func front_door_near(px: float) -> Dictionary:
 	for fd in front_doors:
 		if absf(fd["center"].x - px) <= FRONT_DOOR_INTERACT_RANGE:
 			return fd
 	return {}
+
+
+func _exit_tree() -> void:
+	if RoomSolid.active == solid:
+		RoomSolid.active = null

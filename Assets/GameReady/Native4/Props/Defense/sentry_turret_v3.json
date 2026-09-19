@@ -1,0 +1,50 @@
+{
+  "id": "sentry_turret_v3",
+  "design": "future_wall_floor_deployable",
+  "description": "벽·바닥 매립형 해치에서 전개되는 미래형 센트리. 기존 중앙 드럼/넓은 받침 실루엣을 버리고, 방사형 해치·다축 짐벌·측면 카트리지·부유형 쌍열 헤드로 재설계했다.",
+  "clean_condition": true,
+  "parts": {
+    "mount": {
+      "resource": "sentry_turret_mount_v3.png",
+      "native_size": [128, 48],
+      "game_size": [512, 192],
+      "pivot_native": [64, 24],
+      "role": "standalone_fixed_wall_floor_hatch",
+      "notes": "빨간 표시 영역에 해당하는 방사형 매립 해치/전개 플레이트만 분리한 리소스. 현재 base_v3에 포함된 하부 해치의 독립형 교체/재사용 파츠로 사용한다."
+    },
+    "base": {
+      "resource": "sentry_turret_base_v3.png",
+      "native_size": [112, 112],
+      "game_size": [448, 448],
+      "pivot_native": [56, 14],
+      "role": "fixed_lower_module",
+      "notes": "벽/바닥 개구부에 고정. 상단 링은 별도 발사부가 결합되는 다축 짐벌 소켓이다."
+    },
+    "firing": {
+      "resource": "sentry_turret_firing_v3.png",
+      "native_size": [120, 56],
+      "game_size": [480, 224],
+      "pivot_native": [22, 28],
+      "role": "rotating_weapon_head",
+      "notes": "쌍열 회전 헤드와 상부 광학 센서. pivot_native 기준으로 조준 방향을 회전시킨다."
+    },
+    "ammo_feed": {
+      "resource": "sentry_turret_ammo_feed_v3.png",
+      "native_size": [96, 64],
+      "game_size": [384, 256],
+      "role": "separate_flexible_feed",
+      "notes": "개별 링크와 탄두가 보이는 장갑형 S자 급탄 라인. 양 끝 커넥터를 발사부와 측면 카트리지에 연결한다."
+    }
+  },
+  "assembly": {
+    "variants": "Use mount as a standalone replacement when the base's integrated hatch is hidden; do not render both hatch silhouettes simultaneously.",
+    "rotation": "rotate firing only around firing.pivot_native; keep mount and base fixed",
+    "ammo_line": "place between upper weapon feed port and side cartridge port; preserve visible slack",
+    "wall_floor_mount": "place mount flush with the surrounding wall or floor surface, then attach base above it"
+  },
+  "style": {
+    "palette": ["dark_graphite", "warm_gunmetal", "restrained_bronze", "amber_indicator"],
+    "surface": "clean maintained composite armor; minimal rust, blood, grime, and decay",
+    "rendering": "hard-edged chunky pixel art, native 4px blocks, transparent background"
+  }
+}

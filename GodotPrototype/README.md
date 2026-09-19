@@ -16,6 +16,7 @@
 |---|---|
 | ▶ 메인 게임 | `scenes/MainGame.tscn`(`scripts/main_game.gd`, `main.gd` 상속). **에어록**(`RoomData.START_ROOM`)에서 시작해 측벽문·정면문으로 전체 맵을 탐색한다. 우상단에 구역 · 몬스터 밀도(안전/적음/위험) · 탐색한 방 수 |
 | ⚙ 테스트 — 랜덤한 방에서 시작 | `scenes/Main.tscn`. 방 하나를 무작위로 골라 바로 플레이 (원버튼) |
+| ⌖ 센트리건 테스트 — 작업실에서 시작 | `scenes/Main.tscn` 을 **작업실**(`workshop`)에서 연다. 바닥 해치 옆에서 W/↑ 로 센트리건을 전개·조종한다 |
 | ▦ 맵 뷰어 | `scenes/MapViewer.tscn`(`scripts/map_viewer.gd`). 방을 `Room.build` 로 통째로 조립해 자유 카메라로 본다. **[ ]** 이전/다음 방 · 휠 줌 · 휠클릭/WASD 이동 · F 방 전체 보기 · G 격자·문 표시 · L 전체 밝게 · R 다시 조립 |
 | ✕ 종료 | 프로그램 종료 |
 
@@ -33,7 +34,7 @@
 | F2 | (비교 중) **공간감 프리셋 A/B**: 1 이전(평면) ↔ 2 근경 분리(기본). 같은 방·위치에서 씬을 다시 로드한다. 우상단 표시 |
 | F4 / Shift+F4 | **CRT 모니터 프리셋** 다음/이전 (모든 씬 공통, 기본 "아케이드 모니터"). 화면 위 토스트로 이름·설명 표시. 로비의 "CRT 모니터" 드롭다운으로도 선택. 아래 "CRT 모니터 후처리" 참고 |
 | Ctrl (S / ↓) | 앉기 (홀드) — 앉은 채로 조준·사격 가능 |
-| W / ↑ | 정면문 앞에서 다른 방으로 진입 |
+| W / ↑ | 정면문 앞에서 다른 방으로 진입. **센트리건 옆에서는 센트리건 전개·조종(해제)** 이 먼저다 |
 | F1 | 로비로 돌아가기 |
 | F11 | 전체화면 토글 |
 
@@ -52,6 +53,11 @@
 - **방 키**: `left_door`/`right_door`(측벽문, 열림·목적지) · `front_doors`(뒷벽 정면문, 서로 가리켜야 함) · `props`(`{"tex", "x"}` 바닥 중심 — 접지 자동, `cy`/`fy` 로 벽걸이, `type` 으로 전력실 전용) ·
   `lamps`(펜던트 램프 x 목록 — 그 열 천장에 매달림, 총으로 깨짐) · `fixtures`(장식 조명: 전력실 Lighting 6종 + 색) · `fx`(비상등·누수·전선·케이블·불·고인 물, 위치는 `x` + `cy` 천장 기준) ·
   `monsters`/`spawn`(시작 배치·지속 스폰. `max` 0 = 없음, 2~5 = 적음, 9~14 = 위험). 자세한 설명은 `room_data.gd` 머리 주석.
+- **벽은 실제로 막혀 있다** (`scripts/room_solid.gd`): 같은 열 프로필에서 충돌 기하(`RoomSolid`)를 뽑는다. 열린 공간은 열마다 위 = 천장 타일 상단 + 천장 띠(48),
+  아래 = 바닥선, 좌우 = 막힌 이웃 열 경계에서 벽 띠(56) 안쪽 — 계단형 방의 단차 벽면도 포함하고, 그 밖(방 밖 어둠)은 전부 벽이다. 물리 노드는 쓰지 않는다(좌우 이동뿐인 사이드뷰라 기하 판정으로 충분).
+  사격은 `Room.clip_shot` 이 선분을 벽면까지 잘라 **조준점이 벽 너머라도 탄은 벽에서 멈춘다**(총구가 벽 띠 안이어도 벽을 빠져나온 뒤부터 본다). 탄피·프랍 파편·불꽃은 벽에 튕기고, 독액은 벽에서 자국 없이 터진다.
+- **벽 바깥 어둠** (`scripts/wall_shadow.gd`): 방 실루엣 밖을 검정으로 덮고 실루엣 안쪽으로 짧은 그라데이션(벽 60 · 천장 52 · 바닥 66px, 지수 2.0)을 넣는 층(z8, 근경 위, 라이트 받지 않음).
+  방 모양에서 16px 텍셀 알파 텍스처를 구워 한 장으로 그린다. 이게 없으면 비상등 회전 광선·램프 빛·근경 실루엣이 벽 너머 검은 여백으로 새어나가 "벽 뒤에 공간이 있다" 처럼 보인다.
 - **검사**: `godot --path . --headless --script res://tools/validate_map.gd` — 모양(조각 없는 셀), 문 연결(양방향), 정면문 위치, 프랍 벽 밖·겹침, 리소스 존재, 시작 방에서 전 방 도달, 테마·밀도 커버리지. 방마다 문자 지도를 찍는다.
 - **스크린샷**: `godot --path . --script res://tools/map_shots.gd -- [bright|lit]` → `user://shots/map/<방 id>_<모드>.png` 방 21장. 한 방은 `tools/room_shot.gd -- <방 id> [main|game|viewer]`.
 
@@ -155,6 +161,22 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 
 열린 측벽문(초록등)은 걸어서 그대로 통과한다. 닫힌 측벽문(주황등)은 벽으로 막힌다.
 
+## 센트리건 (`scripts/sentry_turret.gd`)
+
+바닥 격납형 거치 화기. `RoomData.ROOMS[...]["props"]` 에 `{"type": "sentry", "x": 바닥 중심}` 을 적으면 `Room.build` 가 놓는다 (작업실 1230 · 격납고 3495). 평소엔 바닥과 같은 높이의 해치로 묻혀 있고, 옆에 서서 **W / ↑** 를 누르면 솟아오른다.
+
+| 단계 | 내용 |
+|---|---|
+| 전개 | `sentry_turret_deploy_direct_v1_sheet` 8프레임 10fps (해치 열림 → 하부 상승 → 머리 세움 → 포신 전개). 시작·끝에 바닥 먼지(`CPUParticles2D`)·불꽃(`SparkBurst`)·카메라 흔들림 6.0/3.5. 끝나면 기동시킨 사람이 그대로 조종을 잡는다 |
+| 조준 | 마지막 프레임을 **머리(포신 어셈블리 + 급탄 호스)** 와 **받침(요동 실린더 · 기둥 · 해치 꽃잎)** 으로 분리해 머리만 요동축에서 부앙한다. 한계 ±0.45rad(≈26°), 보간 16/s. 좌우는 전체를 x 반전 — 호스가 항상 포신 반대쪽에 온다. 머리를 받침 **뒤**에 그려 분리 단면이 실린더에 가린다 |
+| 사격 | 좌클릭 홀드 — 위·아래 포신이 **번갈아** 0.11초 간격(≈9발/초). 탄띠 48발, 비면 2.1초 급탄(우하단 HUD). 산탄 0.016rad. 탄·탄착·벽 클리핑은 플레이어 사격과 같은 경로(`Main._spawn_shot`), 카메라 흔들림만 5.2 로 더 묵직하다. 포신은 2차 스프링으로 최대 16px 후퇴 |
+| 발사 VFX | `MuzzleBlast` — 십자 섬광 → 화염 원뿔 + 잎 3~4장 + 흰 심(가산 블렌드, 글로우 임계 초과) · 총구 연기(월드 좌표, 0.22초마다) · 화약 불꽃 · 0.075초 `PointLight2D`. 탄피는 플레이어와 같은 `ShellCasing` |
+| 대기·격납 | 조종을 놓으면 천천히 좌우를 훑다가 14초 뒤 해치 안으로 접힌다(역재생). 광학 조준경의 호박색 라이트는 대기 0.45 · 조종 중 1.5 |
+
+조종 중에는 플레이어 입력이 꺼지고(이동·사격·구르기 없음) 같은 마우스가 포신을 끈다. **W / ↑** 를 다시 누르면 놓는다. 방을 떠나면 자동으로 풀린다.
+
+**자산**: `Tools/build_sentry_turret_parts.py` 가 원본 시트(4×2 · 416×468)를 프레임마다 **접지선·받침 중심**에 맞춰 정렬하고(원본은 프레임마다 중심이 218 → 190px 로 흘러 그대로 쓰면 전개 중 떨린다), 마지막 프레임을 머리/받침으로 갈라 `assets/props/defense/sentry/` 에 저장한다(`sentry_turret.json` 에 앵커·요동축·총구·배출구). 노멀맵은 `python Tools/build_normal_maps.py props`. 확인용 스크린샷: `godot --path . --script res://tools/sentry_shot.gd`
+
 ## 몬스터: 독성 종양 크롤러 (`scripts/crawler.gd`)
 
 바닥을 기어다니는 몬스터. `RoomData.ROOMS[...]["monsters"]` 에 `{"type": "crawler", "x": 발 밑 X, "facing": ±1}` 를 적으면 `Room.build` 가 캐릭터와 같은 층(z 5)에 놓는다 (작업실 2 · 창고 2 · 격납고 6 · 숙소 2). 원본의 **40% 크기**(`Crawler.SCALE`, 60% 축소 — 플레이어 무릎 높이)로 그린다.
@@ -201,6 +223,8 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 |---|---|
 | `scripts/room_data.gd` | 전체 맵 데이터 — 방 21개의 테마·열 프로필(모양)·문 연결·프랍·램프·조명 기구·환경 연출 `fx`·몬스터 밀도. 새 방은 여기에 항목만 추가 |
 | `scripts/room_theme.gd` / `scripts/room_tiles.gd` | 테마 표 + 실행 중 TileSet 캐시 / 열 프로필 → 타일맵(프레임 조각 이웃 판정, L-벤드, 조각 없는 셀 검사, 문자 지도) |
+| `scripts/room_solid.gd` | 방의 벽 충돌 기하 — 열 프로필 → 열린 공간(천장 띠·바닥선·벽 띠·단차 벽면). `is_solid` · `clip_ray`(사격) · `confine`/`bounce_walls`(탄피·파편·불꽃·독액). `RoomSolid.active` 로 현재 방 참조 |
+| `scripts/wall_shadow.gd` | 벽 바깥 어둠 층(z8) — 방 모양에서 구운 알파 그라데이션 + 그 바깥 검은 여백. 빛·근경이 벽 너머로 새지 않게 한다 |
 | `scripts/room.gd` | 데이터로 타일맵·펜던트 램프·조명 기구·문·프랍(접지 자동)·fx 를 조립. 레이어 순서: 타일 → 뒷벽 문 → 프랍 → 캐릭터 → 투사체 |
 | `scripts/player.gd` | 캐릭터. `BodyPivot/Body`(머리 없는 몸통 애니) + `BodyPivot/HeadPivot/Head`(목 기준 회전하는 후드+마스크, 프레임별 텍스처) + `ArmPivot/Arm·Muzzle·Flash`(어깨 기준 회전하는 팔+총). 상태 Roll > Crouch > Walk > Idle |
 | `scripts/crawler.gd` | 몬스터 — 독성 종양 크롤러. 상태 IDLE/WALK/JUMP/ATTACK/DEAD, 프레임별 발 밑 보정, 히트 박스, 체력·피격·죽음 |
@@ -220,12 +244,15 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 | `scripts/water_pool.gd` | 고인 물 (fx `water`) — 수면선 아래 폴리곤 + `water_surface` 반사·굴절 셰이더. |
 | `scripts/broken_wire.gd` | 끊긴 전선 (버렛 체인 물리, 총알·플레이어 반응, 아크 방전) |
 | `scripts/fire_source.gd` | 불 (절차 불꽃·라이트·불티·잔해·그을음·부피감 연기 파티클). `STYLES` 3종 — 채도 낮춘 팔레트, 연기는 불의 붉은기로 시작해 검게 (`smoke.gdshader use_particle_color`) |
+| `scripts/sentry_turret.gd` | 바닥 격납형 센트리건 — 전개 애니, 머리/받침 분리 조준, 조종, 사격·탄띠, 대기 스캔·격납 |
+| `scripts/muzzle_blast.gd` | 중화기 총구 화염 — 십자 섬광·화염 원뿔·흰 심(`_draw`, 가산) + 연기 파티클 + 불꽃 + 라이트 |
 | `scripts/shell_casing.gd` | 탄피 — 중력·바닥 튕김·회전, 1.6초 후 페이드 |
 | `scripts/crosshair.gd` | 마우스 위치의 조준점 (사격 시 벌어짐) |
 | `scripts/mouse_recoil.gd` | 사격 반동을 실제 마우스 포인터에 적용 (`Viewport.warp_mouse`). 한 발 약 21px 사방 랜덤 방향(직전 방향과 60° 이상 벌림), 연사 heat 에 비례해 커지고 55% 는 자동 복귀. 포인터 잔떨림은 반올림 드리프트 때문에 두지 않음(카메라 흔들림·조준점 벌어짐이 담당) |
 | `scripts/game_camera.gd` | 동적 카메라 — 플레이어 추적 + 마우스·시선 리드, 감도 프리셋 3종, 방 한계, 사격 흔들림 |
 | `scripts/light_mood.gd` | 배경 라이팅 무드 프리셋 3종 (`PRESETS`, preload 로 사용) — 앰비언트 색 + 방 전체 보조 광원(채광 필 라이트 / LED 스트립·표시등·창문 외광). `Room.apply_mood` 가 얹는다 |
 | `scripts/lobby.gd` / `scripts/app_flow.gd` / `scripts/map_viewer.gd` | 로비 UI(메인 게임·테스트·맵 뷰어) / 씬 흐름·시작 방 전달 / 맵 뷰어(방 통째 조립, [ ] 전환) |
+| `tools/sentry_shot.gd` | 센트리건 전개→조준→사격 단계별 스크린샷 (`user://shots/sentry_*.png`) |
 | `tools/validate_map.gd` / `tools/map_shots.gd` / `tools/room_shot.gd` | 맵 데이터 검사(헤드리스) / 방 21장 스크린샷 / 방 한 장 스크린샷 (`-- <방 id> [main\|game\|viewer] [프레임]`) |
 | `tools/build_theme_tile_sheets.py` | 테마별 타일 시트(3×2·3×3·L-벤드 4×1) 합성 + 펜던트 램프 추출 + 테마 프랍 복사 |
 | `scripts/crt_overlay.gd` (autoload `CrtFx`) / `scripts/crt_preset.gd` / `shaders/crt.gdshader` | 전역 CRT 모니터 후처리(루트 뷰포트 층 100 풀스크린) · 프리셋 표 · 셰이더. F4 순환, `user://crt.cfg` 저장, 환경 변수 `CRT_PRESET`. 스크린샷 `tools/crt_shot.gd` |

@@ -1,0 +1,26 @@
+﻿{
+    "id":  "sentry_turret_deploy_v3",
+    "frame_size_native":  [
+                              256,
+                              160
+                          ],
+    "sheet_game":  "sentry_turret_deploy_v3_sheet.png",
+    "sheet_native":  "sentry_turret_deploy_v3_sheet_native.png",
+    "fps":  12,
+    "loop":  false,
+    "sequence":  [
+                     "hatch_open_stowed",
+                     "base_rises_body_folded",
+                     "body_unfolds",
+                     "head_lifts",
+                     "head_levels",
+                     "optic_stands",
+                     "barrels_extend",
+                     "deployed_ready"
+                 ],
+    "frame_size_game":  [
+                            1024,
+                            640
+                        ],
+    "frame_count":  8
+}

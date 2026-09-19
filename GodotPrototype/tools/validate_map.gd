@@ -121,6 +121,7 @@ func _check_room(id: String) -> void:
 				"capacitor": pw = 360.0
 				"cart": pw = 224.0
 				"breaker": pw = 192.0
+				"sentry": pw = 376.0
 				_: _errors.append("%s: 알 수 없는 프랍 type '%s'" % [id, p["type"]])
 		if x - pw * 0.5 < RoomTiles.WALL_BAND or x + pw * 0.5 > w - RoomTiles.WALL_BAND:
 			_errors.append("%s: 프랍 %s x=%d (폭 %d) 가 벽 밖으로 나간다" % [id, label, int(x), int(pw)])

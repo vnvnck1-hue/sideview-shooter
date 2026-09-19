@@ -43,6 +43,9 @@ func _process(delta: float) -> void:
 			WaterPool.active.splash(position.x, clampf(0.4 + half_h / 30.0, 0.4, 1.0))
 			vel *= 0.4
 			spin *= 0.3
+		var hit := RoomSolid.bounce_walls(position, vel, 0.3)
+		position = hit[0]
+		vel = hit[1]
 		if position.y + half_h >= floor_y and vel.y > 0.0:
 			position.y = floor_y - half_h
 			vel.y = -vel.y * 0.3

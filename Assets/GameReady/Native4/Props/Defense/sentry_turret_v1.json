@@ -1,0 +1,31 @@
+{
+  "id": "sentry_turret_v1",
+  "style": "chunky_pixel_art_native4",
+  "mount_modes": ["floor_hatch", "wall_hatch"],
+  "parts": {
+    "base": {
+      "file": "sentry_turret_base_v1.png",
+      "native_size": [112, 112],
+      "world_size": [448, 448],
+      "pivot": [56, 112],
+      "socket": [56, 12]
+    },
+    "firing": {
+      "file": "sentry_turret_firing_v1.png",
+      "native_size": [120, 56],
+      "world_size": [480, 224],
+      "rotation_pivot": [12, 28],
+      "default_rotation_degrees": 0,
+      "forward": "right"
+    },
+    "ammo_feed": {
+      "file": "sentry_turret_ammo_feed_v1.png",
+      "native_size": [96, 64],
+      "world_size": [384, 256],
+      "anchors": {
+        "left": [8, 16],
+        "right": [88, 16]
+      }
+    }
+  }
+}

@@ -74,8 +74,10 @@ func _process(delta: float) -> void:
 			_p.y = floor_y
 			_splat(false)
 			return
-		if room and (_p.x < -80.0 or _p.x > float(room.get("width")) + 80.0):
-			queue_free()
+		# 벽에 닿으면 넘어가지 못하고 그 자리에서 터진다
+		if RoomSolid.active != null and RoomSolid.active.is_solid(_p):
+			_p = RoomSolid.active.clip_ray(_p - _v * delta, _p)
+			_splat(false, false)
 			return
 		queue_redraw()
 	else:
@@ -87,10 +89,13 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 
-func _splat(on_player: bool) -> void:
+## on_player: 플레이어에 명중 / puddle: 바닥 웅덩이를 남기는가 (벽에 맞으면 남기지 않는다)
+func _splat(on_player: bool, puddle := true) -> void:
 	_flying = false
 	_t = 0.0
-	_puddle_w = 0.0 if on_player else randf_range(48.0, 72.0)
+	_puddle_w = randf_range(48.0, 72.0) if (puddle and not on_player) else 0.0
+	if not puddle:
+		_t = PUDDLE_LIFE - 0.3          # 벽에 튄 독액은 자국 없이 곧 사라진다
 	var sparks := SparkBurst.spawn(get_parent(), floor_y, false)
 	sparks.z_index = 1
 	var dir := Vector2(-signf(_v.x) * 0.3, -1.0)

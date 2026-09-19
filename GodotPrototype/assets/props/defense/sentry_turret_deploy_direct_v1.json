@@ -1,0 +1,10 @@
+{
+  "id": "sentry_turret_deploy_direct_v1",
+  "sheet": "sentry_turret_deploy_direct_v1_sheet.png",
+  "columns": 4,
+  "rows": 2,
+  "frame_count": 8,
+  "frame_size": [416, 468],
+  "fps": 10,
+  "loop": false
+}

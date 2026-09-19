@@ -1,0 +1,32 @@
+{
+  "id": "sentry_turret_deploy_direct_v1",
+  "type": "complete_object_sprite_sheet",
+  "description": "분리 파츠 조립이 아닌, 완성된 센트리건 전체를 프레임마다 다시 그린 바닥 전개 애니메이션.",
+  "sheet": "sentry_turret_deploy_direct_v1_sheet.png",
+  "layout": {
+    "columns": 4,
+    "rows": 2,
+    "frame_count": 8,
+    "frame_size": [416, 468],
+    "order": "left_to_right_then_next_row"
+  },
+  "playback": {
+    "fps": 10,
+    "loop": false,
+    "sequence": [
+      "flush_hatch_stowed",
+      "hatch_open_compact_shell",
+      "lower_chassis_rising_folded",
+      "body_lifts_head_folded",
+      "head_hinge_starts",
+      "head_stands_optic_visible",
+      "barrels_extend_feed_settles",
+      "fully_deployed_ready"
+    ]
+  },
+  "rendering": {
+    "background": "transparent",
+    "style": "complete integrated object per frame, hard-edged chunky pixel art",
+    "surface": "clean maintained composite armor, minimal rust/blood/decay"
+  }
+}
