@@ -199,7 +199,7 @@ func _build_ui() -> void:
 	add_child(layer)
 	var top := ColorRect.new()
 	top.color = Color(0, 0, 0, 0.55)
-	top.size = Vector2(1600, 104)
+	top.size = Vector2(AppFlow.VIEW_SIZE.x, 104)
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(top)
 	_info = _label(Color(0.95, 0.92, 0.85), 22)
@@ -211,7 +211,7 @@ func _build_ui() -> void:
 	_status.size = Vector2(1552, 28)
 	layer.add_child(_status)
 	var help := _label(Color(0.72, 0.74, 0.82), 17)
-	help.position = Vector2(24, 900 - 24 - 50)
+	help.position = Vector2(24, AppFlow.VIEW_SIZE.y - 24 - 50)
 	help.size = Vector2(1552, 50)
 	help.text = ("[ ] 이전/다음 방 · 휠 줌 · 휠클릭 드래그 / WASD 이동 · F 방 전체 보기 · G 격자·문 표시 · L 전체 밝게 · R 다시 조립 · F1/Esc 로비\n"
 		+ "맵 데이터는 scripts/room_data.gd — 방 모양(열 프로필 [[폭 셀, 높이 셀], ...])·문·프랍·조명·몬스터")

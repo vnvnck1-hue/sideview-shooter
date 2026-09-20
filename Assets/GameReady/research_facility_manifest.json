@@ -1,0 +1,169 @@
+{
+  "formatVersion": 1,
+  "artPixelWorldPx": 4,
+  "cellWorldPx": 128,
+  "rooms": {
+    "research_analysis": {
+      "title": "검체 분석실 / Specimen Analysis",
+      "backgroundTiles": 6,
+      "frameTiles": 8,
+      "innerCornerTiles": 4,
+      "props": [
+        {
+          "file": "research_analysis_specimen_chamber.png",
+          "nativeSizePx": [
+            52,
+            84
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_analysis_analysis_bench.png",
+          "nativeSizePx": [
+            96,
+            53
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_analysis_microscope_station.png",
+          "nativeSizePx": [
+            55,
+            59
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_analysis_cold_storage.png",
+          "nativeSizePx": [
+            56,
+            75
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_analysis_sample_cart.png",
+          "nativeSizePx": [
+            63,
+            48
+          ],
+          "pivot": "bottom_center"
+        }
+      ],
+      "preview": "Assets/GameReady/Validation/research_analysis_room_preview.png",
+      "sheets": {
+        "background": "research_analysis_modular_background_sheet_3x2.png",
+        "frame": "research_analysis_modular_frame_terrain_3x3.png",
+        "bend": "research_analysis_modular_frame_bend_sheet_4x1.png"
+      }
+    },
+    "research_isolation": {
+      "title": "멸균·격리실 / Decontamination & Isolation",
+      "backgroundTiles": 6,
+      "frameTiles": 8,
+      "innerCornerTiles": 4,
+      "props": [
+        {
+          "file": "research_isolation_decon_arch.png",
+          "nativeSizePx": [
+            79,
+            102
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_isolation_isolation_pod.png",
+          "nativeSizePx": [
+            102,
+            62
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_isolation_wash_station.png",
+          "nativeSizePx": [
+            65,
+            59
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_isolation_medical_cabinet.png",
+          "nativeSizePx": [
+            54,
+            79
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_isolation_uv_sterilizer.png",
+          "nativeSizePx": [
+            54,
+            68
+          ],
+          "pivot": "bottom_center"
+        }
+      ],
+      "preview": "Assets/GameReady/Validation/research_isolation_room_preview.png",
+      "sheets": {
+        "background": "research_isolation_modular_background_sheet_3x2.png",
+        "frame": "research_isolation_modular_frame_terrain_3x3.png",
+        "bend": "research_isolation_modular_frame_bend_sheet_4x1.png"
+      }
+    },
+    "research_diagnostics": {
+      "title": "진단 관제실 / Diagnostics Control",
+      "backgroundTiles": 6,
+      "frameTiles": 8,
+      "innerCornerTiles": 4,
+      "props": [
+        {
+          "file": "research_diagnostics_diagnostic_console.png",
+          "nativeSizePx": [
+            94,
+            62
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_diagnostics_server_rack.png",
+          "nativeSizePx": [
+            61,
+            88
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_diagnostics_wall_display.png",
+          "nativeSizePx": [
+            100,
+            53
+          ],
+          "pivot": "wall_mount"
+        },
+        {
+          "file": "research_diagnostics_signal_scope.png",
+          "nativeSizePx": [
+            58,
+            65
+          ],
+          "pivot": "bottom_center"
+        },
+        {
+          "file": "research_diagnostics_drone_dock.png",
+          "nativeSizePx": [
+            80,
+            55
+          ],
+          "pivot": "bottom_center"
+        }
+      ],
+      "preview": "Assets/GameReady/Validation/research_diagnostics_room_preview.png",
+      "sheets": {
+        "background": "research_diagnostics_modular_background_sheet_3x2.png",
+        "frame": "research_diagnostics_modular_frame_terrain_3x3.png",
+        "bend": "research_diagnostics_modular_frame_bend_sheet_4x1.png"
+      }
+    }
+  }
+}

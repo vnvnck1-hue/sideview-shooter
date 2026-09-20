@@ -18,7 +18,7 @@ signal preset_changed(index: int, preset: Dictionary)
 ##   facing_lead   : 캐릭터가 바라보는 쪽으로 항상 밀어두는 거리
 ##   follow_speed  : 플레이어 추적 보간 속도 (클수록 즉각적)
 ##   look_speed    : 리드(마우스·시선) 보간 속도
-##   deadzone      : 화면 중심 근처에서 마우스 리드를 무시하는 반경 (창 px, 1600×900 기준 — view_scale 로 뷰 px 변환)
+##   deadzone      : 화면 중심 근처에서 마우스 리드를 무시하는 반경 (창 px, AppFlow.VIEW_SIZE 기준 — view_scale 로 뷰 px 변환)
 const PRESETS := [
 	{
 		"id": "steady", "name": "안정형",
@@ -43,10 +43,17 @@ const DEFAULT_PRESET := 1            # 표준 (확정). 1/2/3·C 키는 개발�
 const SHAKE_DECAY := 14.0
 
 var target: Node2D                      # Player (position.x 와 facing 사용)
+## 원격 조종(단말기 → 센트리건)처럼 플레이어가 아닌 지점을 잡아 둘 때. NAN 이면 평소대로 target 을 따라간다.
+## 마우스 리드는 그대로 살아 있어 포탑에서도 포인터 쪽을 조금 내다본다.
+var focus_x := NAN
 var base_y := 0.0                       # 방의 세로 중심
 var view_scale := 1.0                   # 창 px / 이 카메라 뷰포트 px (저해상도 SubViewport 면 2)
 var preset_index := DEFAULT_PRESET
 var preset: Dictionary = PRESETS[DEFAULT_PRESET]
+
+## 마우스·시선 리드를 끈다. 대화처럼 **화면이 멈춰 있어야 하는 동안** 포인터를 따라
+## 카메라가 흔들리지 않게. 끄면 _lead 가 look_speed 로 0 까지 부드럽게 빠진다(툭 끊기지 않는다).
+var lead_enabled := true
 
 var _follow_x := 0.0                    # 플레이어 추적 위치 (보간됨)
 var _lead := Vector2.ZERO               # 마우스·시선 리드 (보간됨)
@@ -83,6 +90,20 @@ func snap() -> void:
 	reset_smoothing()
 
 
+## 플레이어가 아닌 지점을 잡는다 (단말기 화면 · 원격 조종 중인 포탑).
+## 세로 중심까지 옮기므로 한계를 다시 잡아 준다 — 안 그러면 새 중심이 이전 한계에 걸려 잘린다.
+func focus_at(pos: Vector2) -> void:
+	focus_x = pos.x
+	base_y = pos.y
+	_apply_limits()
+
+
+func clear_focus(restore_base_y: float) -> void:
+	focus_x = NAN
+	base_y = restore_base_y
+	_apply_limits()
+
+
 func add_shake(amount: float, cap := 10.0) -> void:
 	_shake = minf(_shake + amount, cap)
 
@@ -103,7 +124,7 @@ func _apply_limits() -> void:
 	var left := -_side_pad
 	var right := _room_width + _side_pad
 	if _is_narrow_room():
-		var cx := _room_width * 0.5
+		var cx := focus_x if is_finite(focus_x) else _room_width * 0.5
 		var slack := float(preset["mouse_max_x"]) + float(preset["facing_lead"])
 		left = cx - vp.x * 0.5 - slack
 		right = cx + vp.x * 0.5 + slack
@@ -128,7 +149,10 @@ func _process(delta: float) -> void:
 
 
 ## 추적 기준점. 화면보다 좁은 방은 방 가운데를 기준으로 두고 리드만 움직인다 (플레이어가 벽 쪽에 있어도 방이 한쪽으로 쏠리지 않게).
+## 단, focus_at 으로 잡아 둔 지점은 그 규칙보다 앞선다 — 단말기 화면·대화 상대를 화면 가운데로 가져오려고 잡은 것이므로.
 func _follow_target_x() -> float:
+	if is_finite(focus_x):
+		return focus_x                       # 잡아 둔 지점이 있으면 방 크기와 상관없이 그쪽
 	if _is_narrow_room():
 		return _room_width * 0.5
 	return target.position.x
@@ -143,6 +167,8 @@ func _is_narrow_room() -> bool:
 
 ## 마우스 리드 + 시선 리드 (월드 px)
 func _desired_lead() -> Vector2:
+	if not lead_enabled:
+		return Vector2.ZERO
 	var vp := get_viewport_rect().size
 	var mouse_screen := get_viewport().get_mouse_position()
 	var rel := mouse_screen - vp * 0.5                       # 화면 중심 기준 포인터 오프셋 (화면 px)
@@ -156,8 +182,8 @@ func _desired_lead() -> Vector2:
 	var lead := world_rel * float(preset["mouse_weight"])
 	lead.x = clampf(lead.x, -float(preset["mouse_max_x"]), float(preset["mouse_max_x"]))
 	lead.y = clampf(lead.y, -float(preset["mouse_max_y"]), float(preset["mouse_max_y"]))
-	var facing := 1.0
-	if "facing" in target:
+	var facing := 0.0                                         # 고정 지점을 볼 때는 시선 리드가 없다
+	if not is_finite(focus_x) and "facing" in target:
 		facing = float(target.facing)
 	lead.x += facing * float(preset["facing_lead"])
 	return lead

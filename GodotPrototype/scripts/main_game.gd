@@ -15,14 +15,14 @@ func _ready() -> void:
 	_hud_font.font_names = PackedStringArray(["Malgun Gothic", "맑은 고딕", "Segoe UI", "Noto Sans CJK KR"])
 	var layer := get_node("UI") as CanvasLayer
 	explore_label = Label.new()
-	explore_label.position = Vector2(1600 - 24 - 700, 84)
+	explore_label.position = Vector2(AppFlow.VIEW_SIZE.x - 24 - 700, 84)
 	explore_label.size = Vector2(700, 60)
 	explore_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	explore_label.add_theme_font_override("font", _hud_font)
 	explore_label.add_theme_font_size_override("font_size", 22)
 	explore_label.add_theme_color_override("font_color", Color(0.9, 0.86, 0.7))
 	layer.add_child(explore_label)
-	hint_label.text = "F1 로비    A/D 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입 (뒷벽 문)    측벽문(초록등)은 걸어서 통과    R 재장전    F4 CRT 모니터    F11 전체화면"
+	hint_label.text = "F1 로비    A/D 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입 · 생존자에게 말 걸기    대화 중 Space/E 넘기기 · ↑/↓ 선택    측벽문(초록등)은 걸어서 통과    R 재장전    F3 줌    F4 CRT 모니터    F11 전체화면"
 	_note_room()
 
 
@@ -30,6 +30,13 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	super(id, spawn_x, face_dir)
 	if explore_label:
 		_note_room()
+
+
+## 단말기 화면이 시야를 채우는 동안은 탐색 라벨도 같이 숨는다
+func _set_world_hud(shown: bool) -> void:
+	super(shown)
+	if explore_label:
+		explore_label.visible = shown
 
 
 func _note_room() -> void:

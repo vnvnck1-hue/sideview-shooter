@@ -1,0 +1,13 @@
+{
+  "id": "sentry_wall_side_hatch_v1",
+  "type": "side_wall_embedded_sentry_housing_concept",
+  "image": "sentry_wall_side_hatch_v1_concept_sheet.png",
+  "camera": "strict_side_view",
+  "orientation": "wall_left_sentry_emerges_right",
+  "states": [
+    "closed_flush",
+    "shutters_retracting",
+    "fully_open_cavity"
+  ],
+  "notes": "Designed for a vertical side wall. Horizontally flip for a right-wall installation. The cavity remains empty so the complete sentry can slide out as one assembled unit."
+}

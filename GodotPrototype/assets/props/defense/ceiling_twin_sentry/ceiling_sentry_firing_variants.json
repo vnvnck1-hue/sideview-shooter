@@ -1,0 +1,7 @@
+{
+  "mount": "ceiling_twin_sentry_mount.png",
+  "canvas_px": [512, 224],
+  "aim_pivot_px": [160, 82],
+  "rotary_head": "ceiling_sentry_rotary_head.png",
+  "accelerator_head": "ceiling_sentry_accelerator_head.png"
+}

@@ -127,15 +127,16 @@ func is_solid_at(point: Vector2) -> bool:
 
 ## dir: 탄 진행 방향 (+1 = 왼쪽→오른쪽으로 맞음). hit_y: 월드 Y (높이 맞을수록 더 들림)
 ## hit_point: 월드 탄착점 — 이 주변만 플래시·열·파츠 피해
-func hit(dir: float, hit_y: float, hit_point: Vector2 = Vector2.INF) -> void:
+## power: 위력 배율(1.0 플레이어 소총 · 2.0 센트리건) — 들썩임·밀림·조각 수와 비거리가 비례한다
+func hit(dir: float, hit_y: float, hit_point: Vector2 = Vector2.INF, power := 1.0) -> void:
 	var d := 1 if dir >= 0.0 else -1
 	# 거의 서 있으면 축을 새로 잡는다: 총이 날아온 반대편 바닥 모서리
 	if absf(_angle) < 0.004:
 		_pivot_side = d
 	var lever := clampf((rect.end.y - hit_y) / _h, 0.25, 1.0)
 	# 축이 오른쪽(+1)이면 양의 회전이 왼쪽을 들어올린다
-	_ang_v += ANG_IMPULSE * lever * float(_pivot_side)
-	_slide_left = SLIDE_PER_HIT
+	_ang_v += ANG_IMPULSE * lever * float(_pivot_side) * power
+	_slide_left = SLIDE_PER_HIT * power
 	_slide_dir = float(d)
 	_flash = 1.0
 	_mat.set_shader_parameter("flash", 1.0)
@@ -144,11 +145,11 @@ func hit(dir: float, hit_y: float, hit_point: Vector2 = Vector2.INF) -> void:
 		var uv := ((hit_point - rect.position) / rect.size).clamp(Vector2.ZERO, Vector2.ONE)
 		_mat.set_shader_parameter("hit_uv", uv)
 		_heat.add_hit(uv, 1.0)
-		_damage_cells(hit_point - rect.position, Vector2(dir, 0.0))
+		_damage_cells(hit_point - rect.position, Vector2(dir, 0.0), power)
 
 
 ## 탄착점(텍스처 로컬 px) 주변 셀에 피해 누적, 부서진 셀은 조각으로 날린다
-func _damage_cells(local: Vector2, shot_dir: Vector2) -> void:
+func _damage_cells(local: Vector2, shot_dir: Vector2, power := 1.0) -> void:
 	var broke: Array = []
 	for cy in range(_rows):
 		for cx in range(_cols):
@@ -160,7 +161,7 @@ func _damage_cells(local: Vector2, shot_dir: Vector2) -> void:
 			if dist > DAMAGE_RADIUS:
 				continue
 			var fall := 1.0 - smoothstep(0.0, DAMAGE_RADIUS, dist)
-			_damage[idx] += DAMAGE_PER_HIT * (0.35 + 0.65 * fall)
+			_damage[idx] += DAMAGE_PER_HIT * (0.35 + 0.65 * fall) * power
 			if _damage[idx] >= 1.0:
 				broke.append(Vector2i(cx, cy))
 	if broke.is_empty():
@@ -170,15 +171,15 @@ func _damage_cells(local: Vector2, shot_dir: Vector2) -> void:
 		return Vector2((a.x + 0.5) * CELL, (a.y + 0.5) * CELL).distance_to(local) < Vector2((b.x + 0.5) * CELL, (b.y + 0.5) * CELL).distance_to(local))
 	var n := 0
 	for c in broke:
-		if n >= MAX_CHUNKS_PER_HIT:
+		if n >= int(MAX_CHUNKS_PER_HIT * power):
 			_damage[c.y * _cols + c.x] = 0.92      # 거의 부서진 채 다음 발에 떨어진다
 			continue
-		_break_cell(c.x, c.y, shot_dir, local)
+		_break_cell(c.x, c.y, shot_dir, local, power)
 		n += 1
 	_mask_tex.update(_mask_img)
 
 
-func _break_cell(cx: int, cy: int, shot_dir: Vector2, local_hit: Vector2) -> void:
+func _break_cell(cx: int, cy: int, shot_dir: Vector2, local_hit: Vector2, power := 1.0) -> void:
 	_mask_img.set_pixel(cx, cy, Color.BLACK)
 	_broken += 1
 	var region := Rect2(cx * CELL, cy * CELL, minf(CELL, _w - cx * CELL), minf(CELL, _h - cy * CELL))
@@ -186,7 +187,7 @@ func _break_cell(cx: int, cy: int, shot_dir: Vector2, local_hit: Vector2) -> voi
 	var world := to_global(offset + center_local)
 	var away := (center_local - local_hit)
 	away = away.normalized() if away.length() > 1.0 else Vector2(0, -1)
-	var vel := shot_dir.normalized() * randf_range(140.0, 380.0) + away * randf_range(60.0, 200.0) + Vector2(0, -randf_range(120.0, 320.0))
+	var vel := (shot_dir.normalized() * randf_range(140.0, 380.0) + away * randf_range(60.0, 200.0) + Vector2(0, -randf_range(120.0, 320.0))) * power
 	var chunk := ChunkDebris.new()
 	chunk.setup(texture, region, world, vel, rect.end.y)
 	chunk.z_index = 1

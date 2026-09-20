@@ -1,0 +1,22 @@
+{
+  "id": "ceiling_sentry_firing_variants_v1",
+  "shared_mount": "ceiling_twin_sentry_mount.png",
+  "canvas_px": [512, 224],
+  "shared_origin_px": [0, 0],
+  "aim_pivot_px": [160, 82],
+  "variants": [
+    {
+      "id": "rotary",
+      "head": "ceiling_sentry_rotary_head.png",
+      "assembled_preview": "ceiling_sentry_rotary_assembled.png",
+      "firing_axis": "single_compact_rotating_barrel_cluster"
+    },
+    {
+      "id": "accelerator",
+      "head": "ceiling_sentry_accelerator_head.png",
+      "assembled_preview": "ceiling_sentry_accelerator_assembled.png",
+      "firing_axis": "single_long_electromagnetic_channel"
+    }
+  ],
+  "note": "Both heads share the same mount and canvas origin. Rotate the selected head around aim_pivot_px while keeping the mount fixed."
+}

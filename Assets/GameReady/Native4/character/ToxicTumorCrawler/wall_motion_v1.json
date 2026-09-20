@@ -1,0 +1,43 @@
+{
+  "formatVersion": 1,
+  "character": "toxic_tumor_crawler",
+  "artPixelToWorldPixel": 4,
+  "cell": [
+    80,
+    80
+  ],
+  "commonPivot": {
+    "x": 0.5,
+    "y": 0.0,
+    "description": "bottom center of each cell, matching existing crawler metadata"
+  },
+  "orientation": "right-wall jump, then right-wall-to-ceiling inside corner; mirror or rotate for other surfaces",
+  "clips": {
+    "wall_jump": {
+      "frames": [
+        "wall_jump/wall_jump_01.png",
+        "wall_jump/wall_jump_02.png",
+        "wall_jump/wall_jump_03.png",
+        "wall_jump/wall_jump_04.png",
+        "wall_jump/wall_jump_05.png"
+      ],
+      "sheet": "wall_jump_5f_v1.png",
+      "fps": 10,
+      "loop": false,
+      "description": "floor takeoff to right-wall grip"
+    },
+    "corner_turn": {
+      "frames": [
+        "corner_turn/corner_turn_01.png",
+        "corner_turn/corner_turn_02.png",
+        "corner_turn/corner_turn_03.png",
+        "corner_turn/corner_turn_04.png",
+        "corner_turn/corner_turn_05.png"
+      ],
+      "sheet": "corner_turn_5f_v1.png",
+      "fps": 10,
+      "loop": false,
+      "description": "concave inside corner: right wall to ceiling, body stays within the room"
+    }
+  }
+}

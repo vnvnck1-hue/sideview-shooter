@@ -3,14 +3,17 @@ extends Node2D
 ## 붉은 후드 정비공. 위치는 바닥 월드 좌표(발 밑).
 ## 구조:  Player
 ##          BodyPivot (몸 중심, 구르기 회전축)
-##            Body      AnimatedSprite2D  — idle(조준 자세 1프레임) / walk(다리만 애니) / crouch
+##            Body      AnimatedSprite2D  — idle / walk / run / crouch
 ##            HeadPivot (목 앵커, 마우스 방향으로 제한된 각도만큼 회전)
 ##              Head    Sprite2D  — 후드+마스크 (목이 원점, 몸 프레임에 맞춰 텍스처 교체)
 ##          ArmPivot   (어깨 앵커, 마우스 방향으로 실시간 회전)
 ##            Arm       Sprite2D  — 팔+총 (어깨가 원점)
 ##            Muzzle    Marker2D  — 총구
 ##            Flash     Sprite2D  — 총구 화염
-## 상태 우선순위: Roll > Crouch > Walk > Idle. 사격은 Roll 이 아닐 때 언제나 가능(즉발). 버튼을 누르고 있으면 FIRE_COOLDOWN 간격으로 연사.
+## 상태 우선순위: Roll > Crouch > Run/Walk > Idle.
+## 이동/사격 배타: Shift = 질주(RUN_SPEED). 질주 중엔 총을 쏠 수 없고, 사격 입력이 들어오면
+## 질주가 즉시 풀려 걷기(WALK_SPEED)로 감속한다 — FIRE_MAX_SPEED 아래로 떨어져야 첫 발이 나간다.
+## 버튼을 누르고 있으면 FIRE_COOLDOWN 간격으로 연사.
 ## 탄창: MAG_SIZE 발을 쏘면 자동 재장전(RELOAD_TIME, R 로 수동). 재장전 중엔 팔이 아래로 내려가 총을 흔든다.
 ## 반동은 팔·머리·몸통 세 개의 2차 스프링이 서로 다른 강도·감쇠·지연으로 받아 **절차적으로 따로** 흔들린다(팔 즉시 → 머리 → 몸통 순).
 ## 탄착점은 연사 열(_heat)에 비례한 산탄각으로 흔들린다(첫 발은 거의 정확, 길게 누르면 벌어짐).
@@ -27,6 +30,7 @@ const ACTION_FRAME_COUNT := 6
 const CLIPS := {
 	"idle":   {"fps": 1.0, "loop": true,  "frames": 1},
 	"walk":   {"fps": 16.0, "loop": true,  "frames": 4},
+	"run":    {"fps": 18.0, "loop": true,  "frames": 4},
 	"crouch": {"fps": 12.0, "loop": false, "frames": 4},
 }
 const BODY_CENTER_Y := 150.0        # 발 밑 기준 몸 중심 높이
@@ -34,7 +38,12 @@ const ROLL_CENTER := Vector2(10.0, 103.0)   # 웅크린 프레임(crouch_04) 내
 const DEFAULT_SHOULDER := Vector2(39, -142)
 const EJECT_LOCAL := Vector2(46, -14)     # 어깨 기준 탄피 배출구 (팔 로컬)
 
-const SPEED := 588.0                # 840 → 30% 감속
+const WALK_SPEED := 380.0           # 기본 이동 = 걷기. 이 속도에서만 사격할 수 있다
+const RUN_SPEED := 620.0            # Shift 질주. 사격 불가
+const SPEED := RUN_SPEED             # 구르기 종료 관성의 기존 기준값
+const RUN_CLIP_SPEED := WALK_SPEED * 1.05   # 이 속도를 넘어서야 run 클립으로 갈아탄다
+const FIRE_MAX_SPEED := WALK_SPEED * 1.15   # 이보다 빠르면 아직 질주 중 — 사격 불가
+const RUN_FIRE_LOCK := 0.22         # 사격 입력 뒤 이 시간 동안 질주 금지 (연사 중 걷기 유지)
 const WALK_THRESHOLD := 30.0
 const ACCEL := 5200.0               # 출발 가속 (px/s^2) - 약 0.16초에 최고속
 const DECEL := 3600.0               # 정지 감속 - 약 0.23초에 멈춤, 살짝 미끄러짐
@@ -87,7 +96,7 @@ const ROLL_EXIT_SPEED := 0.85       # 구르기가 끝날 때 남는 관성 (SPE
 const ROLL_SLIDE_TIME := 0.4        # 그 뒤 이 시간 동안은 약한 감속으로 미끄러진다
 const ROLL_SLIDE_DECEL := 1500.0
 
-enum State { IDLE, WALK, CROUCH, UNCROUCH, ROLL }
+enum State { IDLE, WALK, RUN, CROUCH, UNCROUCH, ROLL }
 
 var state: State = State.IDLE
 var facing := 1                     # 1 = 오른쪽, -1 = 왼쪽 (조준 방향이 결정)
@@ -98,6 +107,7 @@ var max_x := 10000.0
 var aim_target := Vector2.ZERO      # 월드 좌표. Main 이 매 프레임 마우스 위치를 넣어준다
 
 var _fire_cd := 0.0
+var _run_lock := 0.0                # >0 이면 사격 때문에 질주가 잠긴 상태
 var _flash_t := 0.0
 var _roll_t := 0.0
 var _roll_dir := 1
@@ -369,6 +379,7 @@ func start_reload() -> void:
 
 func _process(delta: float) -> void:
 	_fire_cd = maxf(_fire_cd - delta, 0.0)
+	_run_lock = maxf(_run_lock - delta, 0.0)
 	_update_recoil(delta)
 	_update_reload(delta)
 	if input_enabled and Input.is_action_just_pressed("reload"):
@@ -381,10 +392,12 @@ func _process(delta: float) -> void:
 
 	var axis := 0.0
 	var crouch_held := false
+	var run_held := false
 	var shoot_pressed := false
 	if input_enabled:
 		axis = Input.get_axis("move_left", "move_right")
 		crouch_held = Input.is_action_pressed("crouch")
+		run_held = Input.is_action_pressed("run")
 		shoot_pressed = Input.is_action_pressed("shoot")      # 홀드 = 연사
 		if Input.is_action_just_pressed("roll") and state != State.ROLL:
 			_start_roll(int(signf(axis)) if absf(axis) > 0.1 else facing)
@@ -410,8 +423,14 @@ func _process(delta: float) -> void:
 		state = State.UNCROUCH
 		body.play_backwards("crouch")
 
+	# 사격이 질주를 이긴다: 쏘는 동안(과 그 직후 RUN_FIRE_LOCK)은 Shift 를 눌러도 걷기로 내려온다
+	if shoot_pressed:
+		_run_lock = RUN_FIRE_LOCK
+	var running := run_held and _run_lock <= 0.0
+
 	# 이동 - 가속/감속 이징 (숙인 동안은 감속만)
-	var target_v := axis * SPEED if (state != State.CROUCH and state != State.UNCROUCH) else 0.0
+	var target_speed := RUN_SPEED if running else WALK_SPEED
+	var target_v := axis * target_speed if (state != State.CROUCH and state != State.UNCROUCH) else 0.0
 	var rate := ACCEL
 	_slide_t = maxf(_slide_t - delta, 0.0)
 	if absf(target_v) < 1.0:
@@ -424,24 +443,28 @@ func _process(delta: float) -> void:
 	if absf(velocity_x) > 0.5:
 		position.x = clampf(position.x + velocity_x * delta, min_x, max_x)
 
-	# Idle / Walk 결정. 조준 반대 방향으로 걸으면 역재생(뒷걸음)
-	if state == State.IDLE or state == State.WALK:
-		var want: State = State.WALK if moving else State.IDLE
+	# 걷기/달리기 포즈를 별도 클립으로 재생한다. 조준 반대 방향은 역재생.
+	if state == State.IDLE or state == State.WALK or state == State.RUN:
+		var want: State = State.IDLE
+		if moving:
+			want = State.RUN if running and absf(velocity_x) > RUN_CLIP_SPEED else State.WALK
 		if want != state:
 			state = want
-			body.play("walk" if moving else "idle")
-		if state == State.WALK:
-			# 걷기 애니 속도는 실제 속도에 비례, 조준 반대 방향이면 역재생(뒷걸음)
+			body.play("run" if state == State.RUN else ("walk" if state == State.WALK else "idle"))
+		if state == State.WALK or state == State.RUN:
 			var backwards := signf(velocity_x) != signf(float(facing))
-			var k := clampf(absf(velocity_x) / SPEED, 0.35, 1.0)
+			var clip_speed := RUN_SPEED if state == State.RUN else WALK_SPEED
+			var k := clampf(absf(velocity_x) / clip_speed, 0.35, 1.0)
 			body.speed_scale = -k if backwards else k
 		else:
 			body.speed_scale = 1.0
 
 	_update_breath(delta)
 
-	# 사격 - 누르고 있는 동안 쿨다운마다 한 발 (첫 발 즉발). 탄창이 비면 자동 재장전
-	if shoot_pressed and _fire_cd <= 0.0 and not reloading:
+	# 사격 - 누르고 있는 동안 쿨다운마다 한 발 (첫 발 즉발). 탄창이 비면 자동 재장전.
+	# 질주 속도가 남아 있는 동안은 발사되지 않는다 — 위에서 이미 걷기로 감속을 시작했으므로
+	# 브레이크를 밟듯 아주 짧게 늦춰졌다가 나간다.
+	if shoot_pressed and _fire_cd <= 0.0 and not reloading and absf(velocity_x) <= FIRE_MAX_SPEED:
 		if ammo > 0:
 			_fire()
 		else:

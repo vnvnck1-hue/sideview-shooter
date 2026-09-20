@@ -184,6 +184,78 @@
         52,
         -91
       ]
+    },
+    "run_01": {
+      "shoulder": [
+        204,
+        176
+      ],
+      "shoulder_from_pivot": [
+        44,
+        -144
+      ],
+      "neck": [
+        180,
+        170
+      ],
+      "neck_from_pivot": [
+        20,
+        -150
+      ]
+    },
+    "run_02": {
+      "shoulder": [
+        190,
+        176
+      ],
+      "shoulder_from_pivot": [
+        30,
+        -144
+      ],
+      "neck": [
+        166,
+        170
+      ],
+      "neck_from_pivot": [
+        6,
+        -150
+      ]
+    },
+    "run_03": {
+      "shoulder": [
+        202,
+        176
+      ],
+      "shoulder_from_pivot": [
+        42,
+        -144
+      ],
+      "neck": [
+        178,
+        170
+      ],
+      "neck_from_pivot": [
+        18,
+        -150
+      ]
+    },
+    "run_04": {
+      "shoulder": [
+        218,
+        176
+      ],
+      "shoulder_from_pivot": [
+        58,
+        -144
+      ],
+      "neck": [
+        194,
+        170
+      ],
+      "neck_from_pivot": [
+        34,
+        -150
+      ]
     }
   },
   "arm_gun": {

@@ -1,0 +1,9 @@
+{
+  "id": "sentry_wall_side_head_v1",
+  "source": "Assets/Generated/SentryTurret/WallHatch/sentry_wall_side_head_v1_concept.png",
+  "type": "sentry_upper_head_module",
+  "camera": "strict_side_view",
+  "aim_direction": "right",
+  "mounting": "rear_dock_and_underside_pivot",
+  "flip_for_right_wall": true
+}

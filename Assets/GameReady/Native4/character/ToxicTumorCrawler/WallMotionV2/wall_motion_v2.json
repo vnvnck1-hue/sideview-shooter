@@ -1,0 +1,79 @@
+{
+  "formatVersion": 2,
+  "character": "toxic_tumor_crawler",
+  "anatomyGuide": "Docs/TOXIC_TUMOR_CRAWLER_ANATOMY.md",
+  "source": "Assets/Generated/CharacterAnimation/ToxicTumorCrawler/toxic_tumor_crawler_base_v2.png",
+  "canonicalRgbaSha256": "484db43b5345601d8a1bfeab8c5162af34244254bae1883c7affbcacc83beef1",
+  "artPixelToWorldPixel": 4,
+  "cell": [
+    80,
+    80
+  ],
+  "commonPivot": {
+    "x": 0.5,
+    "y": 0.0,
+    "description": "bottom center, same convention as the existing crawler sheet"
+  },
+  "clips": {
+    "wall_jump": {
+      "frames": [
+        "wall_jump/wall_jump_01.png",
+        "wall_jump/wall_jump_02.png",
+        "wall_jump/wall_jump_03.png",
+        "wall_jump/wall_jump_04.png",
+        "wall_jump/wall_jump_05.png"
+      ],
+      "sheet": "wall_jump_5f_v2.png",
+      "anglesDegCounterclockwise": [
+        0,
+        20,
+        42,
+        65,
+        90
+      ],
+      "fps": 10,
+      "loop": false,
+      "description": "floor takeoff to right-wall attachment"
+    },
+    "corner_inside": {
+      "frames": [
+        "corner_inside/corner_inside_01.png",
+        "corner_inside/corner_inside_02.png",
+        "corner_inside/corner_inside_03.png",
+        "corner_inside/corner_inside_04.png",
+        "corner_inside/corner_inside_05.png"
+      ],
+      "sheet": "corner_inside_5f_v2.png",
+      "anglesDegCounterclockwise": [
+        90,
+        112,
+        135,
+        158,
+        180
+      ],
+      "fps": 10,
+      "loop": false,
+      "description": "concave room corner: right wall to underside of ceiling"
+    },
+    "corner_outside": {
+      "frames": [
+        "corner_outside/corner_outside_01.png",
+        "corner_outside/corner_outside_02.png",
+        "corner_outside/corner_outside_03.png",
+        "corner_outside/corner_outside_04.png",
+        "corner_outside/corner_outside_05.png"
+      ],
+      "sheet": "corner_outside_5f_v2.png",
+      "anglesDegCounterclockwise": [
+        90,
+        68,
+        45,
+        22,
+        0
+      ],
+      "fps": 10,
+      "loop": false,
+      "description": "convex ledge corner: left vertical face to top surface"
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "sentry_wall_side_head_v1",
+  "type": "sentry_upper_head_module",
+  "image": "sentry_wall_side_head_v1_concept.png",
+  "camera": "strict_side_view",
+  "aim_direction": "right",
+  "mounting": {
+    "dock": "rear_horizontal_wall_housing_guide",
+    "pivot": "underside_rotation_collar",
+    "flip_for_right_wall": true
+  },
+  "features": [
+    "upper_sensor_optic",
+    "twin_forward_cannon_shroud",
+    "visible_rear_ammunition_feed",
+    "compact_foldable_actuators"
+  ]
+}

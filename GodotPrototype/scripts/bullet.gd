@@ -11,7 +11,7 @@ const SPEED := 20800.0
 const TRAIL_W := 7.0
 const TRAIL_FADE := 0.05       # 탄착 후 궤적이 사라지는 시간 (거의 즉시)
 
-# 픽셀 잔상 (궤적 라인이 부서진 조각). 카메라 zoom 0.5 → 월드 2유닛 = 화면 1px.
+# 픽셀 잔상 (궤적 라인이 부서진 조각). 카메라 zoom 0.625 → 월드 4유닛 = 화면 2.5px.
 const RESIDUE_PX := 2.0                  # 월드 유닛/화면 px (격자 스냅 단위)
 const RESIDUE_SIZE := 4.0                # 선분 두께 = 화면 2px (가끔 3px). 수렴 후 점의 크기
 const RESIDUE_COUNT_MAX := 3             # 한 발에서 나오는 선분 수: 1 ~ 이 값 사이 랜덤
@@ -80,6 +80,11 @@ const LIGHT_TIME := 0.16      # 탄착 라이트 소등 시간
 
 enum Impact { WALL, GLASS, PROP, FLESH, WATER }
 
+## 탄착 위력 배율 — 1.0 = 플레이어 소총, 센트리건은 SentryTurret.SHOT_POWER(1.7).
+## 탄착 플래시·충격 링·라이트 크기와 불꽃·파편의 **개수·속도**(파편 비거리)가 이 값에 비례한다.
+var power := 1.0
+## 궤적·심·탄두 두께 배율 — 위력과 따로 둔다 (센트리건은 탄은 굵게, 파편·넉백은 위력만큼만).
+var width_scale := 1.0
 var impact_kind: Impact = Impact.WALL
 var start := Vector2.ZERO
 var target := Vector2.ZERO
@@ -115,7 +120,7 @@ func setup(from: Vector2, to: Vector2) -> void:
 
 func _ready() -> void:
 	_trail = Line2D.new()
-	_trail.width = TRAIL_W
+	_trail.width = TRAIL_W * width_scale
 	_trail.default_color = Lighting.TRACER
 	_trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	_trail.end_cap_mode = Line2D.LINE_CAP_ROUND
@@ -127,7 +132,7 @@ func _ready() -> void:
 	add_child(_trail)
 
 	_core = Line2D.new()
-	_core.width = 2.5
+	_core.width = 2.5 * width_scale
 	_core.default_color = Lighting.TRACER_CORE
 	_core.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	_core.end_cap_mode = Line2D.LINE_CAP_ROUND
@@ -136,7 +141,7 @@ func _ready() -> void:
 
 	_head = ColorRect.new()
 	_head.color = Color(1.0, 0.88, 0.82)
-	_head.size = Vector2(12, 12)
+	_head.size = Vector2(12, 12) * width_scale
 	_head.pivot_offset = _head.size * 0.5
 	_head.modulate = Lighting.RED_EMISSIVE
 	add_child(_head)
@@ -172,7 +177,7 @@ func _process_impact(delta: float) -> void:
 	var f := 1.0 - clampf(_impact_t / TRAIL_FADE, 0.0, 1.0)
 	_trail.modulate.a = f
 	_core.modulate.a = f * f
-	_trail.width = TRAIL_W * (0.4 + 0.6 * f)
+	_trail.width = TRAIL_W * width_scale * (0.4 + 0.6 * f)
 
 	# 플래시: 크게 시작해 빠르게 수축
 	var fk := clampf(_impact_t / FLASH_TIME, 0.0, 1.0)
@@ -411,7 +416,7 @@ func _impact() -> void:
 	# 플래시 (밝은 코어)
 	_flash = ColorRect.new()
 	_flash.color = Color(1.0, 0.70, 0.60)
-	_flash.size = Vector2(24, 24)
+	_flash.size = Vector2(24, 24) * power
 	_flash.pivot_offset = _flash.size * 0.5
 	_flash.position = target - _flash.size * 0.5
 	_flash.rotation = randf_range(0.0, TAU)
@@ -420,7 +425,7 @@ func _impact() -> void:
 		# 착수: 붉은 섬광 대신 청백 물보라 플래시, 링은 수면에 납작하게
 		_flash.color = Color(0.85, 0.95, 1.0)
 		_flash.modulate = Color(2.4, 2.8, 3.2, 1.0)
-		_flash.size = Vector2(28, 10)
+		_flash.size = Vector2(28, 10) * power
 		_flash.pivot_offset = _flash.size * 0.5
 		_flash.position = target - _flash.size * 0.5
 		_flash.rotation = 0.0
@@ -434,51 +439,51 @@ func _impact() -> void:
 		_ring.modulate = Color(1.6, 2.0, 2.4, 1.0)
 		_ring.scale = Vector2(1.0, 0.3)
 	add_child(_ring)
-	var half := 17.0
+	var half := 17.0 * power
 	for side in range(4):
 		var r := ColorRect.new()
 		r.color = Color(1.0, 0.45, 0.32, 0.9)
 		if side < 2:
-			r.size = Vector2(half * 2.0, 3.0)
+			r.size = Vector2(half * 2.0, 3.0 * power)
 			r.position = Vector2(-half, (-half if side == 0 else half) - 1.5)
 		else:
-			r.size = Vector2(3.0, half * 2.0)
+			r.size = Vector2(3.0 * power, half * 2.0)
 			r.position = Vector2((-half if side == 2 else half) - 1.5, -half)
 		_ring.add_child(r)
 
 	# 탄착 라이트
 	_light = PointLight2D.new()
 	_light.texture = Lighting.radial_texture()
-	_light.texture_scale = Lighting.scale_for_radius(260.0)
+	_light.texture_scale = Lighting.scale_for_radius(260.0 * (0.5 + 0.5 * power))
 	_light.color = Lighting.IMPACT_LIGHT if impact_kind != Impact.WATER else Lighting.WATER
-	_light.energy = 2.2 if impact_kind != Impact.WATER else 1.4
+	_light.energy = (2.2 if impact_kind != Impact.WATER else 1.4) * (0.7 + 0.3 * power)
 	_light.height = Lighting.FLASH_HEIGHT          # 주변 노멀맵이 섬광에 반응
 	_light.position = target
 	add_child(_light)
 
 	var back := -_dir
-	var spark_n := SPARK_COUNT
-	var chip_n := CHIP_COUNT
+	var spark_n := int(SPARK_COUNT * power)
+	var chip_n := int(CHIP_COUNT * power)
 	if impact_kind == Impact.PROP:
-		spark_n = int(SPARK_COUNT * 0.6)
-		chip_n = int(CHIP_COUNT * 0.5)
+		spark_n = int(spark_n * 0.6)
+		chip_n = int(chip_n * 0.5)
 	elif impact_kind == Impact.GLASS:
-		spark_n = int(SPARK_COUNT * 0.8)
-		chip_n = CHIP_COUNT + 4
+		spark_n = int(spark_n * 0.8)
+		chip_n += 4
 	elif impact_kind == Impact.FLESH:
-		spark_n = int(SPARK_COUNT * 0.4)          # 살에는 불꽃이 거의 없고 독액 방울(Crawler 가 뿌림)이 대신
-		chip_n = int(CHIP_COUNT * 0.5)
+		spark_n = int(spark_n * 0.4)              # 살에는 불꽃이 거의 없고 독액 방울(Crawler 가 뿌림)이 대신
+		chip_n = int(chip_n * 0.5)
 	elif impact_kind == Impact.WATER:
 		spark_n = 0                                # 물에는 불꽃·파편이 없다 — 물기둥·물방울은 WaterPool.bullet_splash 가 그린다
 		chip_n = 0
 	# 불꽃 스파크: 진행 반대 방향 원뿔로 빠르게, 약한 중력
 	for i in range(spark_n):
 		var s := ColorRect.new()
-		var len := randf_range(13.0, 25.0)
-		s.size = Vector2(len, 4.0)
+		var len := randf_range(13.0, 25.0) * power
+		s.size = Vector2(len, 4.0 * power)
 		s.pivot_offset = s.size * 0.5
 		s.color = Color(1.0, randf_range(0.30, 0.58), randf_range(0.12, 0.30))
-		var v := back.rotated(randf_range(-1.1, 1.1)) * randf_range(560.0, 1150.0)
+		var v := back.rotated(randf_range(-1.1, 1.1)) * randf_range(560.0, 1150.0) * power
 		s.position = target - s.size * 0.5
 		s.rotation = v.angle()
 		s.modulate = Lighting.RED_EMISSIVE
@@ -489,16 +494,16 @@ func _impact() -> void:
 	# 파편: 벽=회색 조각 / 유리=밝은 청백색 얇은 조각(아래로 쏟아짐) / 프랍=나무·금속색 소량 / 살=어두운 살점
 	for i in range(chip_n):
 		var c := ColorRect.new()
-		var sz := randf_range(7.0, 14.0)
+		var sz := randf_range(7.0, 14.0) * (0.6 + 0.4 * power)
 		c.size = Vector2(sz, sz * randf_range(0.5, 1.0))
 		c.pivot_offset = c.size * 0.5
-		var v := back.rotated(randf_range(-1.4, 1.4)) * randf_range(210.0, 580.0) + Vector2(0, -randf_range(60.0, 210.0))
+		var v := (back.rotated(randf_range(-1.4, 1.4)) * randf_range(210.0, 580.0) + Vector2(0, -randf_range(60.0, 210.0))) * power
 		match impact_kind:
 			Impact.GLASS:
 				var gl := randf_range(0.75, 1.0)
 				c.color = Color(gl * 0.85, gl * 0.95, gl, 0.95)
 				c.size = Vector2(sz * 1.3, sz * randf_range(0.25, 0.5))
-				v = Vector2(randf_range(-260.0, 260.0), randf_range(-120.0, 220.0))   # 사방으로 흩어지며 낙하
+				v = Vector2(randf_range(-260.0, 260.0), randf_range(-120.0, 220.0)) * power   # 사방으로 흩어지며 낙하
 			Impact.PROP:
 				var w := randf_range(0.35, 0.55)
 				c.color = Color(w * 1.25, w * 0.95, w * 0.7)

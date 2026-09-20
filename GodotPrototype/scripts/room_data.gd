@@ -14,6 +14,8 @@ extends RefCounted
 ##                            벽걸이는 "cy"(그 열 천장 상단에서 아래로) 또는 "fy"(바닥선에서 위로) 를 주면 그 높이에 붙는다.
 ##                            특수 {"type": "cabinet"(파츠 파괴)|"capacitor"|"cart"|"breaker"(벽걸이, cy/fy)|"sentry"(바닥 격납 센트리건)}.
 ##                            sentry 는 평소 바닥 해치로 묻혀 있다가 W/↑ 로 전개·조종한다 (SentryTurret). 받침 폭 376px · 높이 440px 자리를 비워 둘 것.
+##                            생존자 {"type": "npc", "id": NpcData.CAST 의 키, "x", "facing": 1|-1} — W/↑ 로 말을 건다. 내용은 NpcData.LINES.
+##                            몬스터가 도는 방에는 두지 않는다 (대화 중에는 플레이어가 움직이지 못한다).
 ##   lamps                    [x, ...] 천장 펜던트 램프(LampLight — 총으로 깨짐, 빛 기둥, 바닥 풀). 그 열의 천장 띠 아래에 매달린다.
 ##   fixtures                 장식 조명 [{"file": power_relay Lighting 이름, "x", "cy"|"fy", "radius", "color"(선택)}] — PointLight2D + 스프라이트.
 ##                            ceiling_lamp · dangling_lamp · fluorescent_lamp · wall_lamp · floor_work_light · indicator_beacon
@@ -36,6 +38,8 @@ const TILE_HEIGHT := 560                # 옛 스트립 높이 — 카메라 초
 const FRONT_DOOR_W := 315
 const START_ROOM := "airlock"           # 메인 게임 시작 방
 const TEST_ROOM := "tank_room"          # 테스트(원버튼) 시작 방 — 물이 고인 저수조실 (액체 셰이더 확인용)
+const SENTRY_TEST_ROOM := "hangar"      # 센트리건 테스트 방 — 맵에서 가장 큰 방(32열 4096px)
+const SENTRY_TEST_X := 3495.0           # 그 방의 센트리건 설치 지점 (아래 hangar props 와 같은 값)
 
 const PROP_DIR := "res://assets/props/"
 const CONNECTOR_DIR := "res://assets/connectors/"
@@ -63,8 +67,10 @@ const ROOMS := {
 		"left_door": {"open": false}, "right_door": {"open": true, "target": "corr_west"},
 		"front_doors": [],
 		"props": [
+			{"type": "npc", "id": "caretaker", "x": 170, "facing": 1},
 			{"tex": "workshop_locker_game_scale", "x": 320},
 			{"tex": "workshop_armchair_game_scale", "x": 610},
+			{"type": "terminal", "id": "link_airlock", "x": 660, "fy": 330},
 		],
 		"lamps": [448],
 		"fixtures": [],
@@ -79,7 +85,10 @@ const ROOMS := {
 		"shape": [[18, 4]],
 		"left_door": {"open": true, "target": "airlock"}, "right_door": {"open": true, "target": "workshop"},
 		"front_doors": [{"x": 1000, "target": "quarters_corr", "target_door": 0}],
-		"props": [],
+		"props": [
+			{"type": "terminal", "id": "save_corr_west", "x": 400},
+			{"type": "sentry", "id": "sentry_corr_west", "name": "서쪽 통로 방어포", "x": 1800},
+		],
 		"lamps": [500, 1800],
 		"fixtures": [{"file": "fluorescent_lamp", "x": 1400, "cy": 52, "radius": 260}],
 		"fx": [
@@ -98,8 +107,8 @@ const ROOMS := {
 		"front_doors": [],
 		"props": [
 			{"tex": "workshop_locker_game_scale", "x": 260},
-			{"tex": "workshop_workbench_game_scale", "x": 760},
-			{"type": "sentry", "x": 1230},
+			{"type": "terminal", "id": "sec_workshop", "x": 760},
+			{"type": "sentry", "id": "sentry_workshop", "name": "작업실 방어포", "x": 1230},
 			{"tex": "workshop_armchair_game_scale", "x": 1500},
 		],
 		"lamps": [420, 900, 1380],
@@ -158,7 +167,10 @@ const ROOMS := {
 		"shape": [[5, 4]],
 		"left_door": {"open": true, "target": "hall"}, "right_door": {"open": true, "target": "hangar"},
 		"front_doors": [],
-		"props": [],
+		"props": [
+			{"type": "npc", "id": "controller", "x": 500, "facing": -1},
+			{"type": "terminal", "id": "save_corr_mid", "x": 320},
+		],
 		"lamps": [],
 		"fixtures": [{"file": "fluorescent_lamp", "x": 320, "cy": 52, "radius": 260}],
 		"fx": [{"type": "leak", "x": 440, "cy": 96, "dir": Vector2(-0.3, 1.0), "pressure": 0.7}],
@@ -177,7 +189,8 @@ const ROOMS := {
 			{"tex": "workshop_armchair_game_scale", "x": 1950},
 			{"tex": "workshop_locker_game_scale", "x": 2700},
 			{"tex": "workshop_workbench_game_scale", "x": 3150},
-			{"type": "sentry", "x": 3495},
+			{"type": "sentry", "id": "sentry_hangar", "name": "격납고 방어포", "x": SENTRY_TEST_X},
+			{"type": "terminal", "id": "sec_hangar", "x": 2300, "fy": 330},
 			{"tex": "workshop_locker_game_scale", "x": 3800},
 		],
 		"lamps": [500, 1200, 1900, 2600, 3300, 3900],
@@ -211,6 +224,7 @@ const ROOMS := {
 		"front_doors": [{"x": 300, "target": "hydro_lock", "target_door": 0}],
 		"props": [
 			{"tex": "workshop_workbench_game_scale", "x": 900},
+			{"type": "terminal", "id": "survey_storage", "x": 900, "fy": 330},
 			{"tex": "workshop_locker_game_scale", "x": 1345},
 		],
 		"lamps": [500, 1400],
@@ -238,6 +252,8 @@ const ROOMS := {
 			{"tex": POWER_RELAY_DIR + "Props/power_relay_conduit_junction.png", "x": 500, "fy": 300},
 			{"type": "breaker", "x": 1000, "fy": 330},
 			{"tex": POWER_RELAY_DIR + "Props/power_relay_conduit_junction.png", "x": 1500, "fy": 300},
+			{"type": "sentry", "id": "sentry_cable", "name": "케이블 덕트 방어포", "x": 800},
+			{"type": "terminal", "id": "survey_cable", "x": 1750},
 		],
 		"lamps": [1250],
 		"fixtures": [
@@ -264,6 +280,7 @@ const ROOMS := {
 			{"type": "capacitor", "x": 1050},
 			{"type": "breaker", "x": 1190, "cy": 240},
 			{"type": "cart", "x": 1480},
+			{"type": "terminal", "id": "rewire_relay", "x": 1560, "fy": 360},
 		],
 		"lamps": [],
 		"fixtures": [
@@ -341,7 +358,10 @@ const ROOMS := {
 			{"x": 300, "target": "corr_west", "target_door": 0},
 			{"x": 1150, "target": "mess_hall", "target_door": 0},
 		],
-		"props": [],
+		"props": [
+			{"type": "sentry", "id": "sentry_quarters", "name": "숙소 복도 방어포", "x": 880},
+			{"type": "terminal", "id": "sec_quarters", "x": 1560, "fy": 375},
+		],
 		"lamps": [900],
 		"fixtures": [
 			{"file": "fluorescent_lamp", "x": 700, "cy": 52, "radius": 260},
@@ -361,6 +381,7 @@ const ROOMS := {
 		"left_door": {"open": false}, "right_door": {"open": true, "target": "quarters_corr"},
 		"front_doors": [],
 		"props": [
+			{"type": "npc", "id": "junior", "x": 160, "facing": 1},
 			{"tex": "crew_bunk_left", "x": 345},
 			{"tex": "crew_bedside_cabinet", "x": 580},
 			{"tex": "crew_privacy_screen", "x": 780},
@@ -380,6 +401,7 @@ const ROOMS := {
 		"props": [
 			{"tex": "crew_bunk_right", "x": 330},
 			{"tex": "crew_bedside_cabinet", "x": 560},
+			{"type": "terminal", "id": "link_bunk_b", "x": 712, "fy": 320},
 			{"tex": "crew_bunk_left", "x": 950},
 			{"tex": "crew_heater", "x": 1250},
 			{"tex": "crew_privacy_screen", "x": 1470},
@@ -454,7 +476,10 @@ const ROOMS := {
 		"shape": [[7, 5]],
 		"left_door": {"open": false}, "right_door": {"open": true, "target": "greenhouse"},
 		"front_doors": [{"x": 230, "target": "storage", "target_door": 0}],
-		"props": [{"tex": "hydroponics_utility_sink", "x": 640}],
+		"props": [
+			{"type": "npc", "id": "keeper", "x": 300, "facing": 1},
+			{"tex": "hydroponics_utility_sink", "x": 640},
+		],
 		"lamps": [448],
 		"fixtures": [],
 		"fx": [{"type": "leak", "x": 620, "cy": 96, "dir": Vector2(0.0, 1.0), "pressure": 0.5}],
@@ -508,6 +533,8 @@ const ROOMS := {
 		"front_doors": [],
 		"props": [
 			{"tex": POWER_RELAY_DIR + "Props/power_relay_conduit_junction.png", "x": 900, "fy": 300},
+			{"type": "sentry", "id": "sentry_pump", "name": "급수 통로 방어포", "x": 500},
+			{"type": "terminal", "id": "sec_pump", "x": 1180, "fy": 330},
 			{"tex": "hydroponics_utility_sink", "x": 1400},
 		],
 		"lamps": [896],
@@ -535,6 +562,7 @@ const ROOMS := {
 			{"tex": "hydroponics_growth_tank_narrow", "x": 710},
 			{"tex": "hydroponics_plant_rack", "x": 1000},
 			{"tex": "hydroponics_control_console", "x": 1300},
+			{"type": "terminal", "id": "link_tank", "x": 1000, "fy": 320},
 		],
 		"lamps": [500, 1100],
 		"fixtures": [{"file": "fluorescent_lamp", "x": 800, "cy": 52, "radius": 280, "color": GROW_LIGHT}],
@@ -554,9 +582,11 @@ const ROOMS := {
 		"left_door": {"open": true, "target": "tank_room"}, "right_door": {"open": false},
 		"front_doors": [],
 		"props": [
+			{"type": "npc", "id": "senior", "x": 1020, "facing": -1},
 			{"tex": "hydroponics_plant_rack", "x": 330},
 			{"tex": "hydroponics_plant_rack", "x": 620},
 			{"tex": "hydroponics_growth_tank_narrow", "x": 850},
+			{"type": "terminal", "id": "rewire_nursery", "x": 520, "fy": 340},
 		],
 		"lamps": [400, 800],
 		"fixtures": [{"file": "fluorescent_lamp", "x": 576, "cy": 52, "radius": 280, "color": GROW_LIGHT}],

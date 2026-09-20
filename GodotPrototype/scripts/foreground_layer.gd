@@ -30,9 +30,17 @@ const PIPE_JOINT_GAP := 28.0                       # 배관 마디 사이 틈 (�
 const TRAY_H := 56.0                               # 바닥 트레이 두께 — 바닥 밴드 하단선을 덮는다 (윗선 = 하단 − 28)
 const TRAY_GAP := Vector2(96.0, 230.0)             # 트레이 마디 사이 틈 범위
 const VOID_EXT := 320.0                            # 열린 쪽(방 끝·낮은 천장 위)으로 어둠 속에 더 뻗는 길이
-const PILLAR_W := Vector2(64.0, 100.0)             # 기둥 폭 범위
+const PILLAR_W := Vector2(40.0, 64.0)              # 기둥 폭 범위 — 100px 은 방을 반으로 자르는 검은 커튼이 되어 64 로 낮췄다 (작업실 수작업 48)
 const PILLAR_OVER := Vector2(44.0, 32.0)           # 기둥이 천장 위·바닥 밴드 아래로 넘는 길이
 const CRATE_SINK := 38.0                           # 상자 바닥이 바닥선보다 내려가는 px (가까워서 낮게 보인다)
+## 그림 근경(pipe_bracket·utility_housing)은 덩치가 커서 방 한가운데에 원본 크기로 놓으면 화면을 통째로 가린다.
+## 방 양 끝에 붙여 대부분을 벽 바깥 어둠에 두고 아래 비율만큼만 방 안으로 들인다 (작업실 수작업 배치에서 뽑은 값).
+const SPRITE_IN := 0.25                            # 파이프 브래킷이 방 안으로 들어오는 폭 비율
+const SPRITE_H := Vector2(240.0, 480.0)            # 브래킷 높이 범위 (방 안 높이의 80%)
+const SPRITE_RATIO := 0.625                        # 브래킷 폭 / 높이
+const HOUSING_SIZE := Vector2(520.0, 180.0)        # 유틸리티 하우징 기본 크기 — 낮게 깔린다
+const HOUSING_IN := 0.42                           # 하우징이 방 안으로 들어오는 폭 비율
+const HOUSING_SINK := 88.0                         # 하우징 바닥이 바닥 밴드 하단보다 더 내려가는 px (방 안에서는 윗면만 보인다)
 
 const DATA_DIR := "res://foreground/"
 const KINDS := ["pipe", "pillar", "crate", "tray", "dark", "cable", "pipe_bracket", "utility_housing"]
@@ -40,7 +48,7 @@ const KINDS := ["pipe", "pillar", "crate", "tray", "dark", "cable", "pipe_bracke
 const DEFAULT_SIZE := {
 	"pipe": Vector2(480, 24), "pillar": Vector2(40, 900), "crate": Vector2(144, 120),
 	"tray": Vector2(480, 20), "dark": Vector2(32, 32), "cable": Vector2(360, 160),
-	"pipe_bracket": Vector2(420, 616), "utility_housing": Vector2(806, 280),
+	"pipe_bracket": Vector2(300, 480), "utility_housing": Vector2(520, 180),
 }
 ## 그림 근경 (assets/props/foreground_*_v2.png). region = 불투명 영역, 항목 size 에 맞춰 늘린다 (기본 = 원본의 절반).
 ## 실루엣 근경과 같은 층·같은 어둠(라이트 제외, 앰비언트만) — SPRITE_TINT 로 톤을 맞춘다.
@@ -223,23 +231,33 @@ func generate(avoid_x: Array) -> void:
 			_add("dark", Vector2(dx, ty - 16.0), Vector2(_q(_rng.randf_range(32.0, 56.0)), 16.0))   # 놓인 잔해
 		x += seg + _q(_rng.randf_range(TRAY_GAP.x, TRAY_GAP.y))
 
-	# 6. 그림 근경 (시험 방만): 가장 높은 천장 배관에서 내려오는 파이프 브래킷 + 바닥의 유틸리티 하우징. 램프·문·기둥·상자 회피
+	# 6. 그림 근경 (시험 방만): 파이프 브래킷과 유틸리티 하우징을 방의 반대쪽 끝에 하나씩, 대부분 벽 바깥 어둠에 걸쳐 놓는다.
+	#    예전처럼 방 한가운데에 원본 크기로 놓으면 좁은 방(에어록·서쪽 통로)은 화면이 통째로 가려진다.
 	if SPRITE_ROOMS.has(room_id):
-		var bs: Vector2 = DEFAULT_SIZE["pipe_bracket"]
-		var bx := _pick_x_in(top_run["x0"], top_run["x1"], avoid_x + placed, 140.0)
-		if bx < 0.0:
-			bx = _q(lerpf(top_run["x0"], top_run["x1"], 0.72))                        # 좁은 방: 오른쪽 3/4 지점
-		placed.append(bx)
-		_add("pipe_bracket", Vector2(bx - bs.x * 0.35, top_run["y"] - 20.0), bs)           # 세로관이 배관 뒤에서 내려온다
-		var hs: Vector2 = DEFAULT_SIZE["utility_housing"]
-		if hs.x > width * 0.5:
-			hs = (hs * (width * 0.5 / hs.x)).snapped(Vector2(GRID, GRID))             # 좁은 방(에어록)은 방 폭 절반까지만
-		var hx := _pick_x_in(0.0, width, avoid_x + placed, hs.x * 0.45)
-		if hx < 0.0:
-			hx = _q(width * (0.25 if bx > width * 0.5 else 0.75))                       # 좁은 방: 브래킷 반대편
-		placed.append(hx)
-		_add("utility_housing", Vector2(hx - hs.x * 0.5, floor_y + CRATE_SINK - hs.y), hs)
+		var bracket_right := _rng.randf() < 0.5
+		_gen_pipe_bracket(bracket_right, cell)
+		_gen_utility_housing(not bracket_right)
 	from_file = false
+
+
+## 파이프 브래킷: 방 끝에 붙여 세로관만 SPRITE_IN 만큼 방 안으로 들인다. 천장 어둠에서 내려오게 천장선 위로 더 뻗는다.
+func _gen_pipe_bracket(right: bool, cell: float) -> void:
+	var edge := room_width if right else 0.0
+	var probe := clampf(edge + (-cell * 0.5 if right else cell * 0.5), 0.0, room_width - 1.0)
+	var cy := _ceiling_at(probe, cell)
+	var h := _q(clampf((floor_y - cy) * 0.8, SPRITE_H.x, SPRITE_H.y))
+	var w := _q(minf(h * SPRITE_RATIO, room_width * 0.3))
+	var x := edge - w * SPRITE_IN if right else edge - w * (1.0 - SPRITE_IN)
+	_add("pipe_bracket", Vector2(_q(x), _q(cy - h * 0.24)), Vector2(w, h))
+
+
+## 유틸리티 하우징: 반대쪽 방 끝에 붙인 낮은 바닥 덩어리. 바닥 밴드 아래로 깊이 내려 방 안에서는 윗면만 보인다.
+func _gen_utility_housing(right: bool) -> void:
+	var w := _q(minf(HOUSING_SIZE.x, room_width * 0.34))
+	var h: float = HOUSING_SIZE.y
+	var edge := room_width if right else 0.0
+	var x := edge - w * HOUSING_IN if right else edge - w * (1.0 - HOUSING_IN)
+	_add("utility_housing", Vector2(_q(x), _q(room_bottom + HOUSING_SINK - h)), Vector2(w, h))
 
 
 ## 같은 천장 높이로 이어진 열 구간 목록: {y, x0, x1, open_l, open_r}. open = 그쪽이 방 끝이거나 옆 구간 천장이 더 낮음(위가 어둠)

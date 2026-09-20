@@ -1,0 +1,9 @@
+{
+  "id": "sentry_wall_side_hatch_v1",
+  "source": "Assets/Generated/SentryTurret/WallHatch/sentry_wall_side_hatch_v1_concept_sheet.png",
+  "type": "side_wall_embedded_sentry_housing_concept",
+  "camera": "strict_side_view",
+  "orientation": "wall_left_sentry_emerges_right",
+  "states": ["closed_flush", "shutters_retracting", "fully_open_cavity"],
+  "flip_for_right_wall": true
+}

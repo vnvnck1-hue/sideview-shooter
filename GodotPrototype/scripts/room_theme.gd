@@ -33,6 +33,21 @@ const THEMES := {
 		"dir": "res://assets/power_relay_room/Tiles/",
 		"prefix": "power_relay",
 	},
+	"research_analysis": {
+		"title": "검체 분석실 (Specimen Analysis)",
+		"dir": "res://assets/tiles/research_analysis_modular/",
+		"prefix": "research_analysis",
+	},
+	"research_isolation": {
+		"title": "멸균·격리실 (Decontamination & Isolation)",
+		"dir": "res://assets/tiles/research_isolation_modular/",
+		"prefix": "research_isolation",
+	},
+	"research_diagnostics": {
+		"title": "진단 관제실 (Diagnostics Control)",
+		"dir": "res://assets/tiles/research_diagnostics_modular/",
+		"prefix": "research_diagnostics",
+	},
 }
 
 const SRC_BG := 0

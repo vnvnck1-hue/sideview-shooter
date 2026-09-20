@@ -1,0 +1,15 @@
+{
+  "id": "sentry_rotary_head_v1_topdown",
+  "type": "new_rotary_autocannon_head",
+  "image": "sentry_rotary_head_v1_topdown_concept.png",
+  "camera": "high_3_4_top_down",
+  "design_lineage": "new_design_unrelated_to_previous_sentry",
+  "features": [
+    "six_barrel_rotary_cluster",
+    "rear_ammunition_drum",
+    "offset_sensor_pod",
+    "circular_pivot_base",
+    "articulated_barrel_actuators"
+  ],
+  "mounting_note": "The lower pivot base is intended to dock onto the side-wall housing, while the head can rotate for aiming."
+}

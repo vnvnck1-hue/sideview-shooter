@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/props/defense/ceiling_twin_sentry/ceiling_twin_sentry_mount.png" id="1_mount"]
+[ext_resource type="Texture2D" path="res://assets/props/defense/ceiling_twin_sentry/ceiling_twin_sentry_head.png" id="2_head"]
+
+[node name="CeilingTwinSentry" type="Node2D"]
+
+[node name="Mount" type="Sprite2D" parent="."]
+centered = false
+texture = ExtResource("1_mount")
+
+[node name="AimPivot" type="Node2D" parent="."]
+position = Vector2(160, 82)
+
+[node name="Head" type="Sprite2D" parent="AimPivot"]
+centered = false
+offset = Vector2(-160, -82)
+texture = ExtResource("2_head")

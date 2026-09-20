@@ -1,0 +1,15 @@
+{
+  "id": "wall_rotary_v1",
+  "head": "wall_rotary_head_game.png",
+  "hatch_states": [
+    "wall_rotary_hatch_closed.png",
+    "wall_rotary_hatch_opening.png",
+    "wall_rotary_hatch_open.png"
+  ],
+  "head_canvas": [320, 176],
+  "hatch_canvas": [320, 384],
+  "head_pivot_px": [147, 140],
+  "head_offset_on_hatch_px": [8, 110],
+  "assembled_pivot_px": [155, 250],
+  "flip_horizontally_for_right_wall": true
+}

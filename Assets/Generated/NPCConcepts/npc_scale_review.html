@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<title>NPC scale against original player</title>
+<style>
+  html, body { margin: 0; background: #0d1019; }
+  .scene { position: relative; width: 2304px; height: 941px; overflow: hidden; }
+  .background { position: absolute; inset: 0; width: 2304px; height: 941px; image-rendering: pixelated; }
+  .actor { position: absolute; overflow: hidden; }
+  .actor img { position: absolute; max-width: none; image-rendering: pixelated; }
+</style>
+<section class="scene" id="cast" data-background="../../GameReady/Validation/corridor_long_tile_prop_validation.png"></section>
+<section class="scene" id="caretaker" data-background="../../GameReady/Validation/workshop_long_room_tile_prop_validation.png"></section>
+<section class="scene" id="security" data-background="../../GameReady/Validation/crew_quarters_long_room_tile_prop_validation.png"></section>
+<section class="scene" id="keeper" data-background="../../GameReady/Validation/hydroponics_long_room_tile_prop_validation.png"></section>
+<section class="scene" id="junior" data-background="../../GameReady/Validation/hydroponics_long_room_tile_prop_validation.png"></section>
+<section class="scene" id="senior" data-background="../../GameReady/Validation/crew_quarters_long_room_tile_prop_validation.png"></section>
+<script>
+const people = {
+  caretaker: { file: 'airlock_caretaker_concept_v5.png', box: [320,154,939,1196], height: 185 },
+  security: { file: 'security_controller_concept_v5.png', box: [406,72,851,1228], height: 190 },
+  keeper: { file: 'hydroponics_keeper_concept_v5.png', box: [341,58,978,1210], height: 180 },
+  junior: { file: 'researcher_junior_concept_v2.png', box: [369,28,891,1241], height: 185 },
+  senior: { file: 'researcher_senior_concept_v2.png', box: [317,91,914,1221], height: 188 },
+};
+const placements = {
+  cast: [['caretaker',270], ['security',520], ['junior',790], ['senior',1450], ['keeper',1720]],
+  caretaker: [['caretaker',1810]],
+  security: [['security',660]],
+  keeper: [['keeper',1630]],
+  junior: [['junior',1630]],
+  senior: [['senior',660]],
+};
+const pending = [];
+for (const section of document.querySelectorAll('.scene')) {
+  const bg = new Image(); bg.className = 'background'; bg.src = section.dataset.background;
+  section.append(bg); pending.push(bg.decode());
+  for (const [key, x] of placements[section.id]) {
+    const person = people[key], [x0,y0,x1,y1] = person.box;
+    const scale = person.height / (y1-y0), wrap = document.createElement('div');
+    wrap.className = 'actor';
+    Object.assign(wrap.style, { left: x+'px', top: (655-person.height)+'px', width: ((x1-x0)*scale)+'px', height: person.height+'px' });
+    const img = new Image(); img.src = person.file;
+    Object.assign(img.style, { width: (1254*scale)+'px', height: (1254*scale)+'px', left: (-x0*scale)+'px', top: (-y0*scale)+'px' });
+    wrap.append(img); section.append(wrap); pending.push(img.decode());
+  }
+}
+Promise.all(pending).then(() => window.ready = true);
+</script>
+</html>

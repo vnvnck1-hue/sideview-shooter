@@ -1,0 +1,13 @@
+{
+  "id": "ceiling_twin_sentry_v1",
+  "view": "orthographic_full_side_right_facing",
+  "canvas_px": [448, 224],
+  "mount": "ceiling_twin_sentry_mount.png",
+  "head": "ceiling_twin_sentry_head.png",
+  "assembled_preview": "ceiling_twin_sentry_assembled.png",
+  "shared_canvas_origin_px": [0, 0],
+  "head_aim_pivot_px": [160, 82],
+  "muzzle_px": [[416, 125], [416, 164]],
+  "mount_edge_y_px": 28,
+  "note": "Mount stays fixed. Place head in the same canvas position; rotate only the head around the aim pivot. The assembled PNG is for static use or visual checks."
+}

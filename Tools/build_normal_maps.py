@@ -25,6 +25,7 @@ GROUPS = {
     "power_relay_room/Tiles/Frame": (2.4, 0, 1.0),
     "character/Split": (2.8, 4, 0.6),     # 게임이 쓰는 분리 프레임(몸통·팔)만
     "character/ToxicTumorCrawler": (2.6, 5, 0.7),   # 몬스터: 종양 덩어리가 둥글게 굴러 보이도록 베벨을 조금 넓게
+    "character/npc": (2.8, 4, 0.6),       # NPC 한 장짜리 idle — 플레이어 Split 과 같은 반응
 }
 EXCLUDE = {"muzzle_flash.png"}            # 발광 스프라이트는 노멀 불필요
 

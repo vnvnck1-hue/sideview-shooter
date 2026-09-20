@@ -1,0 +1,18 @@
+{
+  "id": "wall_rotary_v1",
+  "head": "wall_rotary_head_game.png",
+  "hatch_states": [
+    "wall_rotary_hatch_closed.png",
+    "wall_rotary_hatch_opening.png",
+    "wall_rotary_hatch_open.png"
+  ],
+  "preview": "wall_rotary_assembled_preview.png",
+  "head_canvas": [320, 176],
+  "hatch_canvas": [320, 384],
+  "head_pivot_px": [147, 140],
+  "head_offset_on_hatch_px": [8, 110],
+  "assembled_pivot_px": [155, 250],
+  "wall_side": "left",
+  "flip_horizontally_for_right_wall": true,
+  "use": "Place the hatch at the wall junction. Animate closed > opening > open, then draw the head above the open hatch using the offset. Rotate the head around its pivot for aiming."
+}

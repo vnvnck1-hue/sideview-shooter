@@ -7,7 +7,7 @@ extends RefCounted
 ##    잔떨림은 카메라 흔들림(GameCamera.add_shake)·조준점 벌어짐(Crosshair.kick)이 맡는다.
 ## (class_name 없이 preload 로 쓴다)
 
-const KICK_PX := 21.0              # 한 발 기본 거리 (화면 px, 1600x900 기준) — 14 에서 50% 강화
+const KICK_PX := 21.0              # 한 발 기본 거리 (화면 px, AppFlow.VIEW_SIZE 기준) — 14 에서 50% 강화
 const KICK_JITTER := 0.35          # 거리 랜덤 폭 (±비율)
 const KICK_GROWTH := 0.45          # heat 1.0 당 거리 배율 증가
 const MIN_TURN := PI / 3.0         # 직전 방향과 최소 각도 차 — 사방으로 퍼지게

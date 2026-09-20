@@ -5,7 +5,7 @@ extends RefCounted
 ##   - 로비: "CRT 모니터" 드롭다운
 ##   - 선택은 user://crt.cfg 에 저장되고, 환경 변수 CRT_PRESET=<번호|id> 가 있으면 그것이 우선한다 (스크린샷 도구용)
 ##
-## 화면은 1600×900, 아트 1px = 화면 2px 이므로 scanline_count 450 이 "아트 픽셀 한 행마다 주사선 한 줄"이다.
+## 화면 세로는 900, 아트 1px = 화면 2.5px 이므로 scanline_count 450 이 "아트 픽셀 한 행마다 주사선 한 줄"이다.
 ## mask_px 는 실제 화면 px 단위(창 크기에 따라 굵기가 달라짐) — 전체화면(1440p·4K)에서는 3~4 가 자연스럽다.
 
 const DEFAULTS := {

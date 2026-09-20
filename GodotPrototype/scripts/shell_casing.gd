@@ -7,36 +7,39 @@ const BOUNCE := 0.42
 const FRICTION := 0.75
 const LIFE := 1.6
 const FADE := 0.35
-const SIZE := Vector2(18, 7)
+const SIZE := Vector2(18, 7)      # 위력 1.0 기준 (센트리건은 setup 의 size_scale 로 두 배)
 
 var vel := Vector2.ZERO
 var spin := 0.0
 var floor_y := 0.0
+var size_scale := 1.0             # 탄피 크기 배율 (센트리건 2.0)
 var _t := 0.0
 var _wet := false                 # 고인 물에 한 번 첨벙
 var _rect: ColorRect
 var _shine: ColorRect
 
 
-func setup(pos: Vector2, dir: int, floor_line: float) -> void:
+func setup(pos: Vector2, dir: int, floor_line: float, scale_mul := 1.0) -> void:
 	position = pos
 	floor_y = floor_line
-	# 바라보는 반대쪽(뒤)·위로 튄다
-	vel = Vector2(-dir * randf_range(260.0, 560.0), -randf_range(800.0, 1150.0))
+	size_scale = scale_mul
+	# 바라보는 반대쪽(뒤)·위로 튄다 (큰 탄피일수록 더 세게)
+	vel = Vector2(-dir * randf_range(260.0, 560.0), -randf_range(800.0, 1150.0)) * (0.5 + 0.5 * scale_mul)
 	spin = -dir * randf_range(14.0, 26.0)
 	rotation = randf_range(0.0, TAU)
 
 
 func _ready() -> void:
+	var sz := SIZE * size_scale
 	_rect = ColorRect.new()
 	_rect.color = Color(0.86, 0.66, 0.24)
-	_rect.size = SIZE
-	_rect.position = -SIZE * 0.5
+	_rect.size = sz
+	_rect.position = -sz * 0.5
 	add_child(_rect)
 	_shine = ColorRect.new()
 	_shine.color = Color(1.0, 0.9, 0.55)
-	_shine.size = Vector2(5, SIZE.y)
-	_shine.position = Vector2(SIZE.x * 0.5 - 5, -SIZE.y * 0.5)
+	_shine.size = Vector2(5 * size_scale, sz.y)
+	_shine.position = Vector2(sz.x * 0.5 - 5 * size_scale, -sz.y * 0.5)
 	add_child(_shine)
 
 

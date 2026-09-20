@@ -51,6 +51,23 @@ const RIM := {"id": "legacy", "name": "이전 (좁음)", "desc": "림이 광원 
 	"width": 15.0, "falloff": 1.0, "strength": 0.9, "ambient": 0.32, "white": 0.35}
 static var _lit_materials: Array = []          # WeakRef — 런타임 재적용용
 static var _fg_rim_materials: Array = []       # WeakRef — foreground_rim (reach 만 받는다)
+## 죽은 WeakRef 청소 기준선. 이게 없으면 탄착 파편·크롤러·방 재조립마다 WeakRef 가 끝없이 쌓여
+## (전투 중 초당 ~5개, 방 이동마다 ~16개) 오래 켜 둘수록 객체 수·메모리가 계속 는다.
+static var _lit_watermark := 256
+static var _fg_watermark := 64
+
+
+## 배열이 기준선을 넘으면 죽은 WeakRef 를 걷어내고, 살아 있는 수의 2배로 기준선을 다시 잡는다 (상각 O(1)).
+static func _track(arr: Array, w: WeakRef, watermark: int) -> int:
+	arr.append(w)
+	if arr.size() < watermark:
+		return watermark
+	var alive: Array = []
+	for r in arr:
+		if r.get_ref() != null:
+			alive.append(r)
+	arr.assign(alive)
+	return maxi(64, alive.size() * 2)
 
 static func rim_preset() -> Dictionary:
 	return RIM
@@ -224,10 +241,10 @@ static func shader_material(name: String) -> ShaderMaterial:
 	m.shader = _shader_cache[name]
 	if name == "lit_surface" or name == "prop_surface":
 		_apply_rim_to(m, rim_preset())
-		_lit_materials.append(weakref(m))
+		_lit_watermark = _track(_lit_materials, weakref(m), _lit_watermark)
 	elif name == "foreground_rim":
 		m.set_shader_parameter("rim_reach", rim_preset()["reach"])
-		_fg_rim_materials.append(weakref(m))
+		_fg_watermark = _track(_fg_rim_materials, weakref(m), _fg_watermark)
 	return m
 
 

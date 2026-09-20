@@ -8,6 +8,8 @@ render_mode unshaded;
 //  형광체 마스크: mask_type(0 없음 · 1 애퍼처 그릴 · 2 섀도 마스크 · 3 슬롯 마스크) · mask_strength · mask_px(삼색 한 묶음의 화면 px)
 //  신호 열화  : aberration(색 분리 px) · bleed(가로 번짐 px) · halation(밝은 곳 주변 헐레이션) · noise · flicker · rolling_bar
 //  색         : brightness · contrast · saturation · tint (saturation 0 + tint 로 단색 형광 모니터)
+//  전환 연출  : collapse(전원 인가·차단 — 가로 한 줄로 수축) · flash(백색 섬광) · desync(채널 전환 — 행 찢김)
+//               이 셋은 프리셋 표에 없다. scripts/crt_overlay.gd 가 단말기 접속 연출 중에만 직접 값을 넣는다 (평소 0).
 
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear;
 
@@ -35,6 +37,10 @@ uniform float brightness : hint_range(0.5, 2.0) = 1.0;
 uniform float contrast : hint_range(0.5, 2.0) = 1.0;
 uniform float saturation : hint_range(0.0, 2.0) = 1.0;
 uniform vec3 tint : source_color = vec3(1.0);
+
+uniform float collapse : hint_range(0.0, 1.0) = 0.0;
+uniform float flash : hint_range(0.0, 2.0) = 0.0;
+uniform float desync : hint_range(0.0, 1.0) = 0.0;
 
 
 float hash12(vec2 p) {
@@ -102,15 +108,46 @@ vec3 phosphor_mask(vec2 frag) {
 	return m;
 }
 
+// 전원 인가·차단: 화면 전체가 가운데 가로 한 줄로 빨려 들어간다 (세로로 눌리고 가로로 늘어난다).
+// 띠 바깥은 검게 잘라낸다. 반환값 < 0 이면 이 픽셀은 띠 밖 (검정).
+float collapse_uv(inout vec2 uv) {
+	if (collapse <= 0.0) {
+		return 1.0;
+	}
+	float h = max(1.0 - collapse, 0.0008);          // 남은 띠 높이 (정규화)
+	float y = (uv.y - 0.5) / h + 0.5;
+	if (y < 0.0 || y > 1.0) {
+		return -1.0;
+	}
+	uv.y = y;
+	uv.x = 0.5 + (uv.x - 0.5) / (1.0 + collapse * 0.35);   // 가로로 늘어난 것처럼 보이게 안쪽만 샘플
+	return 1.0;
+}
+
+// 채널 전환 글리치: 주사선 행 단위로 가로가 찢겨 흔들리고, 화면 전체가 세로로 조금 밀린다.
+void desync_uv(inout vec2 uv) {
+	if (desync <= 0.0) {
+		return;
+	}
+	float t = floor(TIME * 26.0);
+	float row = floor(uv.y * 240.0);
+	float n = hash12(vec2(row, t));
+	float torn = step(1.0 - desync * 0.75, n);              // 일부 행만 찢긴다 (desync 가 클수록 많이)
+	uv.x += (hash12(vec2(row, t + 7.3)) - 0.5) * desync * 0.22 * torn;
+	uv.y = fract(uv.y + (hash12(vec2(t, 11.1)) - 0.5) * desync * 0.06);
+}
+
 void fragment() {
 	vec2 px = SCREEN_PIXEL_SIZE;
 	vec2 uv = SCREEN_UV;
 	if (curvature > 0.0) {
 		uv = warp(uv);
 	}
-	float inside = tube_mask(uv, px);
+	float band = collapse_uv(uv);
+	desync_uv(uv);
+	float inside = tube_mask(uv, px) * step(0.0, band);
 	if (inside <= 0.0) {
-		COLOR = vec4(0.0, 0.0, 0.0, 1.0);
+		COLOR = vec4(vec3(flash), 1.0);        // 베젤·수축 바깥도 섬광은 덮는다 (전 화면이 한 번 하얘진다)
 	} else {
 		vec2 cuv = clamp(uv, px * 0.5, 1.0 - px * 0.5);
 		vec2 dir = cuv - vec2(0.5);
@@ -163,6 +200,10 @@ void fragment() {
 			col *= 1.0 - vignette * smoothstep(0.35, 1.0, r * 1.35);
 		}
 		col *= inside;
-		COLOR = vec4(max(col, vec3(0.0)), 1.0);
+		// 수축할수록 남은 띠가 타들어가듯 밝아진다 (빔 에너지가 한 줄에 몰린다)
+		if (collapse > 0.0) {
+			col *= 1.0 + collapse * collapse * 3.0;
+		}
+		COLOR = vec4(max(col + vec3(flash), vec3(0.0)), 1.0);
 	}
 }

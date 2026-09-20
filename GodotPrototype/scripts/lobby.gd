@@ -2,8 +2,9 @@ extends Control
 ## 로비: 시작 씬(project.godot run/main_scene). 마우스 버튼으로 고른다.
 ##   [메인 게임]   에어록에서 시작해 전체 맵(방 21개, 구역 4개)을 탐색한다 (scenes/MainGame.tscn)
 ##   [테스트]      저수조실에서 바로 시작 — 원버튼 (scenes/Main.tscn)
-##   [센트리건]    작업실에서 바로 시작 — 바닥 격납형 센트리건(SentryTurret) 전개·조종 확인
+##   [센트리건]    가장 큰 방(격납고)의 센트리건 옆에서 바로 시작 — 전개·조종·과열 사격 확인
 ##   [맵 뷰어]     방을 게임 없이 조립해 자유 카메라로 본다. [ ] 로 방 전환 (scenes/MapViewer.tscn)
+##   [대화 UI 랩]  대사 표시 방식 5종을 실제 화면에서 1~5 로 바꿔 가며 비교한다 (scenes/DialogueLab.tscn)
 ##   [CRT 모니터]  전역 CRT 후처리 프리셋 드롭다운 (scripts/crt_preset.gd · autoload CrtFx). 게임 안에서는 F4 / Shift+F4
 ##   [종료]
 ## 게임·뷰어 안에서는 F1 로 이 로비로 돌아온다.
@@ -58,8 +59,8 @@ func _ready() -> void:
 	test.pressed.connect(func(): AppFlow.start_test(get_tree()))
 	box.add_child(test)
 
-	var sentry := _button("⌖   센트리건 테스트 — 작업실에서 시작", "작업실 바닥의 센트리건 해치 옆에서 W/↑ 로 전개하고 마우스로 조준·사격한다. F1 로비")
-	sentry.pressed.connect(func(): AppFlow.start_test(get_tree(), "workshop"))
+	var sentry := _button("⌖   센트리건 테스트 — 격납고(가장 큰 방)에서 시작", "맵에서 가장 큰 방(격납고 4096px·몬스터 12) 의 센트리건 해치 옆에서 시작한다. W/↑ 전개·조종, 마우스 조준, 좌클릭 연사(총열 과열). F1 로비")
+	sentry.pressed.connect(func(): AppFlow.start_test(get_tree(), RoomData.SENTRY_TEST_ROOM, RoomData.SENTRY_TEST_X - SentryTurret.INTERACT_RANGE * 0.7, 1))
 	box.add_child(sentry)
 
 	var view := _button("▦   맵 뷰어", "방을 게임 없이 조립해 자유 카메라로 본다. [ ] 방 전환 · 휠 줌 · WASD 이동 · F1 로비")
@@ -69,6 +70,10 @@ func _ready() -> void:
 	var lab := _button("✎   근경 랩 — 근경 실루엣 배치 편집", "실제 방·조명 위에서 근경(배관·기둥·상자·케이블)을 마우스로 옮기고 늘려 S 로 저장. [ ] 방 전환 · F1 로비")
 	lab.pressed.connect(func(): AppFlow.start_foreground_lab(get_tree(), "workshop"))
 	box.add_child(lab)
+
+	var dlg := _button("✎   대화 UI 랩 — 대사 표시 방식 비교", "실제 방·인물 위에서 대사 표시 방식 5종(카타나 제로 · 비주얼 노벨 · 자막 · 누적 로그 · 레트로 박스)을 1~5 로 바꿔 가며 본다. [ ] 상대 바꾸기 · R 다시 · F1 로비")
+	dlg.pressed.connect(func(): AppFlow.start_dialogue_lab(get_tree()))
+	box.add_child(dlg)
 
 	box.add_child(_spacer(6))
 	box.add_child(_crt_row())

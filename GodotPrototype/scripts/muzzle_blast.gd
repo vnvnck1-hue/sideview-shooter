@@ -15,10 +15,11 @@ const LIFE := 0.075              # 화염이 보이는 시간 (초)
 const STAR_LIFE := 0.045         # 십자 빛살은 더 짧게
 const SMOKE_EVERY := 0.22        # 연속 사격 중 연기가 다시 피는 최소 간격
 
-var length := 200.0              # 화염 길이 (월드 px — 카메라 zoom 0.5 라 화면에서는 절반)
+var length := 200.0              # 화염 길이 (월드 px — 카메라 zoom 0.625 라 화면에서는 5/8)
 var width := 104.0               # 화염 최대 폭
 var spark_count := 5
 var fx_parent: Node2D            # 불꽃을 담을 월드 층 (변환이 없는 노드 — 없으면 불꽃 생략)
+var energy_scale := 1.0          # 총구 라이트 세기 배율 (화염 크기와 따로 줄이고 싶을 때)
 
 var _t := 999.0
 var _smoke_cd := 0.0
@@ -93,7 +94,7 @@ func fire(power := 1.0, world_dir := Vector2.ZERO) -> void:
 			"w": _w * randf_range(0.2, 0.4),
 		})
 	_light.enabled = true
-	_light.energy = 2.6 * power
+	_light.energy = 2.6 * power * energy_scale
 	if _smoke_cd <= 0.0:
 		_smoke_cd = SMOKE_EVERY
 		_smoke.restart()

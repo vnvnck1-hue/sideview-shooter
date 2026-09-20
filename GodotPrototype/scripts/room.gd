@@ -32,6 +32,8 @@ var water: WaterPool          # 고인 물 (fx "water", 방마다 최대 하나)
 var foreground: ForegroundLayer   # 근경 실루엣 층 (DepthPreset "근경 분리" 일 때만)
 var monsters: Array = []      # Crawler
 var sentries: Array = []      # SentryTurret (바닥 격납형 센트리건 — Main 이 조종을 잡는다)
+var terminals: Array = []     # AccessTerminal (플레이어가 W/↑ 로 접속하는 대형 단말기)
+var npcs: Array = []          # Npc (플레이어가 W/↑ 로 말을 거는 생존자)
 var player: Node2D            # Main 이 넣어준다 (전선 밀치기)
 var room_tiles: RoomTiles     # 테마 타일맵 (RoomTiles.build — 실행 중 생성)
 var solid: RoomSolid          # 벽 충돌 기하 (사격 클리핑 · 자유 물체 가두기)
@@ -40,6 +42,7 @@ var heights: Array = []       # 열별 높이(셀)
 
 var _ambient: CanvasModulate
 var _monster_layer: Node2D
+var _npc_layer: Node2D
 var _props_layer: Node2D
 var _stains: Array = []       # BloodStain (오래된 것부터 정리)
 const MAX_STAINS := 48
@@ -134,6 +137,12 @@ func build(id: String) -> void:
 	props.z_index = 2
 	add_child(props)
 	_props_layer = props
+	# 생존자는 프랍이 아니라 **인물**이다 — 플레이어·몬스터와 같은 층(z5)에 서야
+	# 같은 비율의 거울 라이트를 받고 먼지·빛 기둥 뒤에 서지 않는다 (DepthPreset.Z_ACTOR_MIN).
+	_npc_layer = Node2D.new()
+	_npc_layer.name = "Npcs"
+	_npc_layer.z_index = DepthPreset.Z_ACTOR_MIN
+	add_child(_npc_layer)
 	for p in data.get("props", []):
 		_add_prop(props, p)
 
@@ -386,7 +395,7 @@ static func _ground_margin(path: String) -> int:
 	return margin
 
 
-## 특수 프랍: cabinet(파츠 파괴 PowerRelayProp) · capacitor · cart · breaker(벽걸이) · sentry(바닥 격납 센트리건)
+## 특수 프랍: cabinet(파츠 파괴 PowerRelayProp) · capacitor · cart · breaker(벽걸이) · sentry(바닥 격납 센트리건) · terminal(접속 단말기) · npc(생존자)
 func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 	var x := float(prop["x"])
 	match prop.get("type", ""):
@@ -409,11 +418,34 @@ func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 			props_hit.append(hp)
 		"sentry":
 			# 바닥 격납형 센트리건. 프랍 층 맨 앞(z3)에 두어 다른 프랍보다 앞, 인물(z5) 보다는 뒤에 선다.
+			# id 는 보안 단말기의 방어 그리드가 이 포탑을 지목하는 열쇠다 (TerminalData.sentries).
 			var turret := SentryTurret.new()
 			turret.z_index = 1
+			turret.turret_id = str(prop.get("id", ""))
 			turret.setup(x, floor_y, self)
 			parent.add_child(turret)
 			sentries.append(turret)
+		"terminal":
+			# 역할(link·security·rewire·save·survey)은 id 로 TerminalData 에서 끌어온다.
+			# rewire 처럼 벽걸이인 역할은 바닥이 아니라 cy/fy 높이에 붙는다.
+			var tid := str(prop.get("id", ""))
+			var terminal := AccessTerminal.new()
+			var wall_y := NAN
+			if TerminalData.is_wall(tid):
+				var d := prop.duplicate()
+				if not d.has("cy") and not d.has("fy"):
+					d["fy"] = AccessTerminal.WALL_DEFAULT_FY
+				wall_y = _fx_pos(d).y
+			terminal.setup(tid, x, floor_y, wall_y)
+			parent.add_child(terminal)
+			terminals.append(terminal)
+		"npc":
+			# 생존자. 인물·대사는 id 로 NpcData 에서 끌어온다 (배치만 여기, 내용은 저쪽 — 단말기와 같은 규칙).
+			# parent(프랍 층)가 아니라 인물 층에 붙인다.
+			var person := Npc.new()
+			person.setup(str(prop.get("id", "")), x, floor_y, int(prop.get("facing", -1)))
+			_npc_layer.add_child(person)
+			npcs.append(person)
 		"breaker":
 			var breaker := Sprite2D.new()
 			breaker.centered = false
@@ -602,6 +634,38 @@ func sentry_near(px: float) -> SentryTurret:
 		if is_instance_valid(t) and t.controlled:
 			return t
 	for t in sentries:
+		if is_instance_valid(t) and t.can_interact(px):
+			return t
+	return null
+
+
+## 맵 전체에서 유일한 포탑 id 로 찾는다 (보안 단말기의 원격 접속이 쓴다)
+func sentry_by_id(id: String) -> SentryTurret:
+	for t in sentries:
+		if is_instance_valid(t) and t.turret_id == id:
+			return t
+	return null
+
+
+## 원격 조종에서 돌아왔을 때 원래 접속하던 단말기를 다시 잡는다 (방을 새로 조립했으므로 노드가 바뀌었다)
+func terminal_by_id(id: String) -> AccessTerminal:
+	for t in terminals:
+		if is_instance_valid(t) and t.terminal_id == id:
+			return t
+	return null
+
+
+## 플레이어가 말을 걸 수 있는 거리의 생존자 (없으면 null)
+func npc_near(px: float) -> Npc:
+	for n in npcs:
+		if is_instance_valid(n) and n.can_interact(px):
+			return n
+	return null
+
+
+## 플레이어가 접속할 수 있는 거리의 단말기 (없으면 null)
+func terminal_near(px: float) -> AccessTerminal:
+	for t in terminals:
 		if is_instance_valid(t) and t.can_interact(px):
 			return t
 	return null

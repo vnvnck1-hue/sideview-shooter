@@ -191,6 +191,11 @@ func _do(cmd: String) -> void:
 				if is_instance_valid(m) and not m.is_dead():
 					m.force_jump()
 					break
+		"mwall":
+			for m in main.current_room.monsters:
+				if is_instance_valid(m) and not m.is_dead():
+					m.force_wall()
+					break
 		"mroar":
 			for m in main.current_room.monsters:
 				if is_instance_valid(m) and not m.is_dead():
