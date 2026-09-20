@@ -1,0 +1,56 @@
+﻿[
+    {
+        "source":  "GodotPrototype/assets/props/workshop_workbench_game_scale.png",
+        "sha256":  "7931240547220E9F6DB0C06F890C31426C9AFEABBFBF062B50F76F7205FBB850",
+        "nativeCopy":  "workshop_workbench_game_scale.png",
+        "gridAudit":  "workshop_workbench_game_scale.png: 443x235 world -\u003e 112x60 art, grid=(2,2), mismatch=0; leading pad=(2,2) world px"
+    },
+    {
+        "source":  "GodotPrototype/assets/props/workshop_locker_game_scale.png",
+        "sha256":  "79BD4567B47F9EEB9CD26CBD99D18BAD0251C820CC92C78AB3A010AA1ECCC6DB",
+        "nativeCopy":  "workshop_locker_game_scale.png",
+        "gridAudit":  "workshop_locker_game_scale.png: 370x315 world -\u003e 93x80 art, grid=(0,1), mismatch=0; leading pad=(0,3) world px"
+    },
+    {
+        "source":  "GodotPrototype/assets/props/workshop_armchair_game_scale.png",
+        "sha256":  "FC4305112BDD239BCAE8050990C852B9CA6AC5980521B7BF497E2D925B9D4B0E",
+        "nativeCopy":  "workshop_armchair_game_scale.png",
+        "gridAudit":  "workshop_armchair_game_scale.png: 286x240 world -\u003e 72x61 art, grid=(0,3), mismatch=0; leading pad=(0,1) world px"
+    },
+    {
+        "source":  "GodotPrototype/assets/props/hydroponics_control_console.png",
+        "sha256":  "F3219A7C3965504470378B47D349AD4D32B28DE035AAB11B9142FA1F02B9E56A",
+        "nativeCopy":  "hydroponics_control_console.png",
+        "gridAudit":  "hydroponics_control_console.png: 168x180 world -\u003e 43x46 art, grid=(2,3), mismatch=0; leading pad=(2,1) world px"
+    },
+    {
+        "source":  "GodotPrototype/assets/props/hydroponics_growth_tank_full.png",
+        "sha256":  "E2CB3D4027FBDDB223F1A5678FBB2D08E8C12037E6E388A1A9D55F9F676C9954",
+        "nativeCopy":  "hydroponics_growth_tank_full.png",
+        "gridAudit":  "hydroponics_growth_tank_full.png: 171x380 world -\u003e 44x96 art, grid=(2,1), mismatch=0; leading pad=(2,3) world px"
+    },
+    {
+        "source":  "GodotPrototype/assets/props/hydroponics_utility_sink.png",
+        "sha256":  "4E255E8CF906726B67BF5AD9070E9F43946EBB54B49BE036327CD63F2818A74E",
+        "nativeCopy":  "hydroponics_utility_sink.png",
+        "gridAudit":  "hydroponics_utility_sink.png: 190x185 world -\u003e 48x47 art, grid=(3,1), mismatch=0; leading pad=(1,3) world px"
+    },
+    {
+        "source":  "GodotPrototype/assets/character/Frames/idle/idle_01.png",
+        "sha256":  "6480BA291341A245F657FABF31107DCA7081B6D9C87B40E5C742C61E6BCB0666",
+        "nativeCopy":  "idle_01.png",
+        "gridAudit":  "idle_01.png: 320x320 world -\u003e 80x81 art, grid=(0,1), mismatch=0; leading pad=(0,3) world px"
+    },
+    {
+        "source":  "GodotPrototype/assets/tiles/workshop_modular/workshop_modular_background_sheet_3x2.png",
+        "sha256":  "83A41B0E018460B86B9C1CB788EAF51DB4B7B144D65D574FDD6872B3E801819C",
+        "worldCopy":  "workshop_background_WORLD.png",
+        "gridAudit":  "Kept unchanged at world resolution; NOT a native art reference."
+    },
+    {
+        "source":  "GodotPrototype/assets/tiles/research_analysis_modular/research_analysis_modular_background_sheet_3x2.png",
+        "sha256":  "1DBA1050399960CFE8A645F520921B27B2B526CB83D3DF330164F3C3F17D49CF",
+        "worldCopy":  "research_analysis_background_WORLD.png",
+        "gridAudit":  "Kept unchanged at world resolution; NOT a native art reference."
+    }
+]

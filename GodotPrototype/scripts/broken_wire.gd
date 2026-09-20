@@ -79,6 +79,7 @@ func setup(wire_length: float, floor_line: float) -> void:
 	_light.enabled = false
 	_light.top_level = true
 	add_child(_light)
+	Lighting.register_dynamic(_light, 1.3, "ambient")           # 흔들리는 전선 끝을 따라 그림자가 춤춘다
 
 	_sparks = SparkBurst.spawn(self, floor_y, true)
 	_sparks.top_level = true

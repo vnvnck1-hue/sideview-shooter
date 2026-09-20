@@ -80,6 +80,15 @@ const LIGHT_TIME := 0.16      # 탄착 라이트 소등 시간
 
 enum Impact { WALL, GLASS, PROP, FLESH, WATER }
 
+## 탄착 종류 → 채택된 샘플. 유리·살점·물은 아직 쓸 소리가 없어 무음으로 둔다.
+const IMPACT_SFX := {
+	Impact.WALL: "wall",
+	Impact.PROP: "prop",
+	Impact.GLASS: "none",
+	Impact.FLESH: "none",
+	Impact.WATER: "none",
+}
+
 ## 탄착 위력 배율 — 1.0 = 플레이어 소총, 센트리건은 SentryTurret.SHOT_POWER(1.7).
 ## 탄착 플래시·충격 링·라이트 크기와 불꽃·파편의 **개수·속도**(파편 비거리)가 이 값에 비례한다.
 var power := 1.0
@@ -409,6 +418,7 @@ func _process_residue(delta: float) -> void:
 
 func _impact() -> void:
 	_impacting = true
+	Audio.impact(IMPACT_SFX.get(impact_kind, "none"), target, power)
 	_head.visible = false
 	_spawn_residue()
 	_spawn_smoke()
@@ -460,6 +470,9 @@ func _impact() -> void:
 	_light.height = Lighting.FLASH_HEIGHT          # 주변 노멀맵이 섬광에 반응
 	_light.position = target
 	add_child(_light)
+	# "ambient" 인 이유: 탄착 섬광은 천천히 꺼져(0.68→0.02, 십여 프레임) 총구 화염의 짧은 펄스를 뭉갠다.
+	# 오클루더 차폐에는 그대로 쓰이지만, 투영 그림자(쐐기·벽)는 총구만 보게 해 한 발 한 발이 또렷하게 읽히게 한다.
+	Lighting.register_dynamic(_light, 1.2, "ambient")
 
 	var back := -_dir
 	var spark_n := int(SPARK_COUNT * power)

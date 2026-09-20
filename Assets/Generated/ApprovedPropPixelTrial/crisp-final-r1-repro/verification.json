@@ -1,0 +1,104 @@
+﻿[
+    {
+        "name":  "crew_wash_station",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "sourcePixelBlock":  1,
+        "nativePadding":  1,
+        "metrics":  {
+                        "width":  209,
+                        "height":  302,
+                        "opaqueColors":  367,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  1.000000,
+                        "meanChannelErrorOnOverlap":  3.2754
+                    },
+        "edgeAudit":  {
+                          "sourceStrongEdgePairs":  9009,
+                          "previousSamePositionContrastRetention":  0.46770,
+                          "newSamePositionContrastRetention":  0.96663,
+                          "outputColoursAbsentFromSource":  0,
+                          "maskErrors":  0,
+                          "changedOpaqueRGBPixels":  31438
+                      },
+        "roundtripPixelMatch":  true,
+        "referenceAndLayersVerified":  true,
+        "tolerance":  12,
+        "snap":  20,
+        "coherent":  true,
+        "passes":  3,
+        "pngSHA256":  "B578922FE7B4736173C4F08759CA8AF9DDF0942240C9EEAAB0406CB315209A88",
+        "asepriteSHA256":  "FB016FF2803803D760A640244C24F522E90CD7BF2273ADFE0FC7F483CB78A9D9",
+        "generatorSHA256":  "D963A2E24C9130957D7BEBC9EB33CFFAF245A4A67ADA83DFF0BCCF2705C248E3",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "sourcePixelBlock":  1,
+        "nativePadding":  1,
+        "metrics":  {
+                        "width":  372,
+                        "height":  317,
+                        "opaqueColors":  148,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  1.000000,
+                        "meanChannelErrorOnOverlap":  1.8394
+                    },
+        "edgeAudit":  {
+                          "sourceStrongEdgePairs":  8022,
+                          "previousSamePositionContrastRetention":  0.42953,
+                          "newSamePositionContrastRetention":  0.96735,
+                          "outputColoursAbsentFromSource":  0,
+                          "maskErrors":  0,
+                          "changedOpaqueRGBPixels":  62186
+                      },
+        "roundtripPixelMatch":  true,
+        "referenceAndLayersVerified":  true,
+        "tolerance":  12,
+        "snap":  20,
+        "coherent":  true,
+        "passes":  3,
+        "pngSHA256":  "E2A2C26F1BF818B61FE735ED4C8223EBA84921C59FD5E5874F2382C4D6B55C40",
+        "asepriteSHA256":  "6F13D03C27BC97A82991B5AB6A9766A37BCA4997AFC726DE13B0F7C33B1C80C6",
+        "generatorSHA256":  "D963A2E24C9130957D7BEBC9EB33CFFAF245A4A67ADA83DFF0BCCF2705C248E3",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "sourcePixelBlock":  1,
+        "nativePadding":  1,
+        "metrics":  {
+                        "width":  288,
+                        "height":  242,
+                        "opaqueColors":  82,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  1.000000,
+                        "meanChannelErrorOnOverlap":  1.9886
+                    },
+        "edgeAudit":  {
+                          "sourceStrongEdgePairs":  2776,
+                          "previousSamePositionContrastRetention":  0.44840,
+                          "newSamePositionContrastRetention":  0.97098,
+                          "outputColoursAbsentFromSource":  0,
+                          "maskErrors":  0,
+                          "changedOpaqueRGBPixels":  37334
+                      },
+        "roundtripPixelMatch":  true,
+        "referenceAndLayersVerified":  true,
+        "tolerance":  12,
+        "snap":  20,
+        "coherent":  true,
+        "passes":  3,
+        "pngSHA256":  "32F06CD8E1811D7C37F9AB0F33B2924E629BCA150245C8C56D7AB83E0A46B848",
+        "asepriteSHA256":  "192685CAB4DCA73B23218FD2D3E34202992E406194A3FF308696CE64F381ED64",
+        "generatorSHA256":  "D963A2E24C9130957D7BEBC9EB33CFFAF245A4A67ADA83DFF0BCCF2705C248E3",
+        "userApproval":  "pending",
+        "gameImported":  false
+    }
+]

@@ -1,0 +1,82 @@
+﻿[
+    {
+        "name":  "retro_medical_triage_room_concept_v1",
+        "pixelPitch":  3,
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\Environments\\retro_medical_triage_room_concept_v1.png",
+        "sourceWidth":  1672,
+        "sourceHeight":  941,
+        "sourceSHA256":  "FFF87BB13E201C0B628B3E200FD78249406AC5C77D7D4212D5338A3C2D08011E",
+        "preparationSettings":  {
+                                    "passes":  3,
+                                    "coherent":  true,
+                                    "snap":  20,
+                                    "tolerance":  12
+                                },
+        "preparationMetrics":  {
+                                   "width":  1674,
+                                   "height":  943,
+                                   "colours":  701,
+                                   "partialAlpha":  0,
+                                   "foreignColours":  0,
+                                   "maskIoUAtSourceSize":  1.000000,
+                                   "meanRGBErrorOnOverlap":  1.8640
+                               },
+        "preparationGeneratorSHA256":  "D963A2E24C9130957D7BEBC9EB33CFFAF245A4A67ADA83DFF0BCCF2705C248E3",
+        "gridGeneratorSHA256":  "E2BCD087A343D66C805B06B510BA15FE4496ED04024F0C16245BF5AC431BBE40",
+        "metrics":  {
+                        "width":  560,
+                        "height":  316,
+                        "colours":  474,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  1.000000,
+                        "meanRGBErrorOnOverlap":  3.4485
+                    },
+        "roundtripMatch":  true,
+        "referenceAndLayersVerified":  true,
+        "pngSHA256":  "486CA6F62B73AB20DEF554E184E771BA4DC36F127591492E1F06364D4A9B5B14",
+        "asepriteSHA256":  "4422BEDE3F98FDEDEB44EC1DC8FC900817F96DEA9EE0F54652061D1A5EBE6321",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "retro_medical_triage_room_concept_v1",
+        "pixelPitch":  4,
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\Environments\\retro_medical_triage_room_concept_v1.png",
+        "sourceWidth":  1672,
+        "sourceHeight":  941,
+        "sourceSHA256":  "FFF87BB13E201C0B628B3E200FD78249406AC5C77D7D4212D5338A3C2D08011E",
+        "preparationSettings":  {
+                                    "passes":  3,
+                                    "coherent":  true,
+                                    "snap":  20,
+                                    "tolerance":  12
+                                },
+        "preparationMetrics":  {
+                                   "width":  1674,
+                                   "height":  943,
+                                   "colours":  701,
+                                   "partialAlpha":  0,
+                                   "foreignColours":  0,
+                                   "maskIoUAtSourceSize":  1.000000,
+                                   "meanRGBErrorOnOverlap":  1.8640
+                               },
+        "preparationGeneratorSHA256":  "D963A2E24C9130957D7BEBC9EB33CFFAF245A4A67ADA83DFF0BCCF2705C248E3",
+        "gridGeneratorSHA256":  "E2BCD087A343D66C805B06B510BA15FE4496ED04024F0C16245BF5AC431BBE40",
+        "metrics":  {
+                        "width":  420,
+                        "height":  238,
+                        "colours":  408,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  1.000000,
+                        "meanRGBErrorOnOverlap":  4.3347
+                    },
+        "roundtripMatch":  true,
+        "referenceAndLayersVerified":  true,
+        "pngSHA256":  "F8672BE6B4281BB9B5D3A5EDC8CA4C56D0046A036E35FCF4F3BD143A09A46D4A",
+        "asepriteSHA256":  "A49C4B19E3A4C8B92F4AA67B43F5247C91983244A78DA08449AEA82700C7BF20",
+        "userApproval":  "pending",
+        "gameImported":  false
+    }
+]

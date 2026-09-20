@@ -116,7 +116,7 @@ func attach_cone(parent: Node2D, floor_y: float) -> void:
 	_pool.shadow_enabled = false
 	_pool.position = Vector2(0.0, floor_y + 8.0 - global_position.y)
 	add_child(_pool)
-	Lighting.split_by_depth(_pool, DepthPreset.ACTOR_FLOOR_LIGHT_RATIO)   # 발 밑 바닥 빛은 인물에도 조금 더
+	Lighting.split_by_depth(_pool, DepthLayers.ACTOR_FLOOR_LIGHT_RATIO)   # 발 밑 바닥 빛은 인물에도 조금 더
 
 
 func is_hit(point: Vector2) -> bool:

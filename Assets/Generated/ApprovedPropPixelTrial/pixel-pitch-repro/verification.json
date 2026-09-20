@@ -1,0 +1,200 @@
+﻿[
+    {
+        "name":  "crew_wash_station",
+        "level":  "a-125",
+        "pixelPitch":  "1.25",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "approvedBaselineSHA256":  "B578922FE7B4736173C4F08759CA8AF9DDF0942240C9EEAAB0406CB315209A88",
+        "freshPreparationMatchesApproved":  true,
+        "roundtripMatch":  true,
+        "metrics":  {
+                        "width":  168,
+                        "height":  242,
+                        "colours":  350,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  0.990629,
+                        "meanRGBErrorOnOverlap":  7.5870
+                    },
+        "pngSHA256":  "736FAE7F2BA3AF814AC811D7F3D1B8EDA7677139753F0B347A02DA6096B84CCA",
+        "asepriteSHA256":  "12B4BE8FB71B034BADF83FF9E96CE95424DD22D14D46F08CA37410F97EC0DDDC",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "crew_wash_station",
+        "level":  "b-150",
+        "pixelPitch":  "1.5",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "approvedBaselineSHA256":  "B578922FE7B4736173C4F08759CA8AF9DDF0942240C9EEAAB0406CB315209A88",
+        "freshPreparationMatchesApproved":  true,
+        "roundtripMatch":  true,
+        "metrics":  {
+                        "width":  140,
+                        "height":  202,
+                        "colours":  338,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  0.986509,
+                        "meanRGBErrorOnOverlap":  8.8647
+                    },
+        "pngSHA256":  "7A380E19C0C54088FF05CFB163F6E7E894BEABFAE203F9A51166E7FCF975F364",
+        "asepriteSHA256":  "931024B70D881B3DA98E56382F2D45C7DCB73C31552E4BE540839CB56EDEE074",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "crew_wash_station",
+        "level":  "c-200",
+        "pixelPitch":  "2",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "approvedBaselineSHA256":  "B578922FE7B4736173C4F08759CA8AF9DDF0942240C9EEAAB0406CB315209A88",
+        "freshPreparationMatchesApproved":  true,
+        "roundtripMatch":  true,
+        "metrics":  {
+                        "width":  106,
+                        "height":  152,
+                        "colours":  314,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  0.981616,
+                        "meanRGBErrorOnOverlap":  11.8177
+                    },
+        "pngSHA256":  "2BEDC6BE536F5B9849E065677ECE98A11920C6BF5447D61C138D6653D5072FE5",
+        "asepriteSHA256":  "E2267A3C828D1707C94A484019DAB0882015A629095F006256D817E684BBF644",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "level":  "a-125",
+        "pixelPitch":  "1.25",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "approvedBaselineSHA256":  "E2A2C26F1BF818B61FE735ED4C8223EBA84921C59FD5E5874F2382C4D6B55C40",
+        "freshPreparationMatchesApproved":  true,
+        "roundtripMatch":  true,
+        "metrics":  {
+                        "width":  298,
+                        "height":  254,
+                        "colours":  141,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  0.995450,
+                        "meanRGBErrorOnOverlap":  3.1630
+                    },
+        "pngSHA256":  "0D3714080389BDE46AA6B989DC429897CB58D2C32B12317CBE47AF8691CF92C3",
+        "asepriteSHA256":  "AE0510A9BDE9AB516C0B5C70ADEF4B9FF84D5B417C12417A5FD80FDBE23EEF1B",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "level":  "b-150",
+        "pixelPitch":  "1.5",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "approvedBaselineSHA256":  "E2A2C26F1BF818B61FE735ED4C8223EBA84921C59FD5E5874F2382C4D6B55C40",
+        "freshPreparationMatchesApproved":  true,
+        "roundtripMatch":  true,
+        "metrics":  {
+                        "width":  249,
+                        "height":  212,
+                        "colours":  135,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  0.998283,
+                        "meanRGBErrorOnOverlap":  4.4959
+                    },
+        "pngSHA256":  "E6112F01D0BCDA7BA379EBBA73460AACEDD30657CDE3B3D9B3FF9F9DF87EC57D",
+        "asepriteSHA256":  "8EFECB57EC56B1A63089871EC74820DD7B2907BC489E7C7519F97FCF27D73113",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "level":  "c-200",
+        "pixelPitch":  "2",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "approvedBaselineSHA256":  "E2A2C26F1BF818B61FE735ED4C8223EBA84921C59FD5E5874F2382C4D6B55C40",
+        "freshPreparationMatchesApproved":  true,
+        "roundtripMatch":  true,
+        "metrics":  {
+                        "width":  187,
+                        "height":  160,
+                        "colours":  122,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  0.986112,
+                        "meanRGBErrorOnOverlap":  5.6801
+                    },
+        "pngSHA256":  "DC3E652FDD4A446DD9607CABD99C1AF8946CE177A57EAAB6592CFD4F80E43703",
+        "asepriteSHA256":  "6AEEDB0799D32A49634B708524F6087658AD4EE79B29A13B109FB0D7F94FCDC9",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "level":  "a-125",
+        "pixelPitch":  "1.25",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "approvedBaselineSHA256":  "32F06CD8E1811D7C37F9AB0F33B2924E629BCA150245C8C56D7AB83E0A46B848",
+        "freshPreparationMatchesApproved":  true,
+        "roundtripMatch":  true,
+        "metrics":  {
+                        "width":  231,
+                        "height":  194,
+                        "colours":  81,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  0.996055,
+                        "meanRGBErrorOnOverlap":  3.4530
+                    },
+        "pngSHA256":  "42595CBBCFA00D3CDBDA76644BD6815E922FA542AB5BA95A9B9B41E1B744F6FC",
+        "asepriteSHA256":  "FE8CE54AB81D3AA701393FA48226FF3C176CFF48A0745EE8B488F9780AC28ED6",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "level":  "b-150",
+        "pixelPitch":  "1.5",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "approvedBaselineSHA256":  "32F06CD8E1811D7C37F9AB0F33B2924E629BCA150245C8C56D7AB83E0A46B848",
+        "freshPreparationMatchesApproved":  true,
+        "roundtripMatch":  true,
+        "metrics":  {
+                        "width":  193,
+                        "height":  162,
+                        "colours":  78,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  0.988312,
+                        "meanRGBErrorOnOverlap":  4.2860
+                    },
+        "pngSHA256":  "3B796C481A3ACF6F82526E890F80397D1934DCF7B931EA9B1B75DAACFA5BE57B",
+        "asepriteSHA256":  "3459ECF1D32D2F178106039075227033BDE9C7398FF9D048193A077B945763BB",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "level":  "c-200",
+        "pixelPitch":  "2",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "approvedBaselineSHA256":  "32F06CD8E1811D7C37F9AB0F33B2924E629BCA150245C8C56D7AB83E0A46B848",
+        "freshPreparationMatchesApproved":  true,
+        "roundtripMatch":  true,
+        "metrics":  {
+                        "width":  145,
+                        "height":  122,
+                        "colours":  65,
+                        "partialAlpha":  0,
+                        "foreignColours":  0,
+                        "maskIoUAtSourceSize":  0.988708,
+                        "meanRGBErrorOnOverlap":  5.0291
+                    },
+        "pngSHA256":  "AC1CA21367C781120122BB28FE4DB8A9913EDB780C19B57A2CFFB096D9525A3A",
+        "asepriteSHA256":  "17DBEFDB488D315845D4DF956F10217EBEE56F7C70C4FE904CD2BE13DFE6F96B",
+        "userApproval":  "pending",
+        "gameImported":  false
+    }
+]

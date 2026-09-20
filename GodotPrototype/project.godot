@@ -20,6 +20,7 @@ config/windows_native_icon="res://icon/icon.ico"
 [autoload]
 
 CrtFx="*res://scripts/crt_overlay.gd"
+Audio="*res://scripts/audio_manager.gd"
 
 [display]
 

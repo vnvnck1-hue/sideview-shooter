@@ -5,11 +5,14 @@ extends Node2D
 ## 이 노드가 맡는 것은 **몸**뿐이다 — 서 있기·숨쉬기·플레이어 쪽으로 돌아보기·말할 때 끄덕이기.
 ## 무슨 말을 하는지는 npc_data.gd 가, 말풍선은 dialogue_bubble.gd 가, 카메라는 Main 이 맡는다.
 ##
-## 일반 NPC 는 한 장짜리 idle. 연구원 유나는 Native4 프레임 클립 4종을 쓴다.
+## 일반 NPC 는 한 장짜리 idle. 연구원 둘(유나·연구 보조원)은 Native4 프레임 클립 4종을 쓴다.
 ## 정지 프레임만 있는 NPC 의 살아 있는 느낌은 절차적이다:
 ##   숨쉬기   발을 고정한 채 세로로 아주 얕게 늘었다 준다 (플레이어 BREATH_SCALE 과 같은 결)
 ##   돌아보기 플레이어가 사정거리에 들어오면 그쪽으로 몸을 돌린다 (뒤집기, 0.12초 스쿼시)
 ##   끄덕이기 말풍선 한 줄이 시작될 때 한 번 (talk_beat)
+##
+## 걷는 클립이 있는 NPC 는 배치 데이터의 roam 만큼 제 자리 둘레를 어슬렁거린다 (set_roam).
+## 플레이어가 말 걸 수 있는 거리에 들어오면 멈춰 선다 — 걸어 다니는 상대를 쫓아가며 말을 걸 수는 없다.
 
 signal talk_requested(npc: Npc)
 
@@ -28,12 +31,20 @@ const MARK_BOB := 6.0
 const MARK_SIZE := 14.0
 const ANIM_CLIPS := {"idle_breathe": 4, "idle_notes": 4, "idle_listen": 4, "walk": 8}
 const ANIM_FPS := {"idle_breathe": 3.0, "idle_notes": 3.0, "idle_listen": 3.0, "walk": 8.0}
+## 걷기: 8프레임 8fps 한 바퀴에 두 걸음, 한 걸음이 아트 22px(월드 88px) — 이 속도에서 발이 미끄러지지 않는다.
+const WALK_SPEED := 176.0
+const ROAM_PAUSE := Vector2(1.8, 5.0)   # 목적지에 닿은 뒤 서서 쉬는 시간
+const ROAM_RESUME := Vector2(1.2, 2.6)  # 대화가 끝나거나 플레이어가 멀어진 뒤 다시 걷기까지
+const ROAM_ARRIVE := 10.0               # 목적지 도착 판정 반경
+const ROAM_MIN_SPAN := 160.0            # 이만큼도 못 걷는 구간이면 아예 서 있는다
+const PERSONAL_SPACE := 150.0           # 플레이어와 이만큼 가까워지면 멈춘다 (몸을 뚫고 지나가지 않는다)
 
 var npc_id := ""
 var cast: Dictionary = {}
 var facing := -1                      # 스프라이트 원본이 오른쪽을 본다 (+1 = 오른쪽)
 var talking := false
 var in_range := false
+var player_x := INF                   # Main 이 매 프레임 알려 주는 플레이어 x (모르면 INF)
 
 var _pivot: Node2D                    # 발을 축으로 한 숨쉬기·뒤집기 스케일
 var _sprite: Node2D
@@ -44,6 +55,12 @@ var _breath := 0.0
 var _nod := 0.0
 var _turn := 0.0                      # 방금 돌아본 직후의 스쿼시 잔여
 var _base_scale := Vector2.ONE
+var _roam_min := 0.0                  # 어슬렁거리는 구간 (같으면 제자리)
+var _roam_max := 0.0
+var _roam_home := 0.0                 # 배치된 자리 — 구간을 다 돌면 여기로 돌아온다
+var _roam_target := 0.0
+var _roam_wait := 0.0
+var _walking := false
 
 
 func setup(id: String, center_x: float, floor_line: float, face_dir := -1) -> void:
@@ -112,10 +129,66 @@ func _on_animation_finished() -> void:
 		_anim_sprite.play("idle_breathe")
 
 
-## 이동 AI 가 연결되면 walk 를 호출하고 멈출 때 idle_breathe 로 되돌린다.
-func play_animation_clip(clip: String) -> void:
-	if _anim_sprite != null and ANIM_CLIPS.has(clip):
-		_anim_sprite.play(clip)
+## 방이 알려 주는 순찰 구간 — 배치점 기준 ±span 을 벽 안쪽(limit)으로 자른다.
+## span 0 이거나 걷는 클립이 없는 한 장짜리 NPC 는 제자리에 선다.
+func set_roam(span: float, left_limit: float, right_limit: float) -> void:
+	_roam_min = position.x
+	_roam_max = position.x
+	if span <= 0.0 or _anim_sprite == null:
+		return
+	_roam_home = position.x
+	var left := maxf(_roam_home - span, left_limit)
+	var right := minf(_roam_home + span, right_limit)
+	if right - left < ROAM_MIN_SPAN:      # 이만큼도 못 걸으면 서 있는 편이 낫다
+		return
+	_roam_min = left
+	_roam_max = right
+	_roam_target = position.x
+	_roam_wait = randf_range(ROAM_PAUSE.x, ROAM_PAUSE.y)
+
+
+func _roaming() -> bool:
+	return _roam_max > _roam_min
+
+
+## 목적지 고르기 — 늘 지금 서 있는 쪽의 반대편 끝 근처로 간다. 매번 구간을 가로지르므로
+## 한 걸음 떼고 멈추는 안절부절이 없고, 오가는 왕복이 멀리서도 읽힌다.
+func _pick_roam_target() -> float:
+	var far := _roam_min if position.x > (_roam_min + _roam_max) * 0.5 else _roam_max
+	var inward := (_roam_max - _roam_min) * 0.3 * randf()
+	return far + (inward if far == _roam_min else -inward)
+
+
+func _roam(delta: float) -> void:
+	if not _roaming() or talking or in_range or absf(player_x - position.x) < PERSONAL_SPACE:
+		_stand()
+		return
+	if _roam_wait > 0.0:
+		_roam_wait -= delta
+		_stand()
+		return
+	var to := _roam_target - position.x
+	if absf(to) <= ROAM_ARRIVE:
+		position.x = _roam_target
+		_roam_target = _pick_roam_target()
+		_roam_wait = randf_range(ROAM_PAUSE.x, ROAM_PAUSE.y)
+		_stand()
+		return
+	if not _walking:
+		_walking = true
+		_anim_sprite.play("walk")
+	look_at_x(_roam_target)
+	position.x = clampf(position.x + signf(to) * WALK_SPEED * delta, _roam_min, _roam_max)
+
+
+## 걷기를 끊고 다시 선다 (말을 걸렸거나 목적지에 닿았을 때)
+func _stand() -> void:
+	if not _walking:
+		return
+	_walking = false
+	if _anim_sprite != null and not talking:
+		_anim_sprite.play("idle_breathe")
+		_idle_timer = randf_range(6.0, 10.0)
 
 
 ## 말 걸 수 있음 표식 — 강조색 작은 삼각형. 글자를 쓰지 않는다(먼 거리에서 읽히지 않으므로).
@@ -161,6 +234,8 @@ func set_in_range(v: bool) -> void:
 		return
 	in_range = v
 	_mark.visible = v and not talking
+	if not v:
+		_roam_wait = maxf(_roam_wait, randf_range(ROAM_RESUME.x, ROAM_RESUME.y))
 
 
 ## W/↑ — Main 에 대화를 요청한다 (카메라·말풍선은 Main 이 맡는다)
@@ -171,6 +246,10 @@ func activate() -> void:
 func set_talking(v: bool) -> void:
 	talking = v
 	_mark.visible = in_range and not v
+	if v:
+		_stand()
+	else:
+		_roam_wait = maxf(_roam_wait, randf_range(ROAM_RESUME.x, ROAM_RESUME.y))
 	if _anim_sprite != null:
 		_anim_sprite.play("idle_listen" if v else "idle_breathe")
 
@@ -191,7 +270,8 @@ func talk_beat() -> void:
 
 func _process(delta: float) -> void:
 	_breath += delta
-	if _anim_sprite != null and not talking:
+	_roam(delta)
+	if _anim_sprite != null and not talking and not _walking:
 		_idle_timer -= delta
 		if _idle_timer <= 0.0 and _anim_sprite.animation == "idle_breathe":
 			_anim_sprite.play("idle_notes")

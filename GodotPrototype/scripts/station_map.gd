@@ -9,7 +9,7 @@ extends Control
 ##
 ## 방 칸은 네모가 아니라 그 방의 **열 프로필(shape)** 을 축소한 실루엣으로 그린다.
 ## 대형 홀은 가운데가 솟고 복도는 납작하다 — 지도가 "방 목록"이 아니라 스테이션 단면도로 읽힌다.
-## 가로/세로 배율은 일부러 다르다(uy <= ux). 실제 셀은 정사각이지만 21개 방을 한 화면에 넣으려면
+## 가로/세로 배율은 일부러 다르다(uy <= ux). 실제 셀은 정사각이지만 27개 방을 한 화면에 넣으려면
 ## 가로를 더 눌러야 한다 — 절대 크기는 버리고 **모양의 상대 비율만** 지킨다.
 ##
 ## 두 가지로 쓴다.
@@ -23,8 +23,9 @@ extends Control
 
 enum Reveal { DARK, KNOWN, LIVE }
 
-## 지도의 줄 순서. room_data.gd 머리말의 그림과 같게 둔다 (정비 → 승무원 → 전력 → 수경재배).
-const ZONE_ROWS := [RoomData.ZONE_WORKSHOP, RoomData.ZONE_CREW, RoomData.ZONE_POWER, RoomData.ZONE_HYDRO]
+## 지도의 줄 순서. room_data.gd 머리말의 그림과 같게 둔다 (정비 → 승무원 → 전력 → 수경재배 → 연구).
+const ZONE_ROWS := [RoomData.ZONE_WORKSHOP, RoomData.ZONE_CREW, RoomData.ZONE_POWER, RoomData.ZONE_HYDRO,
+	RoomData.ZONE_RESEARCH]
 
 const MIN_W := 4                    # 지도에서의 방 최소 폭(셀)
 const MAX_W := 13                   # 최대 폭 — 격납고(32셀)가 에어록(7셀)을 짓누르지 않게 누른다

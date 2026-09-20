@@ -1,0 +1,11 @@
+Ultra Sci-Fi Game Audio Ambience Pack — Eric Berzins
+출처: https://eberzins.itch.io/ultra-sci-fi-game-audio-ambience-pack
+확인일: 2026-09-20
+
+무료. 게임·영상·앱 등에 로열티 없이 동기화/임베드/믹스 가능(상업 포함).
+크레딧 불필요(권장).
+금지: 사운드 파일 자체의 판매·재배포, 저작자 사칭, 생성형 AI 학습 사용.
+
+사용 파일: bed_common / bed_workshop / bed_power /
+          tex_power_highvolt / tex_hydro_air / tex_crew_quiet
+(WAV 원본을 OGG 로 변환하고 RMS 정규화함 — 위 라이선스가 허용하는 범위의 가공)

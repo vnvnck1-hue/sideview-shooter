@@ -1,0 +1,71 @@
+﻿[
+    {
+        "name":  "microscope_station",
+        "technical":  {
+                          "path":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\PropStyleLab\\batch2\\r4\\microscope_station.png",
+                          "width":  55,
+                          "height":  59,
+                          "opaquePixels":  1535,
+                          "opaqueColors":  15,
+                          "partialAlphaPixels":  0,
+                          "nonTransparentBorderPixels":  0,
+                          "passed":  true,
+                          "errors":  [
+
+                                     ]
+                      },
+        "roundTripPixelsEqual":  true,
+        "sourceLayers":  5,
+        "sourceSHA256":  "D5DA8775757ACC471C17679CD39F8A8D5AA854851974F3E386060B7AB5342E85",
+        "pngSHA256":  "EBB84C68DE01FDEF06D908006FD6804CFD917F04C055A142D3EA049256C80829",
+        "baselineSHA256":  "3A287B37F5D1D6715EFE4F96B5FF3E4E94A69FB265C6EC0BC9B847DD028184A7",
+        "referenceSHA256":  "962A5AAABD0BD2338D07D44190595F61FED06A1B5764C511FD37F3C915389437",
+        "artApproval":  "not-evaluated-by-validator"
+    },
+    {
+        "name":  "sample_cart",
+        "technical":  {
+                          "path":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\PropStyleLab\\batch2\\r4\\sample_cart.png",
+                          "width":  63,
+                          "height":  48,
+                          "opaquePixels":  1309,
+                          "opaqueColors":  14,
+                          "partialAlphaPixels":  0,
+                          "nonTransparentBorderPixels":  0,
+                          "passed":  true,
+                          "errors":  [
+
+                                     ]
+                      },
+        "roundTripPixelsEqual":  true,
+        "sourceLayers":  5,
+        "sourceSHA256":  "2A0F0F247656EDA06F89BAF090EADB6D3D479E0B1DA38A8649C3D9670EF0DE76",
+        "pngSHA256":  "7D56B458AA62D413C1C6E2D2093A0B7190A99CC558964CB7480C4B4924E3ED67",
+        "baselineSHA256":  "487A25B56FF4D2F8023855EFB58BF06E5CDB7652D578F9C8506C6F3C5E53BEF3",
+        "referenceSHA256":  "3CCF8A2EAD1D64E4EECB59041C298A0F9C3186A604223D125B8A03A09DE970EF",
+        "artApproval":  "not-evaluated-by-validator"
+    },
+    {
+        "name":  "server_rack",
+        "technical":  {
+                          "path":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\PropStyleLab\\batch2\\r4\\server_rack.png",
+                          "width":  61,
+                          "height":  88,
+                          "opaquePixels":  4037,
+                          "opaqueColors":  12,
+                          "partialAlphaPixels":  0,
+                          "nonTransparentBorderPixels":  0,
+                          "passed":  true,
+                          "errors":  [
+
+                                     ]
+                      },
+        "roundTripPixelsEqual":  true,
+        "sourceLayers":  5,
+        "sourceSHA256":  "0C8C020DECB9F80FD614DFDFD52DFC5EFBBA90D79E806F3717A8541697BB34B7",
+        "pngSHA256":  "80DC870394714BFDD268EEEB3A38D0377E3233CCB830CA336D8FFBF0B116396E",
+        "baselineSHA256":  "5C5365C987524A9AA16BD807E32E8543BEC31A2344FFD295DC721B9C3603FE6B",
+        "referenceSHA256":  "9A3507427CB2BCCAE2C44999DB59B2FEE47A466466E763690164DDF195222BB6",
+        "artApproval":  "not-evaluated-by-validator"
+    }
+]

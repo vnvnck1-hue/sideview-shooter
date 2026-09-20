@@ -31,7 +31,6 @@ var _ang_v := 0.0
 var _pivot_side := 1              # +1: 오른쪽 바닥 모서리가 축 (왼쪽이 들림), -1: 반대
 var _slide_left := 0.0
 var _slide_dir := 0.0
-var _shadow: Control
 var _flash := 0.0                 # 피격 플래시 (1 → 0)
 var _mat: ShaderMaterial
 var _heat: HeatSurface
@@ -48,7 +47,7 @@ const FLASH_TIME := 0.11
 const FLASH_RADIUS := 70.0        # 탄착점 주변 플래시 반경 (px)
 
 
-func setup(tex: Texture2D, top_left: Vector2, shadow: Control = null) -> void:
+func setup(tex: Texture2D, top_left: Vector2) -> void:
 	texture = tex
 	centered = false
 	_mat = Lighting.shader_material("prop_surface")
@@ -59,7 +58,6 @@ func setup(tex: Texture2D, top_left: Vector2, shadow: Control = null) -> void:
 	offset = Vector2(-_w * 0.5, -_h)          # 원점 = 바닥 중심
 	_base = top_left + Vector2(_w * 0.5, _h)
 	position = _base
-	_shadow = shadow
 	_update_rect()
 	_build_cells()
 
@@ -206,8 +204,6 @@ func _process(delta: float) -> void:
 		_slide_left -= step
 		_base.x += step * _slide_dir
 		_update_rect()
-		if _shadow:
-			_shadow.position.x += step * _slide_dir
 
 	var resting := absf(_angle) < 0.0005 and absf(_ang_v) < 0.02
 	if resting:

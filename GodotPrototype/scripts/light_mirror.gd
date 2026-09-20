@@ -19,8 +19,8 @@ func setup(src: PointLight2D, ratio: float) -> void:
 	blend_mode = src.blend_mode
 	shadow_enabled = false
 	range_item_cull_mask = src.range_item_cull_mask
-	range_z_min = DepthPreset.Z_ACTOR_MIN
-	range_z_max = DepthPreset.Z_FOREGROUND
+	range_z_min = DepthLayers.Z_ACTOR_MIN
+	range_z_max = DepthLayers.Z_FOREGROUND
 	_sync()
 
 

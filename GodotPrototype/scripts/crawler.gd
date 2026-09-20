@@ -15,6 +15,10 @@ extends Node2D
 ##       + 스케일 펀치(옆으로 눌리고 스프링으로 복귀) + 뒤 벽에 작은 체액 자국(BloodStain).
 ##       HP 0 → 죽음 클립 + 육편(ChunkDebris, 프레임 텍스처 조각)이 사방으로 튀고 초록 체액 분출, 벽에 큰 자국.
 ##       잔해로 남았다가 사라진다. 죽은 뒤엔 맞지 않는다(뒤의 벽이 맞음).
+## 소리: 네 자리에만 붙인다 — 포효(입이 실제로 벌어지는 roar_03), 공격 예고(_start_attack),
+##       피격(죽는 타격 제외), 죽음. 여기에 배회 중 웅얼거림(_vocalize)을 거리로 깎아 낮게 깐다.
+##       발소리·착지음은 넣지 않았다 — 개체가 여럿이면 바닥 소리가 총성 밑에서 진창이 된다.
+##       정의는 audio_manager.SOUNDS 의 crawler_* 네 항목. 원본은 CC0(Docs/CREDITS.md).
 ## 쫀득함: 발을 축으로 한 스케일 스프링(_squash). 걷기 바운스·점프 웅크림/늘어남/착지 눌림·공격 예비동작을 모두 여기로 표현한다.
 
 signal died(pos: Vector2)
@@ -62,6 +66,11 @@ const WALL_HOLD := Vector2(0.5, 1.1)  # 덮치기 직전 매달려 노리는 시
 const WALL_MAX_TIME := 11.0           # 안전장치 — 이만큼 붙어 있었으면 그냥 떨어진다
 const WALL_KNOCK_OFF := 0.45          # 벽에 붙은 채 맞았을 때 떨어질 확률
 const FALL_GRAVITY := 2400.0
+
+const VOCAL_INTERVAL := Vector2(3.5, 8.0)     # 걷는 중 웅얼거리는 간격 (초). 포효보다 훨씬 자주, 훨씬 작게
+const VOCAL_MAX_DIST := 2600.0                # 이보다 멀면 웅얼거림은 내지 않는다 (화면 밖 합창 방지)
+const VOCAL_FAR_FADE := 1400.0                # 이 거리부터 멀어질수록 깎기 시작 (px)
+const VOCAL_FAR_DB := -9.0                    # VOCAL_MAX_DIST 에서의 감쇠량
 
 const ROAR_INTERVAL := Vector2(7.0, 14.0)     # 걷는 중 포효 시도 간격 (초)
 const ROAR_MIN_DIST := 220.0          # 플레이어가 이보다 가까우면 포효 안 함 (코앞에서 멈추면 시시하다)
@@ -136,6 +145,7 @@ var _roar_hold := 0.0                 # >0 이면 roar_03 에서 멈춰 있는 �
 var _roar_held := false               # 이번 포효에서 유지 구간을 이미 지났나
 var _roar_last_frame := -1            # 침 분출을 프레임 전환마다 한 번만
 var _saliva_t := 0.0
+var _vocal_t := 0.0                   # 다음 배회 웅얼거림까지
 var _roar_pending := false            # 스폰 페이드가 끝나면 등장 포효
 var _spat := false
 var _knock := 0.0
@@ -181,6 +191,9 @@ func setup(room_node: Node2D, x: float, floor_line: float, left: float, right: f
 	_roar_timer = randf_range(ROAR_INTERVAL.x, ROAR_INTERVAL.y) * 0.5
 	_wall_timer = randf_range(WALL_INTERVAL.x, WALL_INTERVAL.y) * 0.5
 	_attack_cd = randf_range(0.8, 1.6)
+	# 개체마다 위상을 흩어 둔다. 같은 값으로 시작하면 한 방에 둘 이상 있을 때 동시에 울어
+	# "여러 마리"가 아니라 "한 마리가 크게"로 들린다.
+	_vocal_t = randf_range(VOCAL_INTERVAL.x, VOCAL_INTERVAL.y)
 
 
 func _ready() -> void:
@@ -452,6 +465,7 @@ func _process_walk(delta: float) -> void:
 
 	var dx := t.position.x - position.x
 	var dist := absf(dx)
+	_vocalize(delta, dist)
 	# 사거리 안이고 쿨다운이 끝났으면 뱉는다
 	if dist <= ATTACK_MAX and _attack_cd <= 0.0:
 		_start_attack()
@@ -492,9 +506,32 @@ func _process_walk(delta: float) -> void:
 	_sprite.speed_scale = (v / WALK_ANIM_SPEED) * (1.0 if forward else -1.0)
 
 
+## 배회 중 이따금 내는 웅얼거림. 포효와 역할이 다르다 —
+## 포효는 "덤빈다"는 선언이고 이건 **아직 안 보이는 것이 저기 있다**는 정보다.
+## 그래서 조건이 둘 있다.
+##   1) 멀수록 작아진다. AudioStreamPlayer2D 의 거리 감쇠만으로는 부족하다 — 그 감쇠는
+##      MAX_DISTANCE(3000) 기준이라 1500px 쯤에서도 또렷하게 들린다. 화면 밖 개체가
+##      또렷하면 "분위기"가 아니라 "소음"이다.
+##   2) 아주 멀면(VOCAL_MAX_DIST) 아예 내지 않는다. 방 하나에 여럿 깔린 상황에서
+##      전부 울면 크리처 소리가 앰비언스가 되어 버려 정작 가까운 놈이 안 들린다.
+func _vocalize(delta: float, dist: float) -> void:
+	_vocal_t -= delta
+	if _vocal_t > 0.0:
+		return
+	_vocal_t = randf_range(VOCAL_INTERVAL.x, VOCAL_INTERVAL.y)
+	if dist > VOCAL_MAX_DIST:
+		return
+	var far := clampf((dist - VOCAL_FAR_FADE) / (VOCAL_MAX_DIST - VOCAL_FAR_FADE), 0.0, 1.0)
+	Audio.play_at("crawler_idle", hit_center(), VOCAL_FAR_DB * far)
+
+
 func _start_attack() -> void:
 	state = State.ATTACK
 	_face_target()
+	# 뱉기 전 짧은 예고. 독액이 날아오기까지 SPIT_FRAME 만큼의 여유가 있는데, 그 사이를
+	# 그림만으로 알리면 화면 밖·시야 밖에서 날아오는 탄을 피할 방법이 없다. 소리가 그 예고다.
+	# 포효와 같은 샘플이되 -5dB — 같은 개체의 같은 목소리이면서 "포효는 아닌" 크기여야 한다.
+	Audio.play_at("crawler_aggro", hit_center(), -5.0)
 	_punch(ATTACK_ANTICIPATION)
 	_spat = false
 	_sprite.speed_scale = 1.0
@@ -540,6 +577,9 @@ func _process_roar(delta: float) -> void:
 			_roar_hold = ROAR_HOLD
 			_sprite.pause()
 			_punch(ROAR_STRETCH)
+			# 소리는 포효 **시작**이 아니라 여기서 낸다 — roar_01·02 는 숨을 들이켜는 예비동작이고
+			# 입이 실제로 벌어지는 건 roar_03 이다. 시작에 걸면 입을 다문 채 소리가 나 어긋나 보인다.
+			Audio.play_at("crawler_aggro", hit_center())
 			roared.emit(position)
 	if _roar_hold > 0.0:
 		_roar_hold -= delta
@@ -957,6 +997,10 @@ func hit(point: Vector2, dir: float, power := 1.0) -> void:
 	if state == State.DEAD:
 		return
 	hp -= 1
+	# 죽는 타격에서는 피격음을 내지 않는다 — 죽음 소리와 겹치면 둘 다 뭉개진다.
+	# 마지막 한 발의 소리는 _die() 가 맡는다.
+	if hp > 0:
+		Audio.play_at("crawler_hurt", point, lerpf(-2.0, 2.0, clampf(power, 0.0, 1.0)))
 	_flash = 1.0
 	_mat.set_shader_parameter("flash", HIT_FLASH_PEAK)
 	_mat.set_shader_parameter("radius_px", HIT_FLASH_RADIUS)
@@ -1021,6 +1065,8 @@ func _die(dir: float, power := 1.0) -> void:
 	_punch(Vector2.ONE.lerp(DEATH_PUNCH, power))
 	var sb := _burst_node()
 	var c := hit_center()
+	# 위력이 클수록 크게. 육편이 많이 튀는데 소리가 같으면 그림만 화려해진다.
+	Audio.play_at("crawler_death", c, lerpf(-2.5, 1.5, clampf(power, 0.0, 1.0)))
 	# 독액 + 초록 체액이 사방으로 분출 (체액은 더 많이·굵게·오래)
 	sb.burst(c, int(22 * power), Vector2(-signf(dir) * 0.4, -1.0), 1.1, Vector2(160, 560) * power, ACID_HOT, ACID_COLD,
 		Vector2(0.45, 1.1), 2000.0, 5.0 * (0.7 + 0.3 * power), true)

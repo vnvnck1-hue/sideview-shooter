@@ -17,3 +17,6 @@ desktop.ini
 .claude/settings.local.json
 
 __pycache__/
+
+# 오디션용 생성물 (Tools/build_*_audition.py 로 언제든 다시 만든다)
+Docs/_audition/

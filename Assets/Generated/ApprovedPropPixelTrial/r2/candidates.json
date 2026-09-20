@@ -1,0 +1,218 @@
+﻿[
+    {
+        "name":  "crew_wash_station",
+        "variant":  "grid4-c96",
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\CrewQuarters\\crew_wash_station.png",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "step":  4,
+        "paletteBudget":  96,
+        "metrics":  {
+                        "width":  54,
+                        "height":  77,
+                        "opaqueColors":  96,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  0.967698,
+                        "meanChannelErrorOnOverlap":  19.3395
+                    },
+        "sourceOffsetNative":  [
+                                   1,
+                                   1
+                               ],
+        "asepriteSHA256":  "BA2D34F1868154DC206EE6D925969FC38B38F5BA275D4F28ECCBCBDB52475375",
+        "pngSHA256":  "FC9D6ED7B43E6B007D542C81AB40FDF10D99FE4A0106786A07EEA5C6273683A2",
+        "status":  "candidate-not-user-approved"
+    },
+    {
+        "name":  "crew_wash_station",
+        "variant":  "grid2-c64",
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\CrewQuarters\\crew_wash_station.png",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "step":  2,
+        "paletteBudget":  64,
+        "metrics":  {
+                        "width":  106,
+                        "height":  152,
+                        "opaqueColors":  64,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  0.981616,
+                        "meanChannelErrorOnOverlap":  11.2290
+                    },
+        "sourceOffsetNative":  [
+                                   1,
+                                   1
+                               ],
+        "asepriteSHA256":  "F0DCB57E9B92DA7E503F664429100CADED605C4D7758BC9024C84C891C2201BA",
+        "pngSHA256":  "A573DE56A6188479CDEFC5F206EAF176F29468F6BDFE4B9E8D02B8DEF26AB3A0",
+        "status":  "candidate-not-user-approved"
+    },
+    {
+        "name":  "crew_wash_station",
+        "variant":  "grid2-c96",
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\CrewQuarters\\crew_wash_station.png",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "step":  2,
+        "paletteBudget":  96,
+        "metrics":  {
+                        "width":  106,
+                        "height":  152,
+                        "opaqueColors":  96,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  0.981616,
+                        "meanChannelErrorOnOverlap":  10.8777
+                    },
+        "sourceOffsetNative":  [
+                                   1,
+                                   1
+                               ],
+        "asepriteSHA256":  "0EF2138C73C8F94CB8BE56CE44E04F8DB108860AF8CB57A2CC6461BA2D6FC51F",
+        "pngSHA256":  "8E83FF6C8C006EFC283426953A823232E4E3C6D8FB355AC379DDB30436000646",
+        "status":  "candidate-not-user-approved"
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "variant":  "grid4-c96",
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\Workshop\\workshop_locker_game_scale.png",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "step":  4,
+        "paletteBudget":  96,
+        "metrics":  {
+                        "width":  95,
+                        "height":  81,
+                        "opaqueColors":  95,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  0.983926,
+                        "meanChannelErrorOnOverlap":  8.9622
+                    },
+        "sourceOffsetNative":  [
+                                   1,
+                                   1
+                               ],
+        "asepriteSHA256":  "A4601472A90E770AE0EDD8D87EB891F7BACA97818979CF5FA87835545C7ABDE4",
+        "pngSHA256":  "80E52820A405ACFBAE71D18A27A6E419B4F0660AC15BA1511DD0F0E611A8D20B",
+        "status":  "candidate-not-user-approved"
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "variant":  "grid2-c64",
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\Workshop\\workshop_locker_game_scale.png",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "step":  2,
+        "paletteBudget":  64,
+        "metrics":  {
+                        "width":  187,
+                        "height":  160,
+                        "opaqueColors":  64,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  0.986112,
+                        "meanChannelErrorOnOverlap":  5.1049
+                    },
+        "sourceOffsetNative":  [
+                                   1,
+                                   1
+                               ],
+        "asepriteSHA256":  "BA402A68F8CD1D9B195EACEF75EBACC978ABCB7705248E6A3ADB39E2E2C0CEA1",
+        "pngSHA256":  "7D6953C5EF0BA6B639FBBC2561F9D7B64FFE549F510A2EBBA9892275040C0887",
+        "status":  "candidate-not-user-approved"
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "variant":  "grid2-c96",
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\Workshop\\workshop_locker_game_scale.png",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "step":  2,
+        "paletteBudget":  96,
+        "metrics":  {
+                        "width":  187,
+                        "height":  160,
+                        "opaqueColors":  95,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  0.986112,
+                        "meanChannelErrorOnOverlap":  4.9801
+                    },
+        "sourceOffsetNative":  [
+                                   1,
+                                   1
+                               ],
+        "asepriteSHA256":  "79A3935B2CDDA5D8A8E8C3572956344C3BD765611D936D1F325CC024FEBD22C2",
+        "pngSHA256":  "4A85B55893BD6C152E75365E73D9A2F870BEE28F24B097270DAF81C7A9A73D28",
+        "status":  "candidate-not-user-approved"
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "variant":  "grid4-c96",
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\Workshop\\workshop_armchair_game_scale.png",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "step":  4,
+        "paletteBudget":  96,
+        "metrics":  {
+                        "width":  74,
+                        "height":  62,
+                        "opaqueColors":  94,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  0.978202,
+                        "meanChannelErrorOnOverlap":  8.0435
+                    },
+        "sourceOffsetNative":  [
+                                   1,
+                                   1
+                               ],
+        "asepriteSHA256":  "887ABA25D16EACC9EA9C5A3A98D12B469A8208153B87FDBB2D9557A5212B0C3B",
+        "pngSHA256":  "D6663CA6328B2F7D68D1F83BD91B88761DC776790A00F79E33B451230E3CF5F5",
+        "status":  "candidate-not-user-approved"
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "variant":  "grid2-c64",
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\Workshop\\workshop_armchair_game_scale.png",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "step":  2,
+        "paletteBudget":  64,
+        "metrics":  {
+                        "width":  145,
+                        "height":  122,
+                        "opaqueColors":  63,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  0.988708,
+                        "meanChannelErrorOnOverlap":  4.3006
+                    },
+        "sourceOffsetNative":  [
+                                   1,
+                                   1
+                               ],
+        "asepriteSHA256":  "0C577CC255BF7BC61A945501BAD1761C9A1C4FF39141D1FD6E03CAEBA472D645",
+        "pngSHA256":  "A29279EA2D9A96854E324E05BA96D2A75328A7EA4D1AD9C7499B0F44AF1DDBBF",
+        "status":  "candidate-not-user-approved"
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "variant":  "grid2-c96",
+        "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\Workshop\\workshop_armchair_game_scale.png",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "step":  2,
+        "paletteBudget":  96,
+        "metrics":  {
+                        "width":  145,
+                        "height":  122,
+                        "opaqueColors":  96,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  0.988708,
+                        "meanChannelErrorOnOverlap":  4.2049
+                    },
+        "sourceOffsetNative":  [
+                                   1,
+                                   1
+                               ],
+        "asepriteSHA256":  "FFDD6F0743954F996226257FA19796FA9FE2FE54C292BDEFF7AB5A3137DEF0D3",
+        "pngSHA256":  "62DD3F6AA87A49310691923AFFD1C4BD550115D27216C5D1DBF8D0394FAF2AEB",
+        "status":  "candidate-not-user-approved"
+    }
+]

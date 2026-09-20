@@ -33,7 +33,7 @@ func _initialize() -> void:
 
 
 func _process(_delta: float) -> bool:
-	if current_scene == null or not current_scene.has_method("_switch_depth_preset"):
+	if current_scene == null or not current_scene.has_method("_load_room"):   # Main 이 떴는지 확인
 		return false
 	var crt = root.get_node_or_null("CrtFx")
 	if crt == null:

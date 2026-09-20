@@ -14,6 +14,10 @@ const CELL := RoomTheme.CELL
 const FLOOR_BAND := 78          # 바닥 프레임 조각에서 밟는 띠 윗선까지의 오프셋
 const CEILING_BAND := 48        # 천장 띠 두께 (램프·전선은 이 아래에 매단다)
 const WALL_BAND := 56           # 좌우 벽 띠 두께
+# 타일맵이 캔버스 아이템으로 쪼개지는 단위(셀). 조명 한도는 아이템마다 따로 걸리므로
+# 청크가 작을수록 한 청크가 받는 라이트 수가 줄어 한도(15)에 덜 부딪힌다 — Lighting 의 "청크당 라이트 한도" 참고.
+# 기본값 16(2048px)은 방 전체가 몇 덩어리라 램프·무드 광원이 전부 한 청크에 몰렸다. 3 = 384px.
+const QUADRANT := 3
 
 var theme := ""
 var heights: Array = []
@@ -80,16 +84,21 @@ func build(theme_id: String, hs: Array, seed_text: String) -> void:
 	cells = cells_of(hs)
 	var ts := RoomTheme.tileset(theme_id)
 
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(seed_text)
 	var bg := TileMapLayer.new()
 	bg.name = "Background"
 	bg.tile_set = ts
+	bg.rendering_quadrant_size = QUADRANT
 	var fr := TileMapLayer.new()
 	fr.name = "Frame"
 	fr.tile_set = ts
+	fr.rendering_quadrant_size = QUADRANT
+	# The six background cells are one 3x2 architectural macro panel.
+	# Keep their phase locked; random selection turns vents and seams into
+	# 32 px wallpaper and breaks features that cross tile boundaries.
+	var phase_x := posmod(hash(seed_text), 3)
+	var phase_y := posmod(hash(seed_text + "_bg_phase"), 2)
 	for c in cells.keys():
-		var i := rng.randi_range(0, 5)
+		var i := posmod(c.x + phase_x, 3) + posmod(c.y + phase_y, 2) * 3
 		bg.set_cell(c, RoomTheme.SRC_BG, Vector2i(i % 3, i / 3))
 		var piece := _piece(cells, c)
 		if piece == "":

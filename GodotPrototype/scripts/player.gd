@@ -160,6 +160,7 @@ func _ready() -> void:
 	body.material = Lighting.character_material()      # 노멀맵 라이팅 + 캐릭터 림라이트 (CHAR_RIM_PRESETS)
 	body_pivot.add_child(body)
 	body.animation_finished.connect(_on_animation_finished)
+	body.frame_changed.connect(_on_body_frame)
 	body.play("idle")
 
 	# 머리: 몸통과 같은 BodyPivot 아래 (숨쉬기 스케일·구르기 회전을 함께 받는다), 몸 위에 그려진다
@@ -214,6 +215,7 @@ func _ready() -> void:
 	muzzle_light.position = muzzle.position
 	muzzle_light.enabled = false
 	arm_pivot.add_child(muzzle_light)
+	Lighting.register_dynamic(muzzle_light, 1.6, "shot")     # 프랍 그림자가 총구 화염을 따라 확 뻗는다
 
 	# 전신 액션 클립: 기존 분리형 몸통·머리·팔을 가리는 오버레이로만
 	# 재장전/구르기 동안 사용한다. 판정·이동 로직은 기존 값을 유지한다.
@@ -372,6 +374,7 @@ func start_reload() -> void:
 		return
 	reloading = true
 	_reload_t = 0.0
+	Audio.play_at("cloth", global_position, -3.0)
 	_body_rc.y -= 6.0          # 탄창 빼는 몸짓 — 살짝 앞으로 숙임
 	ammo_changed.emit(ammo, MAG_SIZE, true)
 	_show_action_clip("reload")
@@ -419,9 +422,11 @@ func _process(delta: float) -> void:
 		state = State.CROUCH
 		body.speed_scale = 1.0
 		body.play("crouch")
+		Audio.play_at("cloth", global_position)
 	elif not crouch_held and state == State.CROUCH:
 		state = State.UNCROUCH
 		body.play_backwards("crouch")
+		Audio.play_at("cloth", global_position, -2.0)
 
 	# 사격이 질주를 이긴다: 쏘는 동안(과 그 직후 RUN_FIRE_LOCK)은 Shift 를 눌러도 걷기로 내려온다
 	if shoot_pressed:
@@ -547,6 +552,7 @@ func _fire() -> void:
 	flash.scale = Vector2.ONE * randf_range(0.85, 1.25)
 	# 반동 임펄스: 팔은 즉시 속도 임펄스(뒤로 확 → 앞으로 되튐), 머리·몸통은 지연 뒤 (절차적 연쇄)
 	var rp := recoil_preset()
+	Audio.fire(muzzle.global_position)
 	_arm_rc.y += float(rp["arm_imp"])
 	_pending.append({"t": rp["arm"].z + rp["head"].z, "part": "head"})
 	_pending.append({"t": rp["arm"].z + rp["body"].z, "part": "body"})
@@ -616,6 +622,7 @@ func _start_roll(dir: int) -> void:
 	facing = _roll_dir
 	body.flip_h = facing < 0
 	body.speed_scale = 1.0
+	Audio.play_at("cloth", global_position, 2.0)
 	_show_action_clip("roll")
 	body.play("crouch")
 	body.frame = 3                   # 웅크린 프레임으로 구른다
@@ -649,11 +656,22 @@ func _process_roll(delta: float) -> void:
 		body_pivot.rotation = 0.0
 		body_pivot.position = Vector2(0, -BODY_CENTER_Y)
 		body.offset = Vector2(-FRAME_SIZE * 0.5, -FRAME_SIZE + BODY_CENTER_Y)
+		Audio.play_at("land", global_position)
 		velocity_x = _roll_dir * SPEED * ROLL_EXIT_SPEED    # 구르기 끝에 관성이 남아 미끄러지며 이어진다
 		_slide_t = ROLL_SLIDE_TIME
 		body.play("idle")
 		_hide_action_clip()
 		_resume_reload_action()
+
+
+## 걷기·달리기 클립의 접지 프레임에서만 발소리를 낸다.
+## 타이머가 아니라 프레임에 묶여 있어 speed_scale(속도 비례)에 자동으로 따라간다.
+func _on_body_frame() -> void:
+	if state != State.WALK and state != State.RUN:
+		return
+	if body.frame != 0 and body.frame != 2:
+		return
+	Audio.play_at("footstep", global_position, 0.0 if state == State.RUN else -3.5)
 
 
 func _on_animation_finished() -> void:

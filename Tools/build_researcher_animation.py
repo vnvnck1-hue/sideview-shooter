@@ -27,14 +27,53 @@ FPS = {"idle_breathe": 3, "idle_notes": 3, "idle_listen": 3, "walk": 8}
 PEOPLE = {"researcher_junior": 63, "researcher_male": 65}
 
 
+def solid_body(mask: np.ndarray) -> np.ndarray:
+    """Keep the figure, drop blobs that float free of it.
+
+    Some generated poses carry a faint shadow smear a few pixels below the boots.
+    Inside the bounding box it reads as extra height, so the pose gets scaled down
+    and its feet end up hanging above the cell floor while every other frame stands
+    on it. Anything under a twentieth of the body is not part of the body.
+    """
+    height, width = mask.shape
+    seen = np.zeros_like(mask)
+    blobs = []
+    for start_y, start_x in zip(*np.nonzero(mask)):
+        if seen[start_y, start_x]:
+            continue
+        pixels = []
+        todo = [(int(start_y), int(start_x))]
+        seen[start_y, start_x] = True
+        while todo:
+            y, x = todo.pop()
+            pixels.append((y, x))
+            for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+                if 0 <= ny < height and 0 <= nx < width and mask[ny, nx] and not seen[ny, nx]:
+                    seen[ny, nx] = True
+                    todo.append((ny, nx))
+        blobs.append(pixels)
+    body = max(len(pixels) for pixels in blobs)
+    keep = np.zeros_like(mask)
+    for pixels in blobs:
+        if len(pixels) * 20 >= body:
+            ys, xs = np.array(pixels).T
+            keep[ys, xs] = True
+    return keep
+
+
 def extract(sheet: Image.Image, col: int, row: int, cols: int, rows: int, height: int) -> Image.Image:
     """Crop one pose by its invisible grid cell and align by the head, not the stride."""
     width, sheet_height = sheet.size
     x0, x1 = round(col * width / cols), round((col + 1) * width / cols)
     y0, y1 = round(row * sheet_height / rows), round((row + 1) * sheet_height / rows)
     region = sheet.crop((x0, y0, x1, y1)).convert("RGBA")
-    alpha = np.asarray(region)[..., 3]
-    ys, xs = np.nonzero(alpha >= ALPHA_CUT)
+    pixels = np.asarray(region).copy()
+    if not (pixels[..., 3] >= ALPHA_CUT).any():
+        raise ValueError(f"Empty sheet cell {col}, {row}")
+    kept = solid_body(pixels[..., 3] >= ALPHA_CUT)
+    pixels[..., 3] = np.where(kept, pixels[..., 3], 0)
+    region = Image.fromarray(pixels, "RGBA")
+    ys, xs = np.nonzero(kept)
     if len(xs) < 100:
         raise ValueError(f"Empty sheet cell {col}, {row}")
     left, top, right, bottom = int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1

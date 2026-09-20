@@ -15,6 +15,7 @@ var floor_y := 0.0
 var size_scale := 1.0             # 탄피 크기 배율 (센트리건 2.0)
 var _t := 0.0
 var _wet := false                 # 고인 물에 한 번 첨벙
+var _rang := false                # 바닥 첫 바운스에서만 소리를 낸다 (연사 중 뭉침 방지)
 var _rect: ColorRect
 var _shine: ColorRect
 
@@ -63,6 +64,9 @@ func _process(delta: float) -> void:
 	if position.y >= floor_y:
 		position.y = floor_y
 		if absf(vel.y) > 90.0:
+			if not _rang:
+				_rang = true
+				Audio.play_at("shell", global_position)
 			vel.y = -vel.y * BOUNCE
 			vel.x *= FRICTION
 			spin *= 0.5

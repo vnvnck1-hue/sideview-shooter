@@ -171,6 +171,49 @@ const TERMINALS := {
 	"rewire_nursery": {
 		"role": "rewire", "title": "육묘실 배전반", "callsign": "RWR-H1",
 	},
+
+	# ── 연구 구역 ──────────────────────────────────────────────────────────
+	"save_decon": {
+		"role": "save", "title": "멸균 전실 저장 지점", "callsign": "SAV-R1",
+	},
+	"link_isolation": {
+		"role": "link", "title": "격리 병동 통신 단말", "callsign": "SEV-R2",
+		"tex": WALL_PANEL["tex"], "wall": true,
+		"logs": [
+			{"from": "검역반", "title": "수신: 연구동 / 격리 1일차",
+			 "body": "연구동 전체를 검역 등급 4로 올린다.\n정면 격벽 두 짝만 남기고 전부 봉쇄.\n\n안에 남은 인원은 멸균 전실을 거쳐서만 나온다. 예외 없음."},
+			{"from": "간호 기록", "title": "격리 병상 3 / 경과",
+			 "body": "체온 정상. 혈압 정상. 반응 정상.\n\n그런데 본인이 계속 \"안에서 뭔가 자란다\" 고 말한다.\n영상에는 아무것도 잡히지 않는다. 재검 요망."},
+		],
+	},
+	"survey_research": {
+		# 연구 통로 한가운데. 봉쇄된 연구동 안을 읽는 유일한 눈이다.
+		"role": "survey", "title": "연구 통로 센서 판독", "callsign": "SRV-R3",
+		"grid": [RoomData.ZONE_RESEARCH],
+		"logs": [
+			{"from": "센서 로그", "title": "검역 격벽 상태",
+			 "body": "연구동 격벽 6짝 중 4짝이 잠금. 남은 둘은 정비 통로·급수 통로 쪽.\n\n잠금 명령은 연구동 안에서 내려졌다. 밖에서 가둔 것이 아니라,\n안에서 잠근 것이다."},
+		],
+	},
+	"link_analysis": {
+		"role": "link", "title": "분석실 통신 단말", "callsign": "SEV-R4",
+		"tex": WALL_PANEL["tex"], "wall": true,
+		"logs": [
+			{"from": "선임 연구원 델", "title": "음성 로그 11",
+			 "body": "저온고 검체 번호가 하나 비었다.\n반출 기록도, 폐기 기록도 없다.\n\n누가 꺼냈는지는 알 것 같다. 왜 꺼냈는지는 모르겠다."},
+			{"from": "자동 기록", "title": "회수 우선순위 목록",
+			 "body": "1. 저온고 검체 A-7\n2. 분석 기록 원본\n3. 연구동 잔류 인원\n\n…순서를 바꿔 달라고 세 번 요청했다. 세 번 다 반려."},
+		],
+	},
+	"rewire_cold": {
+		"role": "rewire", "title": "저온고 배전반", "callsign": "RWR-R5",
+	},
+	"sec_research": {
+		# 연구동 안쪽 끝. 여기까지 와야 구역 방어포 셋이 모두 잡힌다.
+		"role": "security", "title": "연구 구역 방어 관제", "callsign": "SEC-R6",
+		"grid": [RoomData.ZONE_RESEARCH, RoomData.ZONE_HYDRO],
+		"tex": WALL_PANEL["tex"], "wall": true,
+	},
 }
 
 

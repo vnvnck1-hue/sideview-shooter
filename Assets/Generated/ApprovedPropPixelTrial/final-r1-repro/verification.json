@@ -1,0 +1,86 @@
+﻿[
+    {
+        "name":  "crew_wash_station",
+        "approvedSource":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\CrewQuarters\\crew_wash_station.png",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "sourcePixelBlock":  2,
+        "nativePadding":  1,
+        "sourceMapping":  "floor(sourceCoordinate / 2) + 1",
+        "nativeMetrics":  {
+                              "width":  106,
+                              "height":  152,
+                              "opaqueColors":  102,
+                              "partialAlpha":  0,
+                              "opaqueBorder":  0,
+                              "silhouetteIoU":  0.981616,
+                              "meanChannelErrorOnOverlap":  10.8732
+                          },
+        "roundtripPixelMatch":  true,
+        "layers":  [
+                       "source_mapped_pixels",
+                       "pixel_cleanup"
+                   ],
+        "localColourRepair":  "wash_soap",
+        "sourceSHA256Unchanged":  true,
+        "asepriteSHA256":  "BA6B689A2B6F40D6E8F5340462A2D7C810B687FE26247997729F0CFA456822C7",
+        "pngSHA256":  "EA72C839F58CB74BD65E10912C2F5FA2DFE9043CD34543406E40FBEC23699760",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "approvedSource":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\Workshop\\workshop_locker_game_scale.png",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "sourcePixelBlock":  2,
+        "nativePadding":  1,
+        "sourceMapping":  "floor(sourceCoordinate / 2) + 1",
+        "nativeMetrics":  {
+                              "width":  187,
+                              "height":  160,
+                              "opaqueColors":  95,
+                              "partialAlpha":  0,
+                              "opaqueBorder":  0,
+                              "silhouetteIoU":  0.986112,
+                              "meanChannelErrorOnOverlap":  4.9801
+                          },
+        "roundtripPixelMatch":  true,
+        "layers":  [
+                       "source_mapped_pixels",
+                       "pixel_cleanup"
+                   ],
+        "localColourRepair":  "none",
+        "sourceSHA256Unchanged":  true,
+        "asepriteSHA256":  "79A3935B2CDDA5D8A8E8C3572956344C3BD765611D936D1F325CC024FEBD22C2",
+        "pngSHA256":  "4A85B55893BD6C152E75365E73D9A2F870BEE28F24B097270DAF81C7A9A73D28",
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "approvedSource":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\GameReady\\Props\\Workshop\\workshop_armchair_game_scale.png",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "sourcePixelBlock":  2,
+        "nativePadding":  1,
+        "sourceMapping":  "floor(sourceCoordinate / 2) + 1",
+        "nativeMetrics":  {
+                              "width":  145,
+                              "height":  122,
+                              "opaqueColors":  96,
+                              "partialAlpha":  0,
+                              "opaqueBorder":  0,
+                              "silhouetteIoU":  0.988708,
+                              "meanChannelErrorOnOverlap":  4.2049
+                          },
+        "roundtripPixelMatch":  true,
+        "layers":  [
+                       "source_mapped_pixels",
+                       "pixel_cleanup"
+                   ],
+        "localColourRepair":  "none",
+        "sourceSHA256Unchanged":  true,
+        "asepriteSHA256":  "FFDD6F0743954F996226257FA19796FA9FE2FE54C292BDEFF7AB5A3137DEF0D3",
+        "pngSHA256":  "62DD3F6AA87A49310691923AFFD1C4BD550115D27216C5D1DBF8D0394FAF2AEB",
+        "userApproval":  "pending",
+        "gameImported":  false
+    }
+]

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>프랍 스타일 시험실 · 비교와 제작 절차</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,"Malgun Gothic",sans-serif;background:#13161d;color:#e7e6df}
+*{box-sizing:border-box}body{margin:0;padding:32px;max-width:1600px;margin-inline:auto}h1{font-size:28px;margin:8px 0 12px}h2{font-size:20px;margin:32px 0 12px}p{line-height:1.7;max-width:1000px;color:#bcbfc6}a{color:#b3d3cd}button,select{font:inherit;background:#272c36;color:inherit;border:1px solid #657080;border-radius:5px;padding:8px 12px}button{cursor:pointer}label{display:inline-flex;align-items:center;gap:8px}input{accent-color:#a3c7b9}header small{letter-spacing:.12em;color:#a3c7b9}.controls{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:18px 0}.status{border-left:3px solid #c49f65;padding:8px 16px;background:#20232b}.scroll{overflow:auto;border:1px solid #363d49;background:#21232c;padding:12px;max-width:100%}.compare{display:flex;gap:24px;align-items:flex-start;width:max-content}.compare figure{margin:0;padding:8px;min-width:150px}.compare figcaption{font-size:14px;line-height:1.7;color:#c4c9d0}.stage{display:flex;justify-content:center;align-items:flex-end;min-width:140px;margin-bottom:16px}.art{image-rendering:pixelated;max-width:none;flex:none}.gray .art{filter:grayscale(1)}.flow{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px;counter-reset:step}.step{border-top:2px solid #759989;padding:14px;background:#20252d;line-height:1.7}.step::before{counter-increment:step;content:counter(step,decimal-leading-zero);display:block;color:#a3c7b9}.step strong{display:block}.step span{color:#bcbfc6;font-size:14px}.caption{font-size:14px;color:#bcbfc6}#notice{min-height:24px}table{border-collapse:collapse;line-height:1.65;width:100%}td,th{padding:12px;text-align:left;border-bottom:1px solid #363d49;vertical-align:top}th{color:#a3c7b9}code{color:#c6cbbb}footer{margin-top:36px;color:#a3a8b1;font-size:14px}#assembly{display:block}button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #d2b477;outline-offset:3px}@media(max-width:760px){body{padding:18px}.flow{grid-template-columns:1fr 1fr}.controls{align-items:flex-start}h1{font-size:24px}}@media(max-width:420px){.flow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><small>ART PROCESS / 2026-09-20 / STUDIES, NOT SHIPPED</small>
+<h1>규격만 맞는 그림에서, 구조와 재질이 읽히는 프랍으로</h1>
+<p>실제 런타임 기준과 저밀도 제작본, Aseprite에서 다시 그린 3차 시험본을 비교합니다. 모든 물체는 같은 아트 픽셀 배율입니다. 큰 물체와 작은 물체를 같은 크기로 늘리지 않습니다.</p>
+<p class="status">현재 상태: <strong>과거 재설계 실험 기록 · 원화 보존형 전환으로 미채택 · 게임 미반입</strong><br>batch2 r4도 톤 불일치 피드백으로 채택되지 않았습니다. 아래 비교와 절차는 당시 기록입니다. 현재 제작 원칙은 <a href="../../../Docs/ART_GUIDE.md">ART_GUIDE v1.11 §0</a>의 자연어 요청 → 그림체 가이드로 원화 생성 → 사용자 승인 → 원화 보존형 Aseprite 픽셀화입니다. 보존형 변환 도구와 새 해상도는 아직 미확정입니다.</p>
+</header>
+<section aria-labelledby="batch2-title">
+<h2 id="batch2-title">형태 교정 r4 / 현미경 작업대 · 시약 카트 · 서버 랙</h2>
+<div class="scroll"><img class="art" src="batch2/review-r4/new-props-x3.png" width="1176" height="370" alt="동일한 3배 아트 픽셀 배율의 현미경 작업대, 이동식 시약 카트, 서버 랙"></div>
+<p>r3의 일그러짐을 교정했습니다. 현미경 광축과 C 지지대, 동일 두께의 카트 선반·바퀴, 평행한 서버 레일을 먼저 고정했습니다. 아래 비교는 왼쪽부터 r3 / 구조 사본 / r4입니다.</p>
+<details><summary>세 프랍의 수정 전 → 구조 → 수정 후 펼치기</summary>
+<div class="scroll"><img class="art" src="batch2/review-r4/microscope_station-geometry-x3.png" width="1176" height="370" alt="현미경 형태 교정 전, 구조, 교정 후"></div>
+<div class="scroll"><img class="art" src="batch2/review-r4/sample_cart-geometry-x3.png" width="1176" height="370" alt="카트 형태 교정 전, 구조, 교정 후"></div>
+<div class="scroll"><img class="art" src="batch2/review-r4/server_rack-geometry-x3.png" width="1176" height="370" alt="서버 랙 형태 교정 전, 구조, 교정 후"></div>
+</details>
+<p class="caption">이 추가 제작 이미지는 고정 ×3입니다. 아래 배율 선택기는 이전 3종 비교에 적용됩니다.</p>
+<p><a href="batch2/README.md">추가 3종의 Aseprite·PNG 원본과 비교 기록</a> · <a href="batch2/review-r4/assembly-workshop-x2.png">플레이어와 같은 배율로 보기</a> · <a href="batch2/review-r4/geometry-verification.json">형태 회귀 검사</a></p>
+</section>
+<section aria-labelledby="comparison-title">
+<h2 id="comparison-title">01 / 같은 픽셀 배율로 비교</h2>
+<div class="controls">
+<label>프랍 <select id="asset"><option value="analysis_bench">분석 작업대 · 96×53</option><option value="cold_storage">냉장 보관장 · 56×75</option><option value="specimen_chamber">검체 배양통 · 52×84</option></select></label>
+<label>화면 배율 <select id="scale"><option value="1">×1 · 네이티브</option><option value="2">×2 · 판독</option><option value="3" selected>×3 · 기본</option><option value="6">×6 · 노이즈</option></select></label>
+<label><input type="checkbox" id="iterations"> r1·r2도 보기</label>
+<label><input type="checkbox" id="grayscale"> 흑백</label>
+</div>
+<div class="scroll" id="comparison-scroll"><div class="compare" id="comparison"></div></div>
+<p class="caption">자동 맞춤 축소 없이 정수 확대합니다. 넓으면 가로로 스크롤하세요. 브라우저 줌 100% 기준이며 OS 화면 배율은 별도입니다. 각 물체의 최하단 불투명 픽셀을 맞췄습니다.</p>
+<p id="notice" aria-live="polite"></p>
+</section>
+<section aria-labelledby="scene-title">
+<h2 id="scene-title">02 / 플레이어·배경과 함께 보기</h2>
+<div class="controls"><label>배경 <select id="theme"><option value="workshop">실제 작업실 배경</option><option value="research_analysis">현재 연구시설 배경</option></select></label></div>
+<div class="scroll"><img id="assembly" class="art" src="review-r3/assembly-workshop-x3.png" width="1680" height="480" alt="기존 작업대, 새 작업대, 보관장, 플레이어, 배양통을 같은 접지선에 배치한 오프라인 비교"></div>
+<p class="caption">오프라인 접지 검토용 부분 장면입니다. 엔진 스크린샷이 아니며 바닥 띠는 비교용입니다. 배경은 런타임 월드 텍스처 그대로, 프랍은 네이티브 ×선택 배율입니다. 화면 너비가 좁아도 이미지 자체를 줄이지 않습니다.</p>
+<p>작업실에서는 붉은 플레이어가 분리됩니다. 현재 연구시설의 밝은 청회색 배경에서는 금속 중간톤과 대비가 약해집니다. 이를 프랍 전체 밝기 증가로 해결하지 않으며 환경 세트 승인은 보류합니다.</p>
+</section>
+<section aria-labelledby="process-title">
+<h2 id="process-title">03 / 당시 실험 절차 — 현재 제작 지침으로 사용하지 않음</h2>
+<div class="flow">
+<div class="step"><strong>기준·브리프</strong><span>최신 가이드, 런타임 파일·해시, 격자, 접지, 큰/중간/작은 정보.</span></div>
+<div class="step"><strong>형태 잠금 ↺</strong><span>축·평행선·두께·부품 연결·접지. 구조만 출력해 비교하고, 읽히지 않으면 여기서 수정.</span></div>
+<div class="step"><strong>재질·기능</strong><span>확정된 구조 안에서 명암·유리·기능을 표현. 실루엣 변경은 구조 단계로 되돌림.</span></div>
+<div class="step"><strong>비교 후 수정 ↺</strong><span>×2 판독 / ×3 인상 / ×6 노이즈 / 흑백. 결함과 수정 위치 기록.</span></div>
+<div class="step"><strong>규격 검증</strong><span>크기·색·알파·경계·레이어, 원본 재출력 일치. 아트 승인은 아님.</span></div>
+<div class="step"><strong>조립 게이트 ↺</strong><span>배경·플레이어·접지. 위계가 무너지면 반입 중단.</span></div>
+<div class="step"><strong>선택 파일만 반입</strong><span>승인 범위만 Native4로 승격. 월드 ×4 확대와 노멀맵·임포트.</span></div>
+<div class="step"><strong>엔진 승인</strong><span>실제 줌·빛·가림·상호작용. 미실행 항목을 완료로 표시하지 않음.</span></div>
+</div>
+</section>
+<section aria-labelledby="record-title"><h2 id="record-title">04 / 반복하면서 바뀐 판단</h2>
+<table><thead><tr><th>단계</th><th>관찰</th><th>수정</th></tr></thead><tbody>
+<tr><td>이전</td><td>큰 사각형·얇은 테두리만으로 중간 정보가 빠짐</td><td>규격 통과와 완성 아트를 분리</td></tr>
+<tr><td>r1</td><td>두께가 생겼지만 금속이 평평하고 유리는 긴 띠처럼 보임</td><td>구조 다음에 재질·기능 패스를 필수화</td></tr>
+<tr><td>r2</td><td>보강대·힌지·클램프가 생김. 중복 테두리·긴 반사가 남음</td><td>픽셀 변화율이 높아도 검수를 멈추지 않음</td></tr>
+<tr><td>r3</td><td>국소 하이라이트·연결부·곡면 반사를 정리. 기존보다 정돈된 선은 남음</td><td>밀도 동등성을 점수로 주장하지 않고 비교 증거와 남은 차이를 보존</td></tr>
+</tbody></table>
+<p>당시 실험은 8~16색 예산을 사용했습니다. 현재 v1.11에서는 일괄 상한을 해제하고 승인 원화의 색·재질 보존에 필요한 팔레트를 자산별로 정합니다. 인접 픽셀 변화율은 원화 충실도를 모르는 진단값이며 합격 점수가 아닙니다.</p>
+</section>
+<footer><a href="../../../Docs/PROP_STYLE_REVIEW.md">상세 분석·측정 조건·수정 기록</a> · <a href="../../../Docs/ASEPRITE_PIPELINE.md">실행 절차</a> · <a href="review-r3/verification.json">실제 규격 검사 결과</a><p>r3 원본: <code>Assets/Generated/PropStyleLab/r3/*.aseprite</code> · 원본 5개 레이어 · 1프레임 · 게임 파일은 그대로 유지</p></footer>
+<script>
+const entries={
+ analysis_bench:{ref:'workshop_workbench_game_scale',refBottom:59,refName:'기존 작업실 작업대',bottom:51,detail:'상판 두께, 서랍, 보강대, 선반을 복원하고 기능부 주변에만 마감했습니다.'},
+ cold_storage:{ref:'workshop_locker_game_scale',refBottom:73,refName:'기존 작업실 캐비닛',bottom:73,detail:'측면·문 패킹·힌지·유리 내부를 분리했습니다. 기존 양문장보다 폭이 좁은 별도 물체입니다.'},
+ specimen_chamber:{ref:'hydroponics_growth_tank_full',refBottom:95,refName:'기존 수경 탱크',bottom:82,detail:'링·배관·검체 지지부와 국소 곡면 반사를 추가했습니다. 식물의 빽빽함을 잡티로 복제하지 않습니다.'}
+};
+const asset=document.getElementById('asset'),scale=document.getElementById('scale'),iterations=document.getElementById('iterations'),gray=document.getElementById('grayscale'),theme=document.getElementById('theme');
+const comparison=document.getElementById('comparison'),scene=document.getElementById('assembly'),notice=document.getElementById('notice');
+let generation=0;
+async function render(){
+ const ticket=++generation,k=asset.value,e=entries[k],s=Number(scale.value);
+ const variants=[['references/'+e.ref+'.png',e.refName,e.refBottom],['baseline/'+k+'.png','이전 / 블록아웃',e.bottom]];
+ if(iterations.checked)variants.push(['r1/'+k+'.png','r1 / 구조',e.bottom],['r2/'+k+'.png','r2 / 기능·재질',e.bottom]);
+ variants.push(['r3/'+k+'.png','r3 / 국소 마감',e.bottom]);
+ const figures=await Promise.all(variants.map(async([src,label,bottom])=>{
+  const img=new Image();img.src=src;img.alt=label;img.className='art';await img.decode();
+  img.width=img.naturalWidth*s;img.height=img.naturalHeight*s;img.style.transform='translateY('+((img.naturalHeight-1-bottom)*s)+'px)';
+  const fig=document.createElement('figure'),stage=document.createElement('div'),cap=document.createElement('figcaption');
+  stage.className='stage';stage.style.height=(100*s)+'px';stage.append(img);cap.textContent=label+' · '+img.naturalWidth+'×'+img.naturalHeight+' art px';fig.append(stage,cap);return fig;
+ }));
+ if(ticket!==generation)return;
+ comparison.replaceChildren(...figures);comparison.classList.toggle('gray',gray.checked);
+ scene.src='review-r3/assembly-'+theme.value+'-x'+s+'.png';scene.width=560*s;scene.height=160*s;scene.style.filter=gray.checked?'grayscale(1)':'none';
+ notice.textContent='×'+s+' · '+e.detail;
+}
+for(const input of [asset,scale,iterations,gray,theme])input.addEventListener('change',()=>render().catch(err=>{notice.textContent='이미지를 불러오지 못했습니다: '+err.message;}));
+render().catch(err=>{notice.textContent='이미지를 불러오지 못했습니다: '+err.message;});
+</script>
+</body></html>

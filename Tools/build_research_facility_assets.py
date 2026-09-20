@@ -1,7 +1,8 @@
-"""Author three clean research room kits at native 4 px art resolution.
+"""Publish three clean research room kits at native 4 px art resolution.
 
-Run with the bundled Python runtime. Outputs native sources, 4x game assets,
-tile atlases, transparent props, metadata, and assembled validation previews.
+Props are authored as native Aseprite files by
+Tools/Aseprite/build_research_facility_props.ps1. This publisher never reduces
+the high-resolution concept sheets into final assets.
 """
 from __future__ import annotations
 
@@ -42,7 +43,6 @@ ROOMS = {
     },
 }
 
-
 def rgba(hex_color: str, alpha=255):
     h = hex_color.lstrip("#")
     return tuple(bytes.fromhex(h)) + (alpha,)
@@ -75,38 +75,35 @@ def save(img, rel, ready_rel=None):
     return large
 
 
-def make_bg(p, variant):
-    im = new(CELL, CELL, p["wall"])
+def make_bg_macro(p):
+    """One 96x64 architectural panel, later sliced into six 32px cells.
+
+    Semantic details do not belong in the repeating fill.  Large seams and
+    bevels cross cell boundaries so the room reads as constructed wall panels
+    instead of six independent icon tiles.
+    """
+    im = new(CELL * 3, CELL * 2, p["panel"])
     d = ImageDraw.Draw(im)
-    # The edge colors match across every variation. Detail stays inside the cell.
-    rect(d, (0, 0, 31, 0), p["line"])
-    rect(d, (0, 1, 31, 2), p["light"])
-    rect(d, (0, 30, 31, 31), p["line"])
-    rect(d, (0, 28, 31, 29), p["shade"])
-    rect(d, (1, 3, 30, 27), p["panel"])
-    rect(d, (2, 4, 29, 5), p["light"])
-    rect(d, (1, 6, 2, 25), p["light"])
-    rect(d, (29, 6, 30, 26), p["shade"])
-    if variant == 1:
-        rect(d, (6, 8, 25, 9), p["light"])
-        rect(d, (6, 10, 25, 10), p["shade"])
-    elif variant == 2:
-        rect(d, (4, 14, 27, 14), p["shade"])
-        rect(d, (4, 15, 27, 15), p["light"])
-        rect(d, (6, 18, 8, 18), p["accent"])
-    elif variant == 3:
-        rect(d, (21, 8, 26, 20), p["shade"])
-        rect(d, (22, 9, 25, 18), p["glass"])
-        rect(d, (22, 19, 25, 19), p["line"])
-    elif variant == 4:
-        rect(d, (5, 9, 9, 10), p["line"])
-        rect(d, (6, 10, 8, 10), p["accent"])
-        rect(d, (11, 9, 15, 10), p["line"])
-        rect(d, (12, 10, 14, 10), p["light"])
-    elif variant == 5:
-        rect(d, (4, 24, 27, 25), p["shade"])
-        rect(d, (4, 23, 27, 23), p["light"])
+    # One broad 96 px bay. The seam is deliberately unrelated to the 32 px
+    # storage grid, and the macro repeats vertically without a horizontal bar.
+    rect(d, (0, 0, 1, 63), p["deep"])
+    rect(d, (2, 0, 2, 63), p["light"])
+    rect(d, (3, 0, 5, 63), p["shade"])
+    rect(d, (91, 0, 93, 63), p["shade"])
+    rect(d, (94, 0, 94, 63), p["light"])
+    rect(d, (95, 0, 95, 63), p["line"])
+    # Sparse structural fasteners only; no vents, buttons, or status icons.
+    for x, y in ((8, 10), (87, 10), (8, 54), (87, 54)):
+        rect(d, (x, y, x + 1, y + 1), p["line"])
+        rect(d, (x, y, x, y), p["light"])
     return im
+
+
+def make_bg(p, variant):
+    macro = make_bg_macro(p)
+    x = (variant % 3) * CELL
+    y = (variant // 3) * CELL
+    return macro.crop((x, y, x + CELL, y + CELL))
 
 
 def make_frame(p, kind):
@@ -118,23 +115,21 @@ def make_frame(p, kind):
     right = kind in ("right", "top_right", "bottom_right")
     if top:
         rect(d, (0, 0, 31, 11), p["deep"])
-        rect(d, (0, 2, 31, 3), p["shade"])
-        rect(d, (0, 4, 31, 9), p["light"])
+        rect(d, (0, 2, 31, 3), p["line"])
+        rect(d, (0, 4, 31, 5), p["light"])
+        rect(d, (0, 6, 31, 9), p["shade"])
         rect(d, (0, 10, 31, 11), p["line"])
-        if kind == "top":
-            rect(d, (10, 5, 21, 7), p["accent"])
     if bottom:
         rect(d, (0, 20, 31, 31), p["deep"])
         rect(d, (0, 20, 31, 21), p["line"])
         rect(d, (0, 22, 31, 25), p["floor"])
         rect(d, (0, 26, 31, 26), p["light"])
         rect(d, (0, 27, 31, 31), p["shade"])
-        if kind == "bottom":
-            rect(d, (14, 23, 17, 24), p["line"])
     if left:
         rect(d, (0, 0, 13, 31), p["deep"])
         rect(d, (2, 0, 3, 31), p["shade"])
         rect(d, (4, 0, 11, 31), p["light"])
+        rect(d, (6, 0, 10, 31), p["shade"])
         rect(d, (12, 0, 13, 31), p["line"])
         if kind == "left":
             rect(d, (5, 15, 9, 16), p["shade"])
@@ -142,6 +137,7 @@ def make_frame(p, kind):
         rect(d, (18, 0, 31, 31), p["deep"])
         rect(d, (18, 0, 19, 31), p["line"])
         rect(d, (20, 0, 27, 31), p["light"])
+        rect(d, (21, 0, 25, 31), p["shade"])
         rect(d, (28, 0, 29, 31), p["shade"])
         if kind == "right":
             rect(d, (23, 15, 27, 16), p["shade"])
@@ -150,6 +146,8 @@ def make_frame(p, kind):
         x = 10 if left else 20
         y = 8 if top else 22
         rect(d, (x, y, x+1, y+1), p["accent"])
+    # Straight frame cells stay continuous. Decorative lights and service
+    # modules are separate props; repeating them in every cell creates bars.
     return im
 
 
@@ -269,6 +267,28 @@ def prop(name,p):
     return im
 
 
+def native_prop(theme: str, name: str):
+    """Load an Aseprite-exported native prop without resampling it."""
+    sizes={
+        "specimen_chamber":(52,84), "analysis_bench":(96,53), "microscope_station":(55,59),
+        "cold_storage":(56,75), "sample_cart":(63,48), "decon_arch":(79,102),
+        "isolation_pod":(102,62), "wash_station":(65,59), "medical_cabinet":(54,79),
+        "uv_sterilizer":(54,68), "diagnostic_console":(94,62), "server_rack":(61,88),
+        "wall_display":(100,53), "signal_scope":(58,65), "drone_dock":(80,55),
+    }
+    path = NATIVE / "Props" / theme / f"{theme}_{name}.png"
+    if not path.exists():
+        raise FileNotFoundError(f"Missing Aseprite-native research prop: {path}")
+    w, h = sizes[name]
+    image = Image.open(path).convert("RGBA")
+    if image.size != (w, h):
+        raise ValueError(f"Unexpected native size for {theme}_{name}: {image.size}")
+    alpha_values = set(image.getchannel("A").getdata())
+    if not alpha_values.issubset({0, 255}):
+        raise ValueError(f"Non-binary alpha in {path}")
+    return image
+
+
 def sheet(images, columns):
     rows=(len(images)+columns-1)//columns
     out=new(columns*CELL,rows*CELL)
@@ -283,7 +303,7 @@ def preview(theme,p,bgs,frames,props):
     # Outer ring, four quiet wall rows, one continuous floor line.
     for y in range(rows):
         for x in range(cols):
-            bg=bgs[(x*5+y*3)%6]
+            bg=bgs[(x % 3) + (y % 2) * 3]
             canvas.alpha_composite(bg,(x*CELL,y*CELL))
             vertical = "top" if y == 0 else "bottom" if y == rows - 1 else ""
             horizontal = "left" if x == 0 else "right" if x == cols - 1 else ""
@@ -308,7 +328,22 @@ def preview(theme,p,bgs,frames,props):
 def build():
     VALIDATION.mkdir(parents=True,exist_ok=True)
     names=["top_left","top","top_right","left","right","bottom_left","bottom","bottom_right"]
-    summary={"formatVersion":1,"artPixelWorldPx":4,"cellWorldPx":128,"rooms":{}}
+    summary={
+        "formatVersion":4,
+        "artPixelWorldPx":4,
+        "cellWorldPx":128,
+        "sourceRoot":"Assets/GameReady/Native4/Props",
+        "sourceType":"aseprite_native",
+        "pipeline":"Tools/Aseprite/build_research_facility_props.ps1",
+        "backgroundLayout":{
+            "type":"phase_locked_macro",
+            "columns":3,
+            "rows":2,
+            "randomSelection":False,
+            "reference":"research_wall_macro_reference_v2.png",
+        },
+        "rooms":{},
+    }
     for theme,p in ROOMS.items():
         base=f"tiles/{theme}_modular"
         bgs=[make_bg(p,i) for i in range(6)]
@@ -328,11 +363,11 @@ def build():
             save(img,f"{base}/{theme}_modular_{filename}.png",f"Tiles/{theme}_Modular/{theme}_modular_{filename}.png")
         drawn={}
         for n in p["props"]:
-            drawn[n]=prop(n,p)
+            drawn[n]=native_prop(theme,n)
             save(drawn[n],f"props/{theme}/{theme}_{n}.png",f"Props/{theme}/{theme}_{n}.png")
         out=preview(theme,p,bgs,frames,drawn)
         out.save(VALIDATION/f"{theme}_room_preview.png",optimize=True)
-        summary["rooms"][theme]={"title":p["title"],"backgroundTiles":6,"frameTiles":8,"innerCornerTiles":4,"props":[{"file":f"{theme}_{n}.png","nativeSizePx":list(drawn[n].size),"pivot":"bottom_center" if n!="wall_display" else "wall_mount"} for n in p["props"]],"preview":f"Assets/GameReady/Validation/{theme}_room_preview.png","sheets":{"background":f"{theme}_modular_background_sheet_3x2.png","frame":f"{theme}_modular_frame_terrain_3x3.png","bend":f"{theme}_modular_frame_bend_sheet_4x1.png"}}
+        summary["rooms"][theme]={"title":p["title"],"sourceDirectory":theme,"backgroundTiles":6,"frameTiles":8,"innerCornerTiles":4,"props":[{"file":f"{theme}_{n}.png","source":f"{theme}_{n}.aseprite","nativeSizePx":list(drawn[n].size),"pivot":"bottom_center" if n!="wall_display" else "wall_mount"} for n in p["props"]],"preview":f"Assets/GameReady/Validation/{theme}_room_preview.png","playerScaleReview":f"Assets/GameReady/Validation/{theme}_player_scale_review.png","sheets":{"background":f"{theme}_modular_background_sheet_3x2.png","frame":f"{theme}_modular_frame_terrain_3x3.png","bend":f"{theme}_modular_frame_bend_sheet_4x1.png"}}
     (READY/"research_facility_manifest.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf-8")
     build_normals()
     print("Built 3 research rooms: 18 backgrounds, 24 frames, 12 bends, 15 props, 12 sheets, 3 previews.")

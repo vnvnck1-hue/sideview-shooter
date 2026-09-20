@@ -2,6 +2,10 @@
 
 이 문서는 현재 제작된 작업실 배경 타일과 붉은 후드 정비공 캐릭터 애니메이션을 실제 게임 장면에 배치하는 방법을 설명한다.
 
+> 문서 역할: 완성된 리소스의 조립·피벗·레이어·임포트 참고서다. 신규 아트의 스타일과 Native4 수치는
+> [`ART_GUIDE.md`](ART_GUIDE.md), Aseprite 제작·검사는 [`ASEPRITE_PIPELINE.md`](ASEPRITE_PIPELINE.md),
+> 문서 적용 순서는 [`ART_DOCUMENTATION_INDEX.md`](ART_DOCUMENTATION_INDEX.md)가 우선한다.
+
 ## 1. 사용할 리소스
 
 ### 작업실 배경 타일
@@ -244,7 +248,9 @@ Foreground Frame
 
 캐릭터 발이 배경 바닥선에 닿는지 확인하고, 가구와 겹칠 때는 오브젝트의 바닥 접점 또는 명시적인 Sorting Layer로 앞뒤 관계를 정한다.
 
-## 7. Unity 적용 예시
+## 7. 레거시 Unity 적용 예시 (참고)
+
+현재 실행 프로젝트는 Godot이며 신규 Native4 반입은 `ASEPRITE_PIPELINE.md`의 게임 반입 절차를 사용한다. 아래 내용은 동일 리소스를 Unity에서 시험했던 과거 설정 참고용이며 현재 프로젝트의 단일 출처가 아니다.
 
 ### 타일
 
@@ -292,7 +298,9 @@ Foreground Frame
 
 현재 캐릭터 애니메이션은 게임 플레이 검증을 위한 최소 키프레임 버전이다. 최종 리소스로 발전시킬 때도 셀 크기, Bottom Center 피벗과 공통 바닥선은 변경하지 않는다.
 
-## 10. Power Relay Room — 방식 B 신규 룸
+## 10. 폐기된 실험 기록 — Power Relay Room 방식 B
+
+이 절은 과거 Native8 실험의 구조 기록이다. 현재 아트 규격에서는 Power Relay 방과 Native8 방식을 폐기했으므로 신규 제작·반입 기준으로 사용하지 않는다. 재사용하려면 먼저 Native4로 재제작하고 `ART_GUIDE.md` §10~11의 승인 게이트를 다시 통과해야 한다.
 
 새 지하 전력 릴레이·축전실 테마는 `Assets/GameReady/PowerRelayRoom/`에 있다. 네이티브 8px 규격 원본은 `Assets/GameReady/Native8/PowerRelayRoom/`, Godot에서 바로 읽는 game-scale 출력은 `GodotPrototype/assets/power_relay_room/`에 배치했다.
 

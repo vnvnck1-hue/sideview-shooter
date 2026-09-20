@@ -17,10 +17,13 @@ const PRESETS := [
 	{
 		"id": "gradient_fill", "name": "그라데이션 필",
 		"desc": "위에서 내려오는 넓은 채광 라이트. 위→아래 밝기 그라데이션 + 노멀 방향성",
+		# 2026-09-20: 반경 2600 을 900 간격으로 촘촘히 깔던 것을 2400 간격 · 반경 6000 · 세로 0.5 로 눌러 바꿨다.
+		# 예전 값은 한 지점을 라이트 5개가 겹쳐 비춰 청크당 라이트 한도(Lighting 참고)를 혼자 다 먹었다.
+		# 넓고 납작하게 만들면 방 하나에 1~2개로도 가로로 고르고, 세로로 눌린 덕에 위→아래 그라데이션은 그대로다.
 		"ambient": Color(0.34, 0.37, 0.50),
-		"fill": {"spacing": 900.0, "y": -420.0, "radius": 2600.0, "height": 320.0, "energy": 0.48, "color": Color(0.78, 0.86, 1.0)},
+		"fill": {"spacing": 2400.0, "y": -420.0, "radius": 6000.0, "height": 320.0, "energy": 0.66, "color": Color(0.78, 0.86, 1.0), "squash": 0.5},
 		# 바닥 조명: 바닥선에 깔리는 넓고 낮은 라이트 (위 채광이 바닥까지 못 미치는 것을 보완). 살짝 난색.
-		"floor": {"spacing": 700.0, "dy": 26.0, "radius": 820.0, "height": 110.0, "energy": 0.28, "color": Color(0.96, 0.90, 0.82), "squash": 0.42},
+		"floor": {"spacing": 1500.0, "dy": 26.0, "radius": 950.0, "height": 110.0, "energy": 0.52, "color": Color(0.96, 0.90, 0.82), "squash": 0.42},
 	},
 	{
 		"id": "emissive_bg", "name": "배경 자체 발광",
@@ -32,6 +35,8 @@ const PRESETS := [
 		"window": {"color": Color(0.62, 0.82, 1.0), "radius": 520.0, "energy": 0.9, "glass": Color(1.5, 1.7, 2.1, 1.0)},
 	},
 ]
+## 이 거리(px) 안에 천장 램프가 있으면 방 전체 바닥 광원은 놓지 않는다
+const LAMP_POOL_GUARD := 380.0
 const DEFAULT := 1
 static var index := DEFAULT
 
@@ -61,6 +66,7 @@ static func apply(room: Node2D, layer: Node2D, ambient: CanvasModulate, i: int) 
 			var l := PointLight2D.new()
 			l.texture = Lighting.radial_texture()
 			l.texture_scale = Lighting.scale_for_radius(f["radius"])
+			l.scale = Vector2(1.0, f["squash"])           # 가로로 넓고 세로로 눌린 채광 — 위→아래 그라데이션은 살리고 폭만 넓힌다
 			l.color = f["color"]
 			l.energy = f["energy"]
 			l.height = f["height"]
@@ -71,7 +77,20 @@ static func apply(room: Node2D, layer: Node2D, ambient: CanvasModulate, i: int) 
 	if p.has("floor"):
 		var fl: Dictionary = p["floor"]
 		var n := maxi(1, int(ceil(width / float(fl["spacing"]))))
+		# 천장 램프 바로 아래는 램프의 바닥 풀(LampLight.FloorPool)이 이미 깔려 있다.
+		# 같은 자리에 방 전체 바닥 광원까지 겹치면 밝기는 거의 안 오르면서 청크 라이트 예산만 먹는다.
+		var lamp_xs: Array = []
+		for lamp in room.lamps:
+			lamp_xs.append(lamp.position.x)
 		for k in range(n):
+			var fx := width * (k + 0.5) / n
+			var skip := false
+			for lx in lamp_xs:
+				if absf(float(lx) - fx) < LAMP_POOL_GUARD:
+					skip = true
+					break
+			if skip:
+				continue
 			var l := PointLight2D.new()
 			l.texture = Lighting.radial_texture()
 			l.texture_scale = Lighting.scale_for_radius(fl["radius"])
@@ -79,9 +98,9 @@ static func apply(room: Node2D, layer: Node2D, ambient: CanvasModulate, i: int) 
 			l.color = fl["color"]
 			l.energy = fl["energy"]
 			l.height = fl["height"]
-			l.position = Vector2(width * (k + 0.5) / n, room_floor + float(fl["dy"]))
+			l.position = Vector2(fx, room_floor + float(fl["dy"]))
 			mood.add_child(l)
-			Lighting.split_by_depth(l, DepthPreset.ACTOR_FLOOR_LIGHT_RATIO)
+			Lighting.split_by_depth(l, DepthLayers.ACTOR_FLOOR_LIGHT_RATIO)
 
 	if p.has("strip"):
 		var s: Dictionary = p["strip"]

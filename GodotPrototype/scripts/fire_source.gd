@@ -111,6 +111,8 @@ func setup(air_layer: Node2D, wall_layer: Node2D, fire_size := Vector2(170.0, 21
 	_core_light.height = 70.0
 	_core_light.position = Vector2(0, -size.y * 0.2)
 	add_child(_core_light)
+	Lighting.register_dynamic(_light, 1.0, "ambient")           # 불꽃이 흔들리는 대로 그림자도 흔들린다
+	Lighting.register_dynamic(_core_light, 0.7, "ambient")
 
 	# 그을음 (벽 레이어, 곱셈)
 	var soot := Polygon2D.new()

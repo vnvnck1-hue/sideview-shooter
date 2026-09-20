@@ -1,0 +1,10 @@
+30 CC0 SFX loops — OpenGameArt
+출처: https://opengameart.org/content/30-cc0-sfx-loops
+확인일: 2026-09-20
+
+라이선스: CC0 1.0 (퍼블릭 도메인). 크레딧 불필요, 상업 사용 허용.
+https://creativecommons.org/publicdomain/zero/1.0/
+
+사용 파일: tex_power_machine_01(machine_11) / tex_power_machine_02(machine_08) /
+          tex_hydro_pump(pump_01) / tex_hydro_water(water_flowing) /
+          tex_terminal_noise(noise_01)

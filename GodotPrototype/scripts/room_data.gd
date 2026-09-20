@@ -1,10 +1,11 @@
 class_name RoomData
 extends RefCounted
-## 전체 맵 정의 — 방 21개가 측벽문(같은 평면, 좌우)과 정면문(뒷벽, 다른 방으로 순간 이동)으로 이어진 그래프.
+## 전체 맵 정의 — 방 27개가 측벽문(같은 평면, 좌우)과 정면문(뒷벽, 다른 방으로 순간 이동)으로 이어진 그래프.
 ## 좌표계: 방 왼쪽 끝이 x=0, 바닥선은 모든 방이 FLOOR_Y(486). Y 는 아래로 증가. 천장은 방 모양에 따라 위(음수)로 올라간다.
 ##
 ## 방 한 칸의 키
-##   title / zone / theme     제목, 구역 이름, RoomTheme 테마 id (workshop·corridor·hydroponics·crewquarters·power_relay)
+##   title / zone / theme     제목, 구역 이름, RoomTheme 테마 id
+##                            (workshop·corridor·hydroponics·crewquarters·power_relay·research_isolation·research_analysis·research_diagnostics)
 ##   shape                    열 프로필 [[폭 셀, 높이 셀], ...] — 128px 셀. 바닥 행은 공유하고 위로 쌓인다.
 ##                            높이 4 = 낮은 복도(천장 y 24), 5 = 보통 방(-104), 7 = 높은 방(-360), 9 = 굴뚝·성당(-616).
 ##                            같은 높이 구간은 2셀 이상(1칸 폭 기둥은 아트에 조각이 없음). tools/validate_map.gd 가 검사한다.
@@ -15,6 +16,8 @@ extends RefCounted
 ##                            특수 {"type": "cabinet"(파츠 파괴)|"capacitor"|"cart"|"breaker"(벽걸이, cy/fy)|"sentry"(바닥 격납 센트리건)}.
 ##                            sentry 는 평소 바닥 해치로 묻혀 있다가 W/↑ 로 전개·조종한다 (SentryTurret). 받침 폭 376px · 높이 440px 자리를 비워 둘 것.
 ##                            생존자 {"type": "npc", "id": NpcData.CAST 의 키, "x", "facing": 1|-1} — W/↑ 로 말을 건다. 내용은 NpcData.LINES.
+##                            "roam": px 를 주면 배치점 기준 ±px 를 어슬렁거린다 (걷는 클립이 있는 인물만. 구간은 방 벽 안쪽으로 잘린다).
+##                            그 구간에는 프랍·단말기·센트리건을 두지 않는다 — 통과해 걸어가는 것처럼 보인다.
 ##                            몬스터가 도는 방에는 두지 않는다 (대화 중에는 플레이어가 움직이지 못한다).
 ##   lamps                    [x, ...] 천장 펜던트 램프(LampLight — 총으로 깨짐, 빛 기둥, 바닥 풀). 그 열의 천장 띠 아래에 매달린다.
 ##   fixtures                 장식 조명 [{"file": power_relay Lighting 이름, "x", "cy"|"fy", "radius", "color"(선택)}] — PointLight2D + 스프라이트.
@@ -32,6 +35,10 @@ extends RefCounted
 ##   전력 구역     [케이블 덕트] ⇄ [전력 릴레이실] ⇄ [축전기 저장고] ⇄ [비상 발전실]      │            │
 ##                                                                                    ↕            ↕
 ##   수경재배 구역 [재배실 전실] ⇄ [대형 재배실] ⇄ [급수 통로] ⇄ [저수조실] ⇄ [육묘실]  (재배실↔격납고, 전실↔창고)
+##                                                    ↕
+##   연구 구역     [멸균 전실] ⇄ [격리 병동] ⇄ [연구 통로] ⇄ [검체 분석실] ⇄ [검체 저온고] ⇄ [진단 관제실]
+##                      ↕                          ↕
+##                 (서쪽 통로)                 (급수 통로)
 
 const FLOOR_Y := 486
 const TILE_HEIGHT := 560                # 옛 스트립 높이 — 카메라 초기값 등 호환용
@@ -54,9 +61,11 @@ const ZONE_WORKSHOP := "정비 구역"
 const ZONE_POWER := "전력 구역"
 const ZONE_CREW := "승무원 구역"
 const ZONE_HYDRO := "수경재배 구역"
+const ZONE_RESEARCH := "연구 구역"
 
 const GROW_LIGHT := Color(0.72, 1.0, 0.82)      # 수경재배 형광등(생장등) 색
 const WARM_LIGHT := Color(1.0, 0.54, 0.25)      # 전력실 텅스텐 색
+const STERILE_LIGHT := Color(0.78, 0.90, 1.0)   # 연구 구역 무균등(차가운 백색) 색
 
 const ROOMS := {
 	# ───────────────────────────── 정비 구역 (workshop) ─────────────────────────────
@@ -80,11 +89,14 @@ const ROOMS := {
 		"monsters": [], "spawn": {"max": 0, "interval": [9.0, 9.0]},
 	},
 	"corr_west": {
-		# 길고 낮은 복도. 적음. 정면문으로 숙소 복도와 이어진다.
+		# 길고 낮은 복도. 적음. 정면문 둘 — 숙소 복도, 연구 구역 멸균 전실.
 		"title": "서쪽 정비 통로 (West Passage)", "zone": ZONE_WORKSHOP, "theme": "corridor",
 		"shape": [[18, 4]],
 		"left_door": {"open": true, "target": "airlock"}, "right_door": {"open": true, "target": "workshop"},
-		"front_doors": [{"x": 1000, "target": "quarters_corr", "target_door": 0}],
+		"front_doors": [
+			{"x": 1000, "target": "quarters_corr", "target_door": 0},
+			{"x": 1340, "target": "decon_lock", "target_door": 0},
+		],
 		"props": [
 			{"type": "terminal", "id": "save_corr_west", "x": 400},
 			{"type": "sentry", "id": "sentry_corr_west", "name": "서쪽 통로 방어포", "x": 1800},
@@ -381,7 +393,7 @@ const ROOMS := {
 		"left_door": {"open": false}, "right_door": {"open": true, "target": "quarters_corr"},
 		"front_doors": [],
 		"props": [
-			{"type": "npc", "id": "junior", "x": 160, "facing": 1},
+			{"type": "npc", "id": "junior", "x": 200, "facing": 1, "roam": 170},
 			{"tex": "crew_bunk_left", "x": 345},
 			{"tex": "crew_bedside_cabinet", "x": 580},
 			{"tex": "crew_privacy_screen", "x": 780},
@@ -526,11 +538,11 @@ const ROOMS := {
 		"spawn": {"max": 12, "interval": [1.3, 2.5]},
 	},
 	"pump_corr": {
-		# 낮은 급수 통로, 가운데에 6행 펌프 알코브가 솟아 있다. 적음.
+		# 낮은 급수 통로, 가운데에 6행 펌프 알코브가 솟아 있다. 적음. 알코브의 정면문으로 연구 통로.
 		"title": "급수 통로 (Pump Corridor)", "zone": ZONE_HYDRO, "theme": "corridor",
 		"shape": [[5, 4], [4, 6], [6, 4]],
 		"left_door": {"open": true, "target": "greenhouse"}, "right_door": {"open": true, "target": "tank_room"},
-		"front_doors": [],
+		"front_doors": [{"x": 800, "target": "research_corr", "target_door": 0}],
 		"props": [
 			{"tex": POWER_RELAY_DIR + "Props/power_relay_conduit_junction.png", "x": 900, "fy": 300},
 			{"type": "sentry", "id": "sentry_pump", "name": "급수 통로 방어포", "x": 500},
@@ -592,6 +604,186 @@ const ROOMS := {
 		"fixtures": [{"file": "fluorescent_lamp", "x": 576, "cy": 52, "radius": 280, "color": GROW_LIGHT}],
 		"fx": [{"type": "leak", "x": 700, "cy": 96, "dir": Vector2(0.3, 1.0), "pressure": 0.5}],
 		"monsters": [], "spawn": {"max": 0, "interval": [9.0, 9.0]},
+	},
+
+	# ───────────────────────────── 연구 구역 (research_*) ─────────────────────────────
+	# 검역으로 봉쇄된 연구동. 서쪽 정비 통로와 급수 통로, 두 정면문으로만 들어온다.
+	# 테마 셋이 서쪽 → 동쪽으로 바뀐다: 멸균·격리(isolation) → 검체 분석(analysis) → 진단 관제(diagnostics).
+	"decon_lock": {
+		# 멸균 전실. 몬스터 없음 — 연구 구역의 대피소. 정면문으로 서쪽 정비 통로. 서쪽 막다른 끝.
+		"title": "멸균 전실 (Decon Vestibule)", "zone": ZONE_RESEARCH, "theme": "research_isolation",
+		"shape": [[11, 5]],
+		"left_door": {"open": false}, "right_door": {"open": true, "target": "isolation_ward"},
+		"front_doors": [{"x": 560, "target": "corr_west", "target_door": 1}],
+		"props": [
+			{"type": "terminal", "id": "save_decon", "x": 300},
+			# 단말기(300)와 멸균등(960) 사이의 빈 바닥을 오간다. 대사가 생기면 정면문(중심 ≈717)
+			# 프롬프트를 가리므로 그때 구간을 왼쪽으로 좁힐 것.
+			{"type": "npc", "id": "staff", "x": 620, "facing": -1, "roam": 170},
+			{"tex": "research_isolation/research_isolation_uv_sterilizer", "x": 960},
+			{"tex": "research_isolation/research_isolation_wash_station", "x": 1210},
+		],
+		"lamps": [704],
+		"fixtures": [
+			{"file": "wall_lamp", "x": 140, "cy": 150, "radius": 180, "color": STERILE_LIGHT},
+			{"file": "indicator_beacon", "x": 1160, "cy": 140, "radius": 150, "color": STERILE_LIGHT},
+		],
+		"fx": [{"type": "leak", "x": 880, "cy": 96, "dir": Vector2(-0.2, 1.0), "pressure": 0.5}],
+		"monsters": [], "spawn": {"max": 0, "interval": [9.0, 9.0]},
+	},
+	"isolation_ward": {
+		# 가운데 8열이 7행으로 솟은 격리 병동. 적음.
+		"title": "격리 병동 (Isolation Ward)", "zone": ZONE_RESEARCH, "theme": "research_isolation",
+		"shape": [[4, 5], [8, 7], [4, 5]],
+		"left_door": {"open": true, "target": "decon_lock"}, "right_door": {"open": true, "target": "research_corr"},
+		"front_doors": [],
+		"props": [
+			{"tex": "research_isolation/research_isolation_isolation_pod", "x": 400},
+			{"tex": "research_isolation/research_isolation_isolation_pod", "x": 900},
+			{"type": "terminal", "id": "link_isolation", "x": 1000, "fy": 430},
+			{"tex": "research_isolation/research_isolation_decon_arch", "x": 1300},
+			{"tex": "research_isolation/research_isolation_medical_cabinet", "x": 1580},
+			{"type": "sentry", "id": "sentry_isolation", "name": "격리 병동 방어포", "x": 1840},
+		],
+		"lamps": [300, 1750],
+		"fixtures": [
+			{"file": "ceiling_lamp", "x": 1000, "cy": 112, "radius": 280, "color": STERILE_LIGHT},
+			{"file": "wall_lamp", "x": 140, "cy": 150, "radius": 180, "color": STERILE_LIGHT},
+		],
+		"fx": [
+			{"type": "wire", "x": 700, "cy": 48, "length": 300.0},
+			{"type": "beacon", "x": 1500, "cy": 90},
+			{"type": "leak", "x": 1150, "cy": 104, "dir": Vector2(0.3, 1.0), "pressure": 0.7},
+		],
+		"monsters": [
+			{"type": "crawler", "x": 800, "facing": 1},
+			{"type": "crawler", "x": 1500, "facing": -1},
+		],
+		"spawn": {"max": 5, "interval": [2.4, 4.2]},
+	},
+	"research_corr": {
+		# 길고 낮은 연구 통로. 적음. 정면문으로 급수 통로(수경재배 구역).
+		"title": "연구 통로 (Research Passage)", "zone": ZONE_RESEARCH, "theme": "corridor",
+		"shape": [[16, 4]],
+		"left_door": {"open": true, "target": "isolation_ward"}, "right_door": {"open": true, "target": "analysis_lab"},
+		"front_doors": [{"x": 800, "target": "pump_corr", "target_door": 0}],
+		"props": [
+			{"type": "terminal", "id": "survey_research", "x": 400},
+			{"type": "sentry", "id": "sentry_research_corr", "name": "연구 통로 방어포", "x": 1400},
+			{"tex": "research_analysis/research_analysis_sample_cart", "x": 1800},
+		],
+		"lamps": [1200],
+		"fixtures": [
+			{"file": "fluorescent_lamp", "x": 300, "cy": 52, "radius": 260, "color": STERILE_LIGHT},
+			{"file": "fluorescent_lamp", "x": 1700, "cy": 52, "radius": 260, "color": STERILE_LIGHT},
+		],
+		"fx": [
+			{"type": "power_cable", "x": 600, "cy": 44, "length": 180.0},
+			{"type": "beacon", "x": 1100, "cy": 90},
+			{"type": "wire", "x": 1950, "cy": 44, "length": 200.0},
+		],
+		"monsters": [{"type": "crawler", "x": 1600, "facing": -1}],
+		"spawn": {"max": 3, "interval": [3.0, 5.0]},
+	},
+	"analysis_lab": {
+		# 성당형 검체 분석실 — 가운데 12열이 8행. 아주 많음. 구역에서 가장 큰 방.
+		"title": "검체 분석실 (Specimen Analysis)", "zone": ZONE_RESEARCH, "theme": "research_analysis",
+		"shape": [[5, 5], [12, 8], [5, 5]],
+		"left_door": {"open": true, "target": "research_corr"}, "right_door": {"open": true, "target": "cold_vault"},
+		"front_doors": [],
+		"props": [
+			{"tex": "research_analysis/research_analysis_analysis_bench", "x": 400},
+			{"tex": "research_analysis/research_analysis_microscope_station", "x": 760},
+			{"tex": "research_analysis/research_analysis_specimen_chamber", "x": 1100},
+			{"tex": "research_analysis/research_analysis_specimen_chamber", "x": 1400},
+			{"type": "terminal", "id": "link_analysis", "x": 1600, "fy": 520},
+			{"tex": "research_analysis/research_analysis_analysis_bench", "x": 1800},
+			{"tex": "research_analysis/research_analysis_sample_cart", "x": 2130},
+			{"type": "sentry", "id": "sentry_analysis", "name": "분석실 방어포", "x": 2500},
+		],
+		"lamps": [500, 1200, 1900, 2600],
+		"fixtures": [
+			{"file": "fluorescent_lamp", "x": 900, "cy": 52, "radius": 280, "color": STERILE_LIGHT},
+			{"file": "fluorescent_lamp", "x": 2000, "cy": 52, "radius": 280, "color": STERILE_LIGHT},
+			{"file": "wall_lamp", "x": 140, "cy": 150, "radius": 180, "color": STERILE_LIGHT},
+		],
+		"fx": [
+			{"type": "wire", "x": 1500, "cy": 48, "length": 520.0},
+			{"type": "leak", "x": 1000, "cy": 104, "dir": Vector2(0.4, 1.0), "pressure": 1.0},
+			{"type": "fire", "x": 640, "size": Vector2(170.0, 210.0)},
+			{"type": "beacon", "x": 2300, "cy": 74},
+		],
+		"monsters": [
+			{"type": "crawler", "x": 700, "facing": 1},
+			{"type": "crawler", "x": 1300, "facing": -1},
+			{"type": "crawler", "x": 1900, "facing": -1},
+			{"type": "crawler", "x": 2400, "facing": -1},
+		],
+		"spawn": {"max": 11, "interval": [1.4, 2.6]},
+	},
+	"cold_vault": {
+		# ㄱ자 — 왼쪽 5열은 9행 굴뚝, 오른쪽 7열은 5행. 위험.
+		"title": "검체 저온고 (Cold Vault)", "zone": ZONE_RESEARCH, "theme": "research_analysis",
+		"shape": [[5, 9], [7, 5]],
+		"left_door": {"open": true, "target": "analysis_lab"}, "right_door": {"open": true, "target": "diagnostics"},
+		"front_doors": [],
+		"props": [
+			{"tex": "research_analysis/research_analysis_cold_storage", "x": 250},
+			{"tex": "research_analysis/research_analysis_cold_storage", "x": 520},
+			{"tex": "research_analysis/research_analysis_specimen_chamber", "x": 780},
+			{"type": "terminal", "id": "rewire_cold", "x": 900, "fy": 520},
+			{"tex": "research_analysis/research_analysis_sample_cart", "x": 1060},
+			{"tex": "research_analysis/research_analysis_cold_storage", "x": 1340},
+		],
+		"lamps": [320, 1150],
+		"fixtures": [
+			{"file": "dangling_lamp", "x": 180, "cy": 48, "radius": 240, "color": STERILE_LIGHT},
+			{"file": "dangling_lamp", "x": 420, "cy": 48, "radius": 240, "color": STERILE_LIGHT},
+			{"file": "ceiling_lamp", "x": 700, "cy": 112, "radius": 280, "color": STERILE_LIGHT},
+		],
+		"fx": [
+			{"type": "power_cable", "x": 200, "cy": 78, "length": 400.0},
+			{"type": "wire", "x": 640, "cy": 48, "length": 420.0},
+			{"type": "beacon", "x": 1400, "cy": 90},
+		],
+		"monsters": [
+			{"type": "crawler", "x": 600, "facing": 1},
+			{"type": "crawler", "x": 1000, "facing": -1},
+			{"type": "crawler", "x": 1300, "facing": -1},
+		],
+		"spawn": {"max": 8, "interval": [1.8, 3.2]},
+	},
+	"diagnostics": {
+		# 6행 진단 관제실. 위험. 구역의 보안 관제 단말기가 여기 있다. 동쪽 막다른 끝.
+		"title": "진단 관제실 (Diagnostics Control)", "zone": ZONE_RESEARCH, "theme": "research_diagnostics",
+		"shape": [[15, 6]],
+		"left_door": {"open": true, "target": "cold_vault"}, "right_door": {"open": false},
+		"front_doors": [],
+		"props": [
+			{"tex": "research_diagnostics/research_diagnostics_diagnostic_console", "x": 330},
+			{"tex": "research_diagnostics/research_diagnostics_server_rack", "x": 660},
+			{"tex": "research_diagnostics/research_diagnostics_wall_display", "x": 700, "cy": 110},
+			{"tex": "research_diagnostics/research_diagnostics_server_rack", "x": 920},
+			{"type": "terminal", "id": "sec_research", "x": 1000, "fy": 540},
+			{"tex": "research_diagnostics/research_diagnostics_signal_scope", "x": 1180},
+			{"tex": "research_diagnostics/research_diagnostics_drone_dock", "x": 1470},
+		],
+		"lamps": [500, 1300],
+		"fixtures": [
+			{"file": "ceiling_lamp", "x": 900, "cy": 112, "radius": 280, "color": STERILE_LIGHT},
+			{"file": "indicator_beacon", "x": 1600, "cy": 150, "radius": 150, "color": STERILE_LIGHT},
+			{"file": "wall_lamp", "x": 1800, "cy": 150, "radius": 180, "color": STERILE_LIGHT},
+		],
+		"fx": [
+			{"type": "beacon", "x": 600, "cy": 90},
+			{"type": "wire", "x": 1250, "cy": 48, "length": 300.0},
+			{"type": "power_cable", "x": 1700, "cy": 60, "length": 220.0},
+		],
+		"monsters": [
+			{"type": "crawler", "x": 800, "facing": 1},
+			{"type": "crawler", "x": 1500, "facing": -1},
+		],
+		"spawn": {"max": 6, "interval": [2.0, 3.6]},
 	},
 }
 

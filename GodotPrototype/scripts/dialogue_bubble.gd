@@ -3,8 +3,9 @@ extends Control
 ## 대사 표시 — **한 자씩 찍는 타자 엔진 하나**에 **표시 방식(STYLES) 다섯 가지**를 얹는다.
 ##
 ## 어느 방식이 이 게임에 맞는지 비교하려고 만들었다. 실행 중 전환할 수 있고
-## (대화 랩 scenes/DialogueLab.tscn · 게임 안에서는 F7), 고른 값은 static 이라 씬을 다시 로드해도 남는다.
-## GameCamera.PRESETS · CrtPreset.PRESETS · DepthPreset.PRESETS 와 같은 방식이다.
+## **비교는 끝났다 — 게임은 2번 "자막"으로 확정(FIXED_STYLE)** 이고, 나머지 넷은 대화 랩
+## (scenes/DialogueLab.tscn) 에서만 바꿔 볼 수 있다. 고른 값은 static 이라 씬을 다시 로드해도 남는다.
+## GameCamera.PRESETS · CrtPreset.PRESETS · DepthLayers.PRESETS 와 같은 방식이다.
 ##
 ## ── 공통: 글자 연출 (모든 방식이 같이 쓴다) ────────────────────────────────
 ##   1. 한 자씩 찍히고, 찍히는 순간 아래에서 짧게 올라오며 밝아진다 (POP)
@@ -72,8 +73,13 @@ const STYLES := [
 		"choices": "rows", "log": 0, "mono": true, "width": 980.0, "fixed": true, "lines": 2,
 	},
 ]
+## **확정된 방식 = 2 "자막"**. 게임은 언제나 이 방식으로 뜬다 (Main 이 시작할 때 다시 끼운다).
+## 나머지 넷은 지웠다기보다 **비교 기록**으로 남겨 둔 것이고, 바꿔 볼 수 있는 곳은
+## 대화 UI 랩(로비 → "대화 UI 랩") 하나뿐이다. FireSource.style_index 와 같은 방식이다.
+const FIXED_STYLE := 2
+
 ## 지금 방식. static 이라 씬을 다시 로드해도 남는다. 환경 변수 DIALOGUE_STYLE 로 시작값 고정 가능.
-static var style_index := 0
+static var style_index := FIXED_STYLE
 
 const FONT_SIZE := 26
 const CHOICE_FONT_SIZE := 23
@@ -105,14 +111,31 @@ const INK_LOG := Color(0.42, 0.45, 0.50)          # 지나간 줄
 const SHADOW := Color(0.0, 0.0, 0.0, 0.5)
 const TEXT_SHADOW := Color(0.0, 0.0, 0.0, 0.85)   # 상자 없는 방식의 글자 그림자
 
-## 한 자 찍는 데 걸리는 기본 시간. 인물마다 말투가 다르다 (CAST.voice)
+## 한 자 찍는 데 걸리는 기본 시간과 **말소리**. 인물마다 말투가 다르다 (CAST.voice)
+## 소리를 **어떤 방식으로** 낼지는 여기가 아니라 dialogue_voice.gd 의 프리셋이 정한다.
+##   cps   초당 글자 수
+##   gap   블립 최소 간격(초). 글자마다 다 울리면 빠른 말투에서 기관총이 된다 —
+##         이 값이 실제로 "몇 글자에 한 번 소리가 나는가" 를 정한다
+##   jit   글자마다의 음높이 흔들림(±비율). 없으면 한 음으로 삐-삐- 울려 금방 기계로 들린다
 const VOICES := {
-	"slow":    {"cps": 27.0},
-	"soft":    {"cps": 31.0},
-	"clipped": {"cps": 39.0},
-	"quick":   {"cps": 44.0},
-	"machine": {"cps": 34.0},
+	"slow":    {"cps": 27.0, "gap": 0.085, "jit": 0.05},
+	"soft":    {"cps": 31.0, "gap": 0.075, "jit": 0.055},
+	"clipped": {"cps": 39.0, "gap": 0.062, "jit": 0.035},
+	"quick":   {"cps": 44.0, "gap": 0.056, "jit": 0.065},
+	"machine": {"cps": 34.0, "gap": 0.070, "jit": 0.02},
 }
+
+## 말소리 연출.
+## 사람은 한 문장을 **같은 높이로** 말하지 않는다. 시작이 조금 높고 끝으로 갈수록 내려온다 —
+## 이 기울기 하나만 있어도 "글자마다 나는 소리" 가 "한 사람이 한 문장을 말하는 것" 으로 바뀐다.
+## 물음표로 끝나는 줄만 반대로 끝을 올린다.
+const VOICE_START_PITCH := 1.035
+const VOICE_END_PITCH := 0.965
+const VOICE_QUESTION_PITCH := 1.10      # 물음표로 끝나는 줄의 마지막 음높이
+const VOICE_SHAKE_PITCH := 0.94         # [shake] 구간 — 목소리가 눌린다
+const VOICE_WAVE_PITCH := 1.05          # [wave] 구간 — 비꼬듯 늘어진다
+## 소리를 내지 않는 글자. 문장부호는 **쉼**이지 소리가 아니다 (뒤의 PUNCT_PAUSE 가 그 쉼을 준다).
+const VOICE_SILENT := " 	.,!?…—·:;\"'()[]{}<>~-"
 const PUNCT_PAUSE := {".": 0.20, "!": 0.24, "?": 0.24, ",": 0.11, "…": 0.28, "—": 0.16, "·": 0.10}
 
 const POP_TIME := 0.11                  # 한 글자가 제자리에 앉기까지
@@ -133,6 +156,13 @@ var _accent := Color(1, 1, 1)
 var _name := ""
 var _raw := ""                          # 태그가 살아 있는 원문 (방식을 바꿀 때 다시 레이아웃한다)
 var _voice: Dictionary = VOICES["slow"]
+var _voice_id := "slow"                 # 소리 세트 키 (Audio.voice_blip)
+var _tone := 1.0                        # 인물별 기본 음높이 배율 (CAST.tone)
+var _spoken := 0                        # 여기까지의 글자는 소리를 냈다(또는 건너뛰기로 지나갔다)
+var _last_blip := -99.0                 # 마지막 블립 시각 (타자 시계 _elapsed 기준)
+var _voice_from := 0                    # 이 글자부터 말소리를 낸다 (자막 방식의 이름 머리말은 건너뛴다)
+var _question := false                  # 물음표로 끝나는 줄인가 (끝음을 올린다)
+var _murmuring := false                 # "웅얼거림" 방식으로 이 줄을 말하는 중인가
 var _elapsed := 0.0
 var _total := 0.0                       # 마지막 글자가 찍히는 시각
 var _typing := false
@@ -169,6 +199,7 @@ func _ready() -> void:
 	var env := OS.get_environment("DIALOGUE_STYLE")
 	if env != "" and env.is_valid_int():
 		style_index = wrapi(int(env), 0, STYLES.size())
+	DialogueVoice.apply_env()
 
 
 # ── 표시 방식 ───────────────────────────────────────────────────────────────
@@ -207,7 +238,9 @@ func show_line(cast: Dictionary, text: String, anchor: Vector2) -> void:
 			_log.pop_front()
 	_accent = cast.get("accent", Color(1, 1, 1))
 	_name = str(cast.get("name", ""))
-	_voice = VOICES.get(str(cast.get("voice", "slow")), VOICES["slow"])
+	_voice_id = str(cast.get("voice", "slow"))
+	_voice = VOICES.get(_voice_id, VOICES["slow"])
+	_tone = float(cast.get("tone", 1.0))
 	_anchor = anchor
 	_raw = text
 	_choices.clear()
@@ -247,6 +280,7 @@ func close() -> void:
 		return
 	open = false
 	_typing = false
+	_murmur_end()
 	_raw = ""
 	_log.clear()
 	_choices.clear()
@@ -270,7 +304,9 @@ func skip_typing() -> void:
 	if not _typing:
 		return
 	_elapsed = _total
+	_spoken = _glyphs.size()        # 남은 글자를 한꺼번에 앉히면서 소리까지 몰아 내지는 않는다
 	_typing = false
+	_murmur_end()
 	line_completed.emit()
 	queue_redraw()
 
@@ -335,15 +371,76 @@ func _process(delta: float) -> void:
 		dirty = true
 	if _typing:
 		_elapsed += delta
+		_speak_upto()
+		_murmur_tick()
 		if _elapsed >= _total:
 			_elapsed = _total
 			_typing = false
+			_murmur_end()
 			line_completed.emit()
 		dirty = true
 	# 다 찍힌 뒤에는 움직일 것이 있을 때만 다시 그린다 —
 	# 글자가 가만히 있는 줄에서 매 프레임 다시 그리는 것은 낭비이고, 미세한 떨림도 생기지 않게 한다
 	if dirty or _has_motion:
 		queue_redraw()
+
+
+## 찍힌 글자만큼 말소리를 낸다 (_process 가 타자 시계를 밀 때마다).
+##
+## 무슨 소리를 낼지는 **음성 방식**(DialogueVoice.PRESETS)이 정한다 —
+## 글자마다 아무 모음(blip) · 그 글자의 실제 모음(phoneme) · 이음 루프(murmur) · 무음(off).
+## 글자 단위 방식은 글자마다 한 번씩 울리는 게 아니라 **VOICES.gap 이 허락할 때만** 울린다:
+## 유나(44자/초)는 글자마다 내면 기관총이 되고, 아르카디(27자/초)는 글자마다 내야 말처럼 들린다.
+func _speak_upto() -> void:
+	var mode := DialogueVoice.mode_for(_voice_id)
+	if mode == "murmur":
+		_spoken = _glyphs.size()        # 이음 루프는 글자를 세지 않는다 (_murmur_tick 이 맡는다)
+		return
+	while _spoken < _glyphs.size():
+		var g: Dictionary = _glyphs[_spoken]
+		if float(g["t"]) > _elapsed:
+			return
+		var idx := _spoken
+		_spoken += 1
+		if mode == "off" or idx < _voice_from or VOICE_SILENT.contains(str(g["ch"])):
+			continue
+		if _elapsed - _last_blip < float(_voice.get("gap", 0.07)):
+			continue
+		_last_blip = _elapsed
+		var vowel := DialogueVoice.vowel_for(str(g["ch"])) if mode == "phoneme" else ""
+		Audio.voice_blip(_voice_id, vowel, _blip_pitch(idx, int(g["fx"])))
+
+
+## "웅얼거림" 방식 — 줄을 찍는 동안 이음 루프를 돌리고 음높이만 문장 억양을 따라 움직인다.
+## 줄이 끝나거나 건너뛰면 곧바로 내린다. 말이 끝났는데 소리가 남아 있으면 그게 제일 어색하다.
+func _murmur_tick() -> void:
+	if not _murmuring:
+		return
+	var at := clampf(_elapsed / maxf(_total, 0.001), 0.0, 1.0)
+	var end_pitch := VOICE_QUESTION_PITCH if _question else VOICE_END_PITCH
+	Audio.voice_murmur_start(_voice_id, _tone * lerpf(VOICE_START_PITCH, end_pitch, at * at if _question else at))
+
+
+func _murmur_end() -> void:
+	if not _murmuring:
+		return
+	_murmuring = false
+	Audio.voice_murmur_stop()
+
+
+## 이 글자의 음높이. 인물 기준음 × 문장 억양 × 강조 구간 × 글자별 흔들림.
+func _blip_pitch(index: int, fx: int) -> float:
+	var span := maxf(float(_glyphs.size() - 1 - _voice_from), 1.0)
+	var at := clampf(float(index - _voice_from) / span, 0.0, 1.0)
+	# 물음표 줄은 끝에서 급히 올라간다 (처음부터 올라가면 줄 전체가 들뜬다)
+	var end_pitch := VOICE_QUESTION_PITCH if _question else VOICE_END_PITCH
+	var contour := lerpf(VOICE_START_PITCH, end_pitch, at * at if _question else at)
+	var fx_mul := 1.0
+	match fx:
+		Fx.SHAKE: fx_mul = VOICE_SHAKE_PITCH
+		Fx.WAVE: fx_mul = VOICE_WAVE_PITCH
+	var jit: float = float(_voice.get("jit", 0.05)) * float(_noise[index & 255].x)
+	return _tone * contour * fx_mul * (1.0 + jit)
 
 
 # ── 배치 ────────────────────────────────────────────────────────────────────
@@ -368,7 +465,22 @@ func _display_text() -> String:
 func _restart_line() -> void:
 	_layout(_display_text())
 	_elapsed = 0.0
+	_spoken = 0
+	_last_blip = -99.0
+	# 이름을 대사 앞에 붙이는 방식(자막)에서 **이름은 소리를 내지 않는다** —
+	# 인물이 자기 이름을 부르고 시작하는 게 아니라 화면이 누구인지 알려 주는 것뿐이다.
+	_voice_from = 0
+	if str(style()["name_mode"]) == "inline" and _name != "":
+		_voice_from = mini((_name + "   ").length(), _glyphs.size())
+	_question = _plain("", _raw).strip_edges().ends_with("?")
 	_typing = true
+	# 방식이 줄머리 한마디를 쓰면 여기서 한 번만 낸다 (글자 소리와 별개로 얹힌다)
+	if DialogueVoice.opener_enabled():
+		Audio.voice_opener(_voice_id, _tone)
+	var was_murmur := _murmuring
+	_murmuring = DialogueVoice.mode_for(_voice_id) == "murmur"
+	if was_murmur and not _murmuring:
+		Audio.voice_murmur_stop()
 
 
 ## 태그를 풀어 글자마다 위치·색·연출·찍히는 시각을 정한다

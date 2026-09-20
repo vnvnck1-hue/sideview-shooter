@@ -3,6 +3,7 @@ extends Node2D
 
 const LightMood := preload("res://scripts/light_mood.gd")
 const MouseRecoil := preload("res://scripts/mouse_recoil.gd")
+const PropShadow := preload("res://scripts/prop_shadow.gd")
 
 const WALL_MARGIN := 110.0                   # 캡 타일 안쪽 벽까지의 여유
 const DOOR_PASS_MARGIN := 60.0              # 열린 측벽문으로 들어갈 때 허용되는 초과 거리
@@ -35,9 +36,11 @@ const ZOOM_DEFAULT := 1
 const TERMINAL_ZOOM_STEP := 2           # 접속하면 화면 배율 +2 (×3 → ×5)
 const DIALOGUE_ZOOM_STEP := Vector2i(1, 3)   # 대화 줌이 오갈 수 있는 단계 범위 (기본 +1 ~ +3)
 
+
 var zoom_index := ZOOM_DEFAULT
 var zoom_label: Label                   # 우상단: 줌 프리셋 (F3)
-var depth_label: Label                     # 우상단: 공간감 프리셋 A/B (F2)
+var shadow_label: Label                 # 우상단 둘째 줄: 기본 그림자 프리셋 (F6)
+var dyn_shadow_label: Label             # 우상단 셋째 줄: 동적 광원 그림자 프리셋 (F8)
 
 var world_vp: SubViewport                  # 월드 뷰포트
 var world: Node2D                          # 방·플레이어·탄 등 월드 노드의 부모 (world_vp 안)
@@ -89,7 +92,6 @@ const ABERRATION_DECAY := 18.0
 
 func _ready() -> void:
 	var room_id := AppFlow.start_room if RoomData.ROOMS.has(AppFlow.start_room) else RoomData.START_ROOM
-	DepthPreset.activate()
 	Lighting.apply_light_range()
 	_setup_input_map()
 	_setup_view()
@@ -104,6 +106,9 @@ func _ready() -> void:
 
 	dialogue_bubble = DialogueBubble.new()
 	dialogue_bubble.name = "DialogueBubble"
+	# 표시 방식은 "자막"으로 확정됐다. style_index 는 static 이라 대화 UI 랩을 들렀다 오면
+	# 그 값이 따라오므로, 게임 화면은 들어올 때마다 확정값으로 되돌린다.
+	dialogue_bubble.set_style(DialogueBubble.FIXED_STYLE)
 	(get_node("UI") as CanvasLayer).add_child(dialogue_bubble)
 	dialogue = DialogueRuntime.new()
 	dialogue.name = "Dialogue"
@@ -138,6 +143,8 @@ func _ready() -> void:
 	crosshair.z_index = 20
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 
+	Audio.attach_to_world(world)
+	Audio.set_listener(player)
 	world.add_child(player)
 	world.add_child(bullets)
 	world.add_child(crosshair)
@@ -148,16 +155,16 @@ func _ready() -> void:
 	if AppFlow.resume_x >= 0.0:                 # 프리셋 전환(재로드) 뒤 이어서
 		spawn_x = AppFlow.resume_x
 		face_dir = AppFlow.resume_facing
-		if AppFlow.resume_camera_preset >= 0:
-			cam_preset = AppFlow.resume_camera_preset
 		AppFlow.resume_x = -1.0
-		AppFlow.resume_camera_preset = -1
 	_load_room(room_id, spawn_x, face_dir)
 	camera.make_current()
 	camera.set_preset(cam_preset)
 	camera.snap()
 	if AppFlow.lab_mode:
 		_setup_lab()
+	if AppFlow.amb_lab:
+		add_child(AmbienceLab.new())
+		title_label.text += "   ·   앰비언스 랩"
 
 
 ## 근경 랩: 플레이어 입력·몬스터·조준점을 끄고 ForegroundLab 편집 오버레이를 근경 층에 붙인다. 안내는 하단 힌트 라벨에.
@@ -199,7 +206,6 @@ func _terminal_zoom() -> float:
 	return _zoom_of(_base_px() + TERMINAL_ZOOM_STEP)
 
 
-## F3: 다음 프리셋. 방·대화·단말기 상태와 무관하게 기준 줌만 갈아 끼우고, 지금 카메라에 바로 반영한다.
 func _cycle_zoom() -> void:
 	zoom_index = (zoom_index + 1) % ZOOM_PRESETS.size()
 	_update_zoom_label()
@@ -217,6 +223,7 @@ func _update_zoom_label() -> void:
 	zoom_label.text = "줌 (F3)  %s ×%d  ·  아트 1px = 화면 %dpx" % [p["name"], int(p["px"]), int(p["px"])]
 
 
+## F3: 다음 프리셋. 방·대화·단말기 상태와 무관하게 기준 줌만 갈아 끼우고, 지금 카메라에 바로 반영한다.
 func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("toggle_fullscreen"):
 		var w := get_window()
@@ -237,13 +244,16 @@ func _process(_delta: float) -> void:
 		_cycle_zoom()
 		return
 
-	# 대사 표시 방식 순환 (F7) — 다음 말풍선부터 적용된다. 나란히 비교하려면 로비의 "대화 UI 랩"
-	if Input.is_action_just_pressed("dialogue_style"):
-		dialogue_bubble.cycle_style()
+	# 기본 그림자 프리셋 순환 (F6 다음 · Shift+F6 이전)
+	if not transitioning and Input.is_action_just_pressed("shadow_cycle"):
+		var step := -1 if Input.is_key_pressed(KEY_SHIFT) else 1
+		set_prop_shadow(PropShadow.index + step)
+		return
 
-	# 공간감 프리셋 A/B (F2): 이전(평면) ↔ 근경 분리. 같은 방·위치에서 씬을 다시 로드한다
-	if not transitioning and current_room != null and Input.is_action_just_pressed("depth_toggle"):
-		_switch_depth_preset(DepthPreset.toggle_index())
+	# 동적 광원 그림자 프리셋 순환 (F8 다음 · Shift+F8 이전)
+	if not transitioning and Input.is_action_just_pressed("shadow_dyn_cycle"):
+		var dstep := -1 if Input.is_key_pressed(KEY_SHIFT) else 1
+		set_dyn_shadow(PropShadow.dyn_index + dstep)
 		return
 
 	if current_room == null:
@@ -306,6 +316,7 @@ func _process(_delta: float) -> void:
 	var near_npc := current_room.npc_near(player.position.x)
 	for n in current_room.npcs:
 		n.set_in_range(n == near_npc and DialogueRuntime.has_dialogue(n.npc_id))
+		n.player_x = player.position.x          # 어슬렁거리는 인물이 플레이어를 뚫고 지나가지 않게
 		if n == near_npc:
 			n.look_at_x(player.position.x)
 
@@ -348,6 +359,7 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	current_room.monster_roared.connect(_on_monster_roared)
 	world.add_child(current_room)
 	world.move_child(current_room, 0)
+	Audio.set_room_ambience(id)
 	for t in current_room.terminals:
 		t.access_requested.connect(_on_terminal_access)
 	for n in current_room.npcs:
@@ -437,6 +449,7 @@ func _on_player_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 ## 위력 1.7배(SHOT_POWER: 큰 탄착 · 멀리 튀는 파편 · 몬스터 넉백·체액·육편). 흔들림은 센트리건이 따로 요청한다.
 func _on_turret_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 	_spawn_shot(muzzle_pos, target_pos, SentryTurret.SHOT_POWER, SentryTurret.TRACER_SCALE)
+	Audio.turret_fire(muzzle_pos)
 	_aberration = minf(_aberration + ABERRATION_PER_SHOT * 1.3, ABERRATION_CAP)
 	crosshair.kick()
 
@@ -544,6 +557,7 @@ func _on_terminal_access(t: AccessTerminal) -> void:
 	if terminal_busy or terminal_screen.is_open() or transitioning:
 		return
 	terminal_busy = true
+	Audio.play("ui_tick")
 	active_terminal = t
 	t.set_connected(true)
 	player.input_enabled = false
@@ -675,6 +689,7 @@ func _on_npc_talk(n: Npc) -> void:
 
 ## 줄이 시작될 때마다 — 말하는 쪽이 한 번 끄덕인다 (걷기 프레임이 없으니 몸짓은 전부 절차적)
 func _on_dialogue_line(who: String) -> void:
+	Audio.play("ui_tick")
 	if talking_npc != null and who == talking_npc.npc_id:
 		talking_npc.talk_beat()
 
@@ -785,7 +800,6 @@ func _release_camera(time: float) -> void:
 func _set_world_hud(shown: bool) -> void:
 	title_label.visible = shown
 	hint_label.visible = shown
-	depth_label.visible = shown
 	zoom_label.visible = shown
 	ammo_label.visible = shown
 	prompt_label.visible = false
@@ -808,17 +822,6 @@ func _on_monster_roared(pos: Vector2) -> void:
 		camera.add_shake(lerpf(2.2, 0.4, d / Crawler.ROAR_SHAKE_RANGE))
 
 
-## 공간감 프리셋 전환 — 방·플레이어 위치·시선·카메라 프리셋을 남기고 Main 을 다시 로드한다
-## (층 구성·라이트 분리·근경은 Room.build 에서 정해지므로 방을 새로 조립한다. 스폰된 몬스터는 초기화된다)
-func _switch_depth_preset(preset: int) -> void:
-	if preset == DepthPreset.index:
-		return
-	DepthPreset.index = preset
-	transitioning = true
-	player.input_enabled = false
-	AppFlow.reload_in_place(get_tree(), current_room.room_id, player.position.x, player.facing, camera.preset_index)
-
-
 ## 불 스타일 (확정: 잉걸·검은 연기). 개발용 호출만 남긴다.
 func set_fire_style(index: int) -> void:
 	FireSource.style_index = wrapi(index, 0, FireSource.STYLES.size())
@@ -827,17 +830,38 @@ func set_fire_style(index: int) -> void:
 			f.apply_style(FireSource.style_index)
 
 
+## 프랍 그림자 프리셋 (F6 순환 — PropShadow.PRESETS). 방을 다시 만들지 않고 그림자 층만 갈아 끼운다.
+func set_prop_shadow(i: int) -> void:
+	PropShadow.index = wrapi(i, 0, PropShadow.BASE_PRESETS.size())
+	if current_room:
+		current_room.apply_prop_shadow(PropShadow.index)
+	_update_shadow_label()
+
+
+## 동적 광원(총구 화염·탄착·불·아크·비상등) 그림자 프리셋 (F8 순환)
+func set_dyn_shadow(i: int) -> void:
+	PropShadow.dyn_index = wrapi(i, 0, PropShadow.DYN_PRESETS.size())
+	if current_room:
+		current_room.apply_dyn_shadow(PropShadow.dyn_index)
+	_update_shadow_label()
+
+
+func _update_shadow_label() -> void:
+	if shadow_label == null:
+		return
+	var p: Dictionary = PropShadow.BASE_PRESETS[PropShadow.index]
+	shadow_label.text = "기본 그림자 (F6)  %d/%d  %s — %s" % [
+		PropShadow.index + 1, PropShadow.BASE_PRESETS.size(), p["name"], p["desc"]]
+	var d: Dictionary = PropShadow.DYN_PRESETS[PropShadow.dyn_index]
+	dyn_shadow_label.text = "동적 광원 그림자 (F8)  %d/%d  %s — %s" % [
+		PropShadow.dyn_index + 1, PropShadow.DYN_PRESETS.size(), d["name"], d["desc"]]
+
+
 ## 배경 라이팅 무드 (확정: 그라데이션 필). 개발용 호출만 남긴다.
 func set_light_mood(index: int) -> void:
 	LightMood.index = wrapi(index, 0, LightMood.PRESETS.size())
 	if current_room:
 		current_room.apply_mood(LightMood.index)
-
-
-func _update_depth_label() -> void:
-	if depth_label == null:
-		return
-	depth_label.text = "공간감 (F2 A/B)  %s\n%s" % [DepthPreset.hud_line(), DepthPreset.current()["desc"]]
 
 
 func _on_shell_ejected(pos: Vector2, dir: int) -> void:
@@ -941,12 +965,44 @@ func _setup_ui() -> void:
 	layer.add_child(title_label)
 
 	hint_label = Label.new()
-	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입 · 말 걸기    대화 중 Space/E 넘기기 · ↑/↓ 선택    R 재장전    F2 공간감 A/B    F3 줌    F4 CRT 모니터    F11 전체화면"
+	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입 · 말 걸기    대화 중 Space/E 넘기기 · ↑/↓ 선택    R 재장전    F3 줌    F4 CRT 모니터    F6·F8 그림자    F11 전체화면"
 	hint_label.position = Vector2(24, 860)
 	hint_label.add_theme_font_override("font", font)
 	hint_label.add_theme_font_size_override("font_size", 20)
 	hint_label.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
 	layer.add_child(hint_label)
+
+	# 줌 프리셋 표시 — 우상단 맨 위. 공간감 라벨이 있던 자리(y18)로 올렸다.
+	zoom_label = Label.new()
+	zoom_label.position = Vector2(VIEW_SIZE.x - 24 - 700, 18)
+	zoom_label.size = Vector2(700, 30)
+	zoom_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	zoom_label.add_theme_font_override("font", font)
+	zoom_label.add_theme_font_size_override("font_size", 20)
+	zoom_label.add_theme_color_override("font_color", Color(0.62, 0.84, 0.86))
+	layer.add_child(zoom_label)
+	_update_zoom_label()
+
+	# 프랍 그림자 프리셋 표시 — 줌 라벨 바로 아래 (F6 으로 비교하는 동안만 쓰는 개발용 표시)
+	shadow_label = Label.new()
+	shadow_label.position = Vector2(VIEW_SIZE.x - 24 - 900, 52)
+	shadow_label.size = Vector2(900, 30)
+	shadow_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	shadow_label.add_theme_font_override("font", font)
+	shadow_label.add_theme_font_size_override("font_size", 20)
+	shadow_label.add_theme_color_override("font_color", Color(0.80, 0.76, 0.62))
+	layer.add_child(shadow_label)
+
+	# 동적 광원 그림자 — 그 아래 한 줄 더
+	dyn_shadow_label = Label.new()
+	dyn_shadow_label.position = Vector2(VIEW_SIZE.x - 24 - 900, 78)
+	dyn_shadow_label.size = Vector2(900, 30)
+	dyn_shadow_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	dyn_shadow_label.add_theme_font_override("font", font)
+	dyn_shadow_label.add_theme_font_size_override("font_size", 20)
+	dyn_shadow_label.add_theme_color_override("font_color", Color(0.86, 0.66, 0.52))
+	layer.add_child(dyn_shadow_label)
+	_update_shadow_label()
 
 	# 정면문 안내: 화면 하단 중앙(힌트 바로 위) — 우상단 디버그 라벨과 겹치지 않게
 	prompt_label = Label.new()
@@ -959,27 +1015,7 @@ func _setup_ui() -> void:
 	prompt_label.visible = false
 	layer.add_child(prompt_label)
 
-	# 우상단: 공간감 프리셋 (이전/이후 A/B 비교 중 — 확정되면 제거)
-	depth_label = Label.new()
-	depth_label.position = Vector2(VIEW_SIZE.x - 24 - 1400, 18)
-	depth_label.size = Vector2(1400, 200)
-	depth_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	depth_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	depth_label.add_theme_font_override("font", font)
-	depth_label.add_theme_font_size_override("font_size", 20)
-	depth_label.add_theme_color_override("font_color", Color(0.62, 0.84, 0.86))
-	layer.add_child(depth_label)
-	_update_depth_label()
 
-	zoom_label = Label.new()
-	zoom_label.position = Vector2(VIEW_SIZE.x - 24 - 700, 108)
-	zoom_label.size = Vector2(700, 30)
-	zoom_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	zoom_label.add_theme_font_override("font", font)
-	zoom_label.add_theme_font_size_override("font_size", 20)
-	zoom_label.add_theme_color_override("font_color", Color(0.62, 0.84, 0.86))
-	layer.add_child(zoom_label)
-	_update_zoom_label()
 
 	# 우하단: 탄창
 	ammo_label = Label.new()
@@ -1025,9 +1061,10 @@ func _setup_input_map() -> void:
 	_add_action("toggle_fullscreen", [KEY_F11])
 	_add_action("reload", [KEY_R])
 	_add_action("to_lobby", [KEY_F1])
-	_add_action("dialogue_style", [KEY_F7])  # 대사 표시 방식 순환 (비교용. 씬 전체는 대화 UI 랩)
-	_add_action("depth_toggle", [KEY_F2])   # 공간감 프리셋 이전/이후 A/B (비교 중)
 	_add_action("zoom_cycle", [KEY_F3])     # 줌 프리셋 ×2 → ×3 → ×4 순환
+	_add_action("shadow_cycle", [KEY_F6])   # 기본(붙박이 광원) 그림자 프리셋 순환 (Shift 동시 = 이전)
+	_add_action("shadow_dyn_cycle", [KEY_F8])  # 동적 광원 그림자 프리셋 순환 (Shift 동시 = 이전)
+	_add_action("dialogue_style", [KEY_F7])  # 대사 표시 방식 순환 — 대화 UI 랩 전용 (게임은 "자막" 고정)
 	# 대화: 넘기기/확인 · 선택지 이동. W/↑(interact)는 말을 **거는** 키라 확인에는 넣지 않는다
 	# — 한 번 누른 키가 말을 걸면서 첫 줄까지 넘겨 버리지 않게.
 	_add_action("dlg_advance", [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E])

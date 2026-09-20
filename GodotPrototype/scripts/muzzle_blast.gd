@@ -48,6 +48,7 @@ func setup(size := 1.0, floor_line := 100000.0) -> void:
 	_light.position = Vector2(length * 0.4, 0)
 	_light.enabled = false
 	add_child(_light)
+	Lighting.register_dynamic(_light, 1.6, "shot")
 
 	_smoke = CPUParticles2D.new()
 	_smoke.name = "Smoke"

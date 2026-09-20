@@ -51,39 +51,50 @@ const FLAGS := {
 ##   head        발 밑에서 머리 꼭대기까지 높이(월드 px) — 말풍선 꼬리가 여기에 붙는다
 ##   body        실제 몸 폭(월드 px, 320 셀이 아니라 불투명 화소 기준) — 배치 검사가 벽 여유를 볼 때 쓴다
 ##   accent      이름표·말풍선 테두리 색. 인물마다 다른 색이 곧 "누가 말하는가" 의 단서
-##   voice       말풍선 글자가 찍히는 속도·흔들림 결(dialogue_bubble.gd VOICES)
+##   voice       말풍선 글자가 찍히는 속도와 **말소리**(dialogue_bubble.gd VOICES · assets/audio/sfx/voice)
+##   tone        그 말투 안에서의 개인차 — 말소리 음높이 배율. 1.0 이 기준, 낮을수록 낮고 크게 들린다.
+##               같은 "slow" 를 쓰는 아르카디와 델 박사가 같은 목소리면 안 되므로 여기서 가른다
+##   anim        프레임 클립 폴더 id (assets/character/npc/<id>/animations). 있으면 숨쉬기·기록·듣기·걷기를
+##               실제 그림으로 재생하고, 방 배치에 roam 을 주면 걸어 다닌다. 없으면 한 장짜리 tex 로 서 있는다.
 const CAST := {
 	"caretaker": {
 		"name": "에어록 관리인 · 아르카디", "short": "아르카디",
 		"tex": NPC_DIR + "airlock_caretaker/idle_01.png", "head": 256.0, "body": 156.0,
-		"accent": Color(0.93, 0.74, 0.38), "voice": "slow",
+		"accent": Color(0.93, 0.74, 0.38), "voice": "slow", "tone": 0.90,
 	},
 	"controller": {
 		"name": "방어망 관제원 · 세린", "short": "세린",
 		"tex": NPC_DIR + "security_controller/idle_01.png", "head": 268.0, "body": 104.0,
-		"accent": Color(0.55, 0.78, 1.0), "voice": "clipped",
+		"accent": Color(0.55, 0.78, 1.0), "voice": "clipped", "tone": 1.02,
 	},
 	"keeper": {
 		"name": "수경재배사 · 미나", "short": "미나",
 		"tex": NPC_DIR + "hydroponics_keeper/idle_01.png", "head": 252.0, "body": 140.0,
-		"accent": Color(0.62, 0.95, 0.72), "voice": "soft",
+		"accent": Color(0.62, 0.95, 0.72), "voice": "soft", "tone": 1.0,
 	},
 	"junior": {
 		"name": "연구원 · 유나", "short": "유나",
 		"tex": NPC_DIR + "researcher_junior/idle_01.png", "anim": "researcher_junior", "head": 248.0, "body": 108.0,
-		"accent": Color(0.95, 0.72, 0.82), "voice": "quick",
+		"accent": Color(0.95, 0.72, 0.82), "voice": "quick", "tone": 1.05,
 	},
 	"senior": {
 		"name": "선임 연구원 · 델 박사", "short": "델 박사",
 		"tex": NPC_DIR + "researcher_senior/idle_01.png", "head": 256.0, "body": 136.0,
-		"accent": Color(0.82, 0.80, 0.90), "voice": "slow",
+		"accent": Color(0.82, 0.80, 0.90), "voice": "slow", "tone": 1.06,
+	},
+	## 아직 대사가 없는 인물 — 말 걸기 표식도 뜨지 않는다 (LINES 에 "staff" 가 생기면 그때부터 말을 건다).
+	## 이름은 자리표시자다. 대사를 쓸 때 다른 인물처럼 고유 이름을 붙일 것.
+	"staff": {
+		"name": "연구 보조원", "short": "연구 보조원",
+		"tex": NPC_DIR + "researcher_male/idle_01.png", "anim": "researcher_male", "head": 260.0, "body": 108.0,
+		"accent": Color(0.78, 0.88, 0.80), "voice": "soft", "tone": 0.92,
 	},
 	## 플레이어(로봇)는 월드에 NPC 로 서 있지 않지만 말풍선 주인은 될 수 있다.
 	## head 는 Main 이 플레이어 말풍선 꼬리를 붙일 높이로 그대로 읽는다 (Main._player_head).
 	"player": {
 		"name": "UNIT-7", "short": "UNIT-7",
 		"tex": "", "head": 272.0, "body": 150.0,
-		"accent": Color(1.0, 0.45, 0.38), "voice": "machine",
+		"accent": Color(1.0, 0.45, 0.38), "voice": "machine", "tone": 1.0,
 	},
 }
 

@@ -1,0 +1,134 @@
+﻿[
+    {
+        "name":  "crew_wash_station",
+        "strength":  "medium",
+        "baselineSHA256":  "EA72C839F58CB74BD65E10912C2F5FA2DFE9043CD34543406E40FBEC23699760",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "nativeMetrics":  {
+                              "width":  106,
+                              "height":  152,
+                              "opaqueColors":  102,
+                              "partialAlpha":  0,
+                              "opaqueBorder":  0,
+                              "silhouetteIoU":  0.981616,
+                              "meanChannelErrorOnOverlap":  13.0976
+                          },
+        "maskIdenticalToBaseline":  true,
+        "roundtripPixelMatch":  true,
+        "asepriteSHA256":  "73F7F08DE5CEB1C60BE6CAA2F55AD0331A2768A9832F1DD29F9C99F1812E521D",
+        "pngSHA256":  "6BBE53A3E44125E9DAFB58707736B3D022DF2BECC528F9638CF4673C5D36610F",
+        "userApproval":  "pending",
+        "gameImported":  false,
+        "layerToggleRestoresBaseline":  true
+    },
+    {
+        "name":  "crew_wash_station",
+        "strength":  "strong",
+        "baselineSHA256":  "EA72C839F58CB74BD65E10912C2F5FA2DFE9043CD34543406E40FBEC23699760",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "nativeMetrics":  {
+                              "width":  106,
+                              "height":  152,
+                              "opaqueColors":  102,
+                              "partialAlpha":  0,
+                              "opaqueBorder":  0,
+                              "silhouetteIoU":  0.981616,
+                              "meanChannelErrorOnOverlap":  16.7692
+                          },
+        "maskIdenticalToBaseline":  true,
+        "roundtripPixelMatch":  true,
+        "asepriteSHA256":  "89038F45F74CE17CD9EEF43368B69DA35006A918009A3DA43C6D2039F0649A10",
+        "pngSHA256":  "2970C926040F6B6183F1ED50405FDA757F54D8397DA77F9E9124CA9093FB33CE",
+        "userApproval":  "pending",
+        "gameImported":  false,
+        "layerToggleRestoresBaseline":  true
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "strength":  "medium",
+        "baselineSHA256":  "4A85B55893BD6C152E75365E73D9A2F870BEE28F24B097270DAF81C7A9A73D28",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "nativeMetrics":  {
+                              "width":  187,
+                              "height":  160,
+                              "opaqueColors":  95,
+                              "partialAlpha":  0,
+                              "opaqueBorder":  0,
+                              "silhouetteIoU":  0.986112,
+                              "meanChannelErrorOnOverlap":  5.9554
+                          },
+        "maskIdenticalToBaseline":  true,
+        "roundtripPixelMatch":  true,
+        "asepriteSHA256":  "AB8DD0C0862EF18253795CE3E53E66C3713AC95AB890470B34DC00BF539CFE43",
+        "pngSHA256":  "A0F9186FA6430F95680A6CF6B59177F128C08FC01A962A4F0E6D003754C4FCC7",
+        "userApproval":  "pending",
+        "gameImported":  false,
+        "layerToggleRestoresBaseline":  true
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "strength":  "strong",
+        "baselineSHA256":  "4A85B55893BD6C152E75365E73D9A2F870BEE28F24B097270DAF81C7A9A73D28",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "nativeMetrics":  {
+                              "width":  187,
+                              "height":  160,
+                              "opaqueColors":  95,
+                              "partialAlpha":  0,
+                              "opaqueBorder":  0,
+                              "silhouetteIoU":  0.986112,
+                              "meanChannelErrorOnOverlap":  7.4297
+                          },
+        "maskIdenticalToBaseline":  true,
+        "roundtripPixelMatch":  true,
+        "asepriteSHA256":  "CAB8CCDB61737F3CFA73037F75EA89237BB283CA1AEF55944A5171F3E3027233",
+        "pngSHA256":  "B832EAC74936242330123C6E9A56A0D8CD702598F5E28AD9617E03E44FBB3654",
+        "userApproval":  "pending",
+        "gameImported":  false,
+        "layerToggleRestoresBaseline":  true
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "strength":  "medium",
+        "baselineSHA256":  "62DD3F6AA87A49310691923AFFD1C4BD550115D27216C5D1DBF8D0394FAF2AEB",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "nativeMetrics":  {
+                              "width":  145,
+                              "height":  122,
+                              "opaqueColors":  95,
+                              "partialAlpha":  0,
+                              "opaqueBorder":  0,
+                              "silhouetteIoU":  0.988708,
+                              "meanChannelErrorOnOverlap":  5.5588
+                          },
+        "maskIdenticalToBaseline":  true,
+        "roundtripPixelMatch":  true,
+        "asepriteSHA256":  "46F699EBE40F5B5F71BF1BCFF610CC94DA37B48339F4077CED960B66A771F701",
+        "pngSHA256":  "277156E81C22653FF3D129EBF49FADD2FA4E68066C53B2BAEA8739642A470F38",
+        "userApproval":  "pending",
+        "gameImported":  false,
+        "layerToggleRestoresBaseline":  true
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "strength":  "strong",
+        "baselineSHA256":  "62DD3F6AA87A49310691923AFFD1C4BD550115D27216C5D1DBF8D0394FAF2AEB",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "nativeMetrics":  {
+                              "width":  145,
+                              "height":  122,
+                              "opaqueColors":  95,
+                              "partialAlpha":  0,
+                              "opaqueBorder":  0,
+                              "silhouetteIoU":  0.988708,
+                              "meanChannelErrorOnOverlap":  7.6244
+                          },
+        "maskIdenticalToBaseline":  true,
+        "roundtripPixelMatch":  true,
+        "asepriteSHA256":  "C79A86C250731B7237A87576188B6B0227D604D1183816926880B456B72FB97D",
+        "pngSHA256":  "2064EC802C3E4F32DD2E443CB7859254F2AF88C2037D4528B9D6FE0365795AD6",
+        "userApproval":  "pending",
+        "gameImported":  false,
+        "layerToggleRestoresBaseline":  true
+    }
+]

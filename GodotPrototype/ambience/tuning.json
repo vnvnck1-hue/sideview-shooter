@@ -1,0 +1,76 @@
+{
+	"cable_run": {
+		"bed": "ambience/bed_power.ogg",
+		"bed_db": -5.0,
+		"tex": [
+			{
+				"file": "ambience/tex_power_machine_02.ogg",
+				"db": -12.5
+			}
+		]
+	},
+	"decon_lock": {
+		"bed": "ambience/bed_common.ogg",
+		"bed_db": -5.0,
+		"tex": [
+			{
+				"file": "ambience/tex_terminal_noise.ogg",
+				"db": -16.2
+			}
+		]
+	},
+	"generator": {
+		"bed": "ambience/bed_power.ogg",
+		"bed_db": -5.0,
+		"tex": [
+			{
+				"file": "ambience/tex_power_machine_02.ogg",
+				"db": -18.0
+			}
+		]
+	},
+	"nursery": {
+		"bed": "ambience/bed_common.ogg",
+		"bed_db": -5.0,
+		"tex": [
+			{
+				"file": "ambience/tex_hydro_air.ogg",
+				"db": -11.9
+			}
+		]
+	},
+	"pump_corr": {
+		"bed": "ambience/bed_common.ogg",
+		"bed_db": -5.0,
+		"tex": [
+			{
+				"file": "ambience/tex_hydro_pump.ogg",
+				"db": -10.0
+			}
+		]
+	},
+	"quarters_corr": {
+		"bed": "ambience/bed_common.ogg",
+		"bed_db": -5.0,
+		"tex": [
+			{
+				"file": "ambience/tex_crew_quiet.ogg",
+				"db": -11.5
+			}
+		]
+	},
+	"tank_room": {
+		"bed": "ambience/bed_common.ogg",
+		"bed_db": -5.0,
+		"tex": [
+			{
+				"file": "ambience/tex_hydro_water.ogg",
+				"db": -26.0
+			},
+			{
+				"file": "ambience/tex_hydro_pump.ogg",
+				"db": -8.5
+			}
+		]
+	}
+}

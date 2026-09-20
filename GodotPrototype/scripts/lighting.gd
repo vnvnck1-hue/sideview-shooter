@@ -2,6 +2,17 @@ class_name Lighting
 extends RefCounted
 ## 2D 라이팅 공용 값. 방은 CanvasModulate 로 어둡게 깔고, 램프·총구·탄착 PointLight2D 가 비춘다.
 ## 노멀맵(CanvasTexture)·셰이더 로딩 헬퍼, 절차 생성 텍스처(연기 구 노멀·비상등 광선)도 여기 모아둔다.
+##
+## ## 청크당 라이트 한도 (2026-09-20)
+## Godot 4 의 2D 렌더러는 **캔버스 아이템 하나에 라이트를 15개까지만** 적용한다(MAX_LIGHTS_PER_ITEM).
+## 판정은 원이 아니라 라이트 텍스처의 **사각형**이 아이템 사각형과 겹치는가이고, 넘치면 그 프레임
+## 라이트 목록의 앞쪽 15개만 남고 나머지는 조용히 빠진다. 목록 순서는 우리가 정할 수 없다.
+## 배경 타일맵은 RoomTiles.QUADRANT 셀 단위로 아이템이 쪼개지므로, 넘친 방에서는
+##   · 청크 경계를 따라 조명이 칼같이 끊긴다 (갑자기 어두워지는 세로 띠)
+##   · 총을 쏘면 총구·탄착 라이트가 끼어들어 순서가 바뀌며 램프가 번갈아 반짝인다
+## 는 증상이 났다 (실측: 격납고 청크 하나에 24개). 지금은 정적 광원을 청크당 11개 이하로 두어
+## 전투 라이트(총구·탄착 2·센트리건) 여유 4를 남긴다. 검사는 `tools/light_budget.gd`.
+## 광원을 늘리거나 반경을 키울 때는 그 도구를 돌려 0개 초과인지 확인한다.
 
 static var AMBIENT := _tune_color("VFX_AMB", Color(0.42, 0.43, 0.55))      # 라이트가 없는 곳의 밝기. 0.26,0.28,0.40 → 배경 색이 보이도록 올림 (푸른 기는 유지해 난색 라이트와 대비)
 ## 2D 노멀맵용 라이트 높이(px). 0 이면 표면에 평행해 노멀이 반응하지 않는다
@@ -68,6 +79,40 @@ static func _track(arr: Array, w: WeakRef, watermark: int) -> int:
 			alive.append(r)
 	arr.assign(alive)
 	return maxi(64, alive.size() * 2)
+
+## 동적 광원 등록소 (2026-09-20) — **움직이거나 번쩍 켜졌다 꺼지는** 광원을 여기 등록하면
+## 프랍 그림자(PropShadow)가 매 프레임 읽어 그림자를 그쪽으로 던진다.
+## 천장 램프·무드 광원처럼 방에 붙박이인 것은 등록하지 않는다 (Room 이 레이어를 훑어 따로 모은다).
+## 등록은 WeakRef 라 라이트가 사라지면 자동으로 빠진다 — 총구 화염·탄착처럼 초당 여러 개 생겼다 없어져도 쌓이지 않는다.
+##   weight : 그림자 기여 가중치. 총구 화염처럼 강한 섬광은 1 이상, 은은한 잔광은 1 미만.
+static var _dyn_lights: Array = []
+static var _dyn_watermark := 64
+
+## kind — 그림자가 무엇에 반응할지 가르는 분류다.
+##   "shot"    총구 화염·탄착처럼 **쏠 때만** 번쩍이는 빛. 프랍 그림자의 투영(쐐기·벽)은 이것만 본다.
+##   "ambient" 불·전선 아크·회전 비상등·독액처럼 **계속 켜져 있는** 동적 빛.
+## 나누지 않으면 방에 불이나 비상등이 하나만 있어도 기여도가 늘 0 위에 떠 있어
+## 총을 쏴도 그림자가 반응하지 않는다 (실측: 동적 광원 11개, target 이 0.4~0.7 에서 안 내려옴).
+static func register_dynamic(light: PointLight2D, weight := 1.0, kind := "ambient") -> void:
+	light.set_meta("shadow_weight", weight)
+	light.set_meta("shadow_kind", kind)
+	_dyn_watermark = _track(_dyn_lights, weakref(light), _dyn_watermark)
+
+
+## 살아 있는 동적 광원 목록 (죽은 WeakRef 는 걷어낸다). PropShadow 가 프레임당 한 번 부른다.
+## kind 를 주면 그 종류만 돌려준다 ("shot" · "ambient").
+static func dynamic_lights(kind := "") -> Array:
+	var out: Array = []
+	var alive: Array = []
+	for w in _dyn_lights:
+		var l = w.get_ref()
+		if l != null and is_instance_valid(l):
+			alive.append(w)
+			if kind == "" or str(l.get_meta("shadow_kind", "ambient")) == kind:
+				out.append(l)
+	_dyn_lights = alive
+	return out
+
 
 static func rim_preset() -> Dictionary:
 	return RIM
@@ -201,14 +246,12 @@ static func scale_for_radius(radius: float) -> float:
 	return radius * 2.0 / TEX_SIZE * light_range_mul()
 
 
-## 층별 조명 분리 (DepthPreset "근경 분리" 일 때만). 이 라이트는 배경 층(타일·문·프랍·먼지·빛 기둥, z≤4)만 비추고,
+## 층별 조명 분리. 이 라이트는 배경 층(타일·문·프랍·먼지·빛 기둥, z≤4)만 비추고,
 ## 인물 층(플레이어·몬스터·탄, z5~6)은 ratio 배로 약한 거울 라이트(LightMirror, 자식)가 비춘다.
 ## 근경 층(z7)은 light_mask 0 이라 어느 라이트도 받지 않는다. 벽이 인물보다 밝게 빛나 실루엣이 앞으로 떠 보인다.
 ## 총구·탄착·불·아크처럼 인물 층에 있는 광원은 부르지 않는다 (모든 층을 그대로 비춘다).
-static func split_by_depth(light: PointLight2D, ratio := DepthPreset.ACTOR_LIGHT_RATIO) -> void:
-	if not DepthPreset.enabled():
-		return
-	light.range_z_max = DepthPreset.Z_BACK_MAX
+static func split_by_depth(light: PointLight2D, ratio := DepthLayers.ACTOR_LIGHT_RATIO) -> void:
+	light.range_z_max = DepthLayers.Z_BACK_MAX
 	var m := LightMirror.new()
 	m.setup(light, ratio)
 	light.add_child(m)

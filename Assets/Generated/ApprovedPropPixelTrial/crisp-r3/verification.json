@@ -1,0 +1,68 @@
+﻿[
+    {
+        "name":  "crew_wash_station",
+        "sourceSHA256":  "D2418D3CAD30C5A577479C2B977162BE864CE8A8DFEA5FCF9BA096E5B1E65019",
+        "sourcePixelBlock":  1,
+        "nativePadding":  1,
+        "metrics":  {
+                        "width":  209,
+                        "height":  302,
+                        "opaqueColors":  367,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  1.000000,
+                        "meanChannelErrorOnOverlap":  3.2754
+                    },
+        "roundtripPixelMatch":  true,
+        "tolerance":  12,
+        "snap":  20,
+        "coherent":  true,
+        "passes":  3,
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_locker_game_scale",
+        "sourceSHA256":  "3710892029B61BB430E5F0974A50166ABFE7E89FD480C891DA080476B7CEE0E3",
+        "sourcePixelBlock":  1,
+        "nativePadding":  1,
+        "metrics":  {
+                        "width":  372,
+                        "height":  317,
+                        "opaqueColors":  148,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  1.000000,
+                        "meanChannelErrorOnOverlap":  1.8394
+                    },
+        "roundtripPixelMatch":  true,
+        "tolerance":  12,
+        "snap":  20,
+        "coherent":  true,
+        "passes":  3,
+        "userApproval":  "pending",
+        "gameImported":  false
+    },
+    {
+        "name":  "workshop_armchair_game_scale",
+        "sourceSHA256":  "4D06062516FA98F39079B063E9346271E6D2CAA8465F2F77CB6E08B2EAD5C3CC",
+        "sourcePixelBlock":  1,
+        "nativePadding":  1,
+        "metrics":  {
+                        "width":  288,
+                        "height":  242,
+                        "opaqueColors":  82,
+                        "partialAlpha":  0,
+                        "opaqueBorder":  0,
+                        "silhouetteIoU":  1.000000,
+                        "meanChannelErrorOnOverlap":  1.9886
+                    },
+        "roundtripPixelMatch":  true,
+        "tolerance":  12,
+        "snap":  20,
+        "coherent":  true,
+        "passes":  3,
+        "userApproval":  "pending",
+        "gameImported":  false
+    }
+]

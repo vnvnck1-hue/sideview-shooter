@@ -257,7 +257,7 @@ func _ready() -> void:
 	# 빛줄기는 프랍 층(z2~3)에 묻히면 안 된다 — 절대 z 7 로 올려 인물(5)·탄·몬스터 체액(6) 위에 그린다.
 	# 근경 실루엣(z7)·벽 바깥 어둠(z8)은 나중에 붙는 층이라 여전히 조준선을 가린다 (원근은 유지).
 	_laser.z_as_relative = false
-	_laser.z_index = DepthPreset.Z_FOREGROUND
+	_laser.z_index = DepthLayers.Z_FOREGROUND
 	add_child(_laser)
 
 	# 급탄 호스 — 받침보다 앞(원본 그림처럼 기둥 왼쪽을 지나간다). 좌우 반전은 _flip 이 처리한다.

@@ -1,0 +1,15 @@
+﻿{
+    "passed":  true,
+    "reproRun":  "r3-repro-20260920090632139",
+    "checks":  [
+                   "grid-phase",
+                   "lossless-round-trip",
+                   "off-grid-rejection",
+                   "opaque-pairs-only",
+                   "delta24-threshold",
+                   "legacy-default-blocked",
+                   "source-overwrite-blocked",
+                   "baseline-preserved",
+                   "fresh-r3-regeneration-equal"
+               ]
+}

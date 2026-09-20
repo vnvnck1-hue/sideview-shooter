@@ -38,6 +38,7 @@ func setup(air_layer: Node2D, room_rect: Rect2, floor_line: float) -> void:
 	_beam.shadow_enabled = false
 	add_child(_beam)
 	Lighting.split_by_depth(_beam)                 # 벽을 훑는 광선은 배경 정면, 인물은 55%
+	Lighting.register_dynamic(_beam, 1.1, "ambient")          # 회전하는 광선을 따라 프랍 그림자가 돈다
 
 	# 돔 주변 은은한 붉은 글로우 (회전 방향과 무관하게 맥동)
 	_glow = PointLight2D.new()

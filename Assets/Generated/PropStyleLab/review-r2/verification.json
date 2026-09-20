@@ -1,0 +1,74 @@
+﻿[
+    {
+        "name":  "cold_storage",
+        "technical":  {
+                          "path":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\PropStyleLab\\r2\\cold_storage.png",
+                          "width":  56,
+                          "height":  75,
+                          "opaquePixels":  3285,
+                          "opaqueColors":  13,
+                          "partialAlphaPixels":  0,
+                          "nonTransparentBorderPixels":  0,
+                          "passed":  true,
+                          "errors":  [
+
+                                     ]
+                      },
+        "sourceLayers":  4,
+        "roundTripPixelsEqual":  true,
+        "sourceSHA256":  "F6DD7ACED625786CEB2CEC41F00945A214534291E647685473F1656B6FC2B153",
+        "pngSHA256":  "0223F016E067B98D0B7ADC04C293A06DEFDD238D7908DB4A737FD1CB1E5BFFDF",
+        "generatorSHA256":  "9134DC104A28AB342AF742C3B76CAD7D30658E017DC0384574B09B2F23C08D0C",
+        "baselineSHA256":  "4F82C5D77F83FF3FCE2B1CE3E7033112549F1880B84206E4C260DE66D7CB85EA",
+        "artApproval":  "not-evaluated-by-validator",
+        "scope":  "technical-only"
+    },
+    {
+        "name":  "specimen_chamber",
+        "technical":  {
+                          "path":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\PropStyleLab\\r2\\specimen_chamber.png",
+                          "width":  52,
+                          "height":  84,
+                          "opaquePixels":  3167,
+                          "opaqueColors":  16,
+                          "partialAlphaPixels":  0,
+                          "nonTransparentBorderPixels":  0,
+                          "passed":  true,
+                          "errors":  [
+
+                                     ]
+                      },
+        "sourceLayers":  4,
+        "roundTripPixelsEqual":  true,
+        "sourceSHA256":  "C9843256BA65812D23A2C4F35E00B9137773449D553AF548BEE91F5415A18584",
+        "pngSHA256":  "C1D26ECC5218DD62911C6A5390AECA9FD5FDE7D487A85B31B936978191ECEEF9",
+        "generatorSHA256":  "9134DC104A28AB342AF742C3B76CAD7D30658E017DC0384574B09B2F23C08D0C",
+        "baselineSHA256":  "3A6B436E8FC298C0EEC288A2A6C11F7B23DEF76DDB9F7A05B56D1417902BC8B8",
+        "artApproval":  "not-evaluated-by-validator",
+        "scope":  "technical-only"
+    },
+    {
+        "name":  "analysis_bench",
+        "technical":  {
+                          "path":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\PropStyleLab\\r2\\analysis_bench.png",
+                          "width":  96,
+                          "height":  53,
+                          "opaquePixels":  3024,
+                          "opaqueColors":  15,
+                          "partialAlphaPixels":  0,
+                          "nonTransparentBorderPixels":  0,
+                          "passed":  true,
+                          "errors":  [
+
+                                     ]
+                      },
+        "sourceLayers":  4,
+        "roundTripPixelsEqual":  true,
+        "sourceSHA256":  "7506E4561CAB2C03A81CCDE59D597C9453FA4BFFEB368E423741273686FB19F2",
+        "pngSHA256":  "8D726C6383D7006ED687080D5B9729DE07D6D433077F71EDBAD4A3DA4E7CB03E",
+        "generatorSHA256":  "9134DC104A28AB342AF742C3B76CAD7D30658E017DC0384574B09B2F23C08D0C",
+        "baselineSHA256":  "7F2BAF13D306B7606C084CA5317E0C8EC74E79A4413E1F195C4B2885BC1AE3D0",
+        "artApproval":  "not-evaluated-by-validator",
+        "scope":  "technical-only"
+    }
+]

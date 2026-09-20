@@ -1,10 +1,21 @@
 {
-  "formatVersion": 1,
+  "formatVersion": 4,
   "artPixelWorldPx": 4,
   "cellWorldPx": 128,
+  "sourceRoot": "Assets/GameReady/Native4/Props",
+  "sourceType": "aseprite_native",
+  "pipeline": "Tools/Aseprite/build_research_facility_props.ps1",
+  "backgroundLayout": {
+    "type": "phase_locked_macro",
+    "columns": 3,
+    "rows": 2,
+    "randomSelection": false,
+    "reference": "research_wall_macro_reference_v2.png"
+  },
   "rooms": {
     "research_analysis": {
       "title": "검체 분석실 / Specimen Analysis",
+      "sourceDirectory": "research_analysis",
       "backgroundTiles": 6,
       "frameTiles": 8,
       "innerCornerTiles": 4,
@@ -51,6 +62,7 @@
         }
       ],
       "preview": "Assets/GameReady/Validation/research_analysis_room_preview.png",
+      "playerScaleReview": "Assets/GameReady/Validation/research_analysis_player_scale_review.png",
       "sheets": {
         "background": "research_analysis_modular_background_sheet_3x2.png",
         "frame": "research_analysis_modular_frame_terrain_3x3.png",
@@ -59,6 +71,7 @@
     },
     "research_isolation": {
       "title": "멸균·격리실 / Decontamination & Isolation",
+      "sourceDirectory": "research_isolation",
       "backgroundTiles": 6,
       "frameTiles": 8,
       "innerCornerTiles": 4,
@@ -105,6 +118,7 @@
         }
       ],
       "preview": "Assets/GameReady/Validation/research_isolation_room_preview.png",
+      "playerScaleReview": "Assets/GameReady/Validation/research_isolation_player_scale_review.png",
       "sheets": {
         "background": "research_isolation_modular_background_sheet_3x2.png",
         "frame": "research_isolation_modular_frame_terrain_3x3.png",
@@ -113,6 +127,7 @@
     },
     "research_diagnostics": {
       "title": "진단 관제실 / Diagnostics Control",
+      "sourceDirectory": "research_diagnostics",
       "backgroundTiles": 6,
       "frameTiles": 8,
       "innerCornerTiles": 4,
@@ -159,6 +174,7 @@
         }
       ],
       "preview": "Assets/GameReady/Validation/research_diagnostics_room_preview.png",
+      "playerScaleReview": "Assets/GameReady/Validation/research_diagnostics_player_scale_review.png",
       "sheets": {
         "background": "research_diagnostics_modular_background_sheet_3x2.png",
         "frame": "research_diagnostics_modular_frame_terrain_3x3.png",

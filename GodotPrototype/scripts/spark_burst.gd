@@ -42,6 +42,7 @@ func _flash_light(pos: Vector2, energy: float, col: Color) -> void:
 		_light.texture_scale = Lighting.scale_for_radius(240.0)
 		_light.height = Lighting.FLASH_HEIGHT
 		add_child(_light)
+		Lighting.register_dynamic(_light, 0.8, "ambient")
 	_light.position = pos
 	_light.color = col
 	_light.energy = energy

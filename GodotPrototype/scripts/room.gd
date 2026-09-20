@@ -8,6 +8,7 @@ extends Node2D
 ## 문·프랍은 노멀맵이 붙은 CanvasTexture + lit_surface/prop_surface 셰이더로 그려 라이트에 입체·림으로 반응한다.
 
 const LightMood := preload("res://scripts/light_mood.gd")
+const PropShadow := preload("res://scripts/prop_shadow.gd")
 
 ## 몬스터의 독액이 플레이어에 맞음 (Main 이 카메라 흔들림·밀림 처리)
 signal player_hit(point: Vector2, dir: float)
@@ -29,12 +30,13 @@ var wires: Array = []         # BrokenWire
 var leaks: Array = []         # WaterLeak
 var fires: Array = []         # FireSource
 var water: WaterPool          # 고인 물 (fx "water", 방마다 최대 하나)
-var foreground: ForegroundLayer   # 근경 실루엣 층 (DepthPreset "근경 분리" 일 때만)
+var foreground: ForegroundLayer   # 근경 실루엣 층 (z7)
 var monsters: Array = []      # Crawler
 var sentries: Array = []      # SentryTurret (바닥 격납형 센트리건 — Main 이 조종을 잡는다)
 var terminals: Array = []     # AccessTerminal (플레이어가 W/↑ 로 접속하는 대형 단말기)
 var npcs: Array = []          # Npc (플레이어가 W/↑ 로 말을 거는 생존자)
 var player: Node2D            # Main 이 넣어준다 (전선 밀치기)
+var prop_shadows: Node2D      # 프랍 그림자 층 (PropShadow — 프랍 레이어 맨 뒤)
 var room_tiles: RoomTiles     # 테마 타일맵 (RoomTiles.build — 실행 중 생성)
 var solid: RoomSolid          # 벽 충돌 기하 (사격 클리핑 · 자유 물체 가두기)
 var wall_shadow: WallShadow   # 벽 바깥 어둠 층 (맵 뷰어의 "전체 밝게" 에서 끈다)
@@ -56,6 +58,7 @@ const MONSTER_MARGIN := 150.0
 const SPAWN_DEFAULT := {"max": 6, "interval": [1.8, 3.5]}
 const SPAWN_MIN_PLAYER_DIST := 900.0    # 플레이어에서 이만큼 떨어진 곳(가능하면 화면 밖)에 나온다
 const FRONT_DOOR_INTERACT_RANGE := 110.0
+const NPC_WALL_MARGIN := 150.0          # 어슬렁거리는 생존자가 벽에 붙지 않게 두는 여유 (플레이어보다 조금 넓다)
 const FRONT_DOOR_LIFT := 306.0          # 정면문 스프라이트 상단 = 바닥선 − 306 (문 하단 여백 포함)
 const PENDANT_TEX := RoomData.LIGHTS_DIR + "pendant_lamp.png"
 const PENDANT_META := RoomData.LIGHTS_DIR + "pendant_lamp.json"
@@ -137,11 +140,15 @@ func build(id: String) -> void:
 	props.z_index = 2
 	add_child(props)
 	_props_layer = props
+	# 프랍 그림자 — 프랍 레이어의 **첫 자식**이라 모든 프랍보다 뒤에 그려진다 (벽 드리움이 프랍을 덮지 않게)
+	prop_shadows = PropShadow.new()
+	prop_shadows.setup(floor_y, float(width))
+	props.add_child(prop_shadows)
 	# 생존자는 프랍이 아니라 **인물**이다 — 플레이어·몬스터와 같은 층(z5)에 서야
-	# 같은 비율의 거울 라이트를 받고 먼지·빛 기둥 뒤에 서지 않는다 (DepthPreset.Z_ACTOR_MIN).
+	# 같은 비율의 거울 라이트를 받고 먼지·빛 기둥 뒤에 서지 않는다 (DepthLayers.Z_ACTOR_MIN).
 	_npc_layer = Node2D.new()
 	_npc_layer.name = "Npcs"
-	_npc_layer.z_index = DepthPreset.Z_ACTOR_MIN
+	_npc_layer.z_index = DepthLayers.Z_ACTOR_MIN
 	add_child(_npc_layer)
 	for p in data.get("props", []):
 		_add_prop(props, p)
@@ -194,7 +201,7 @@ func build(id: String) -> void:
 				# 고인 물: 인물(z5)·몬스터가 반사에 들어가야 하므로 인물 층 위(z6, 탄과 같은 층)
 				var wp := WaterPool.new()
 				wp.name = "Water"
-				wp.z_index = DepthPreset.Z_ACTOR_MAX
+				wp.z_index = DepthLayers.Z_ACTOR_MAX
 				add_child(wp)
 				wp.setup(fx, float(width), floor_y, float(room_rect.end.y))
 				water = wp
@@ -224,37 +231,35 @@ func build(id: String) -> void:
 	_spawn_cfg = data.get("spawn", SPAWN_DEFAULT)
 	_spawn_t = _next_spawn_delay() * 0.5
 
-	# 부유 먼지. 근경 분리: 프랍 앞·빛 기둥 뒤(z3) 로 내려 벽과 인물 사이의 "공기" 가 된다.
-	# 이전(평면): air 기준 +2 = z6 로 플레이어·몬스터까지 덮었다 (비교용으로 남김).
+	# 부유 먼지 — 프랍 앞·빛 기둥 뒤(z3). 벽과 인물 사이의 "공기" 가 된다.
 	var dust := DustLayer.new()
 	dust.name = "Dust"
 	dust.setup(room_rect, lamps, sources)
-	dust.z_index = -1 if DepthPreset.enabled() else 2
+	dust.z_index = -1
 	air.add_child(dust)
 
 	# 7. 근경 실루엣 층 (z7) — 조명 제외, 카메라 1.12배 패럴랙스. 램프·정면문 자리는 기둥·케이블이 피한다.
-	if DepthPreset.enabled():
-		var avoid: Array = []
-		for lamp in lamps:
-			avoid.append(lamp.position.x)
-		for fd in front_doors:
-			avoid.append(fd["center"].x)
-		for t in sentries:
-			avoid.append(t.position.x)          # 근경 기둥이 센트리건 앞을 가리지 않게
-		foreground = ForegroundLayer.new()
-		foreground.name = "Foreground"
-		foreground.z_index = DepthPreset.Z_FOREGROUND
-		add_child(foreground)
-		var cols: Array = []
-		for c in range(heights.size()):
-			cols.append(ceiling_at(c * RoomTheme.CELL + RoomTheme.CELL * 0.5))
-		foreground.build(id, float(width), floor_y, room_rect.position.y, avoid, cols, room_rect.end.y)
+	var avoid: Array = []
+	for lamp in lamps:
+		avoid.append(lamp.position.x)
+	for fd in front_doors:
+		avoid.append(fd["center"].x)
+	for t in sentries:
+		avoid.append(t.position.x)          # 근경 기둥이 센트리건 앞을 가리지 않게
+	foreground = ForegroundLayer.new()
+	foreground.name = "Foreground"
+	foreground.z_index = DepthLayers.Z_FOREGROUND
+	add_child(foreground)
+	var cols: Array = []
+	for c in range(heights.size()):
+		cols.append(ceiling_at(c * RoomTheme.CELL + RoomTheme.CELL * 0.5))
+	foreground.build(id, float(width), floor_y, room_rect.position.y, avoid, cols, room_rect.end.y)
 
 	# 8. 벽 바깥 어둠 (z8) — 모든 층 위. 실루엣 밖을 덮고 벽 가장자리를 어둠으로 잇는다.
 	#    비상등 부채꼴·램프 빛·근경이 벽 너머로 새지 않게 하는 시각 마감이다.
 	wall_shadow = WallShadow.new()
 	wall_shadow.name = "WallShadow"
-	wall_shadow.z_index = DepthPreset.Z_FOREGROUND + 1
+	wall_shadow.z_index = DepthLayers.Z_FOREGROUND + 1
 	add_child(wall_shadow)
 	wall_shadow.build(solid, heights)
 
@@ -358,11 +363,11 @@ func _add_prop(parent: Node2D, p: Dictionary) -> void:
 		top_left = p["pos"]
 	else:
 		top_left = Vector2(round(float(p["x"]) - w * 0.5), floor_y + PROP_SINK - (h - _ground_margin(path)))
-	var shadow := _add_contact_shadow(parent, top_left.x, w)
 	var hp := HitProp.new()
-	hp.setup(tex, top_left, shadow)
+	hp.setup(tex, top_left)
 	parent.add_child(hp)
 	props_hit.append(hp)
+	prop_shadows.add_caster(hp, tex)
 
 
 static func _prop_path(tex: String) -> String:
@@ -400,22 +405,22 @@ func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 	var x := float(prop["x"])
 	match prop.get("type", ""):
 		"cabinet":
-			_add_contact_shadow(parent, x - 368.0 * 0.5, 368.0)
 			var cabinet := PowerRelayProp.new()
 			cabinet.setup(x, floor_y)
 			parent.add_child(cabinet)
 			props_hit.append(cabinet)
+			prop_shadows.add_caster(cabinet, Lighting.textured(PowerRelayProp.ROOT + "Props/power_relay_cabinet_assembled.png"))
 		"capacitor", "cart":
 			var file := "power_relay_capacitor_bank.png" if prop["type"] == "capacitor" else "power_relay_maintenance_cart.png"
 			var path := RoomData.POWER_RELAY_DIR + "Props/" + file
 			var tex := Lighting.textured(path)
 			var w := float(tex.get_width())
 			var top_left := Vector2(round(x - w * 0.5), floor_y + PROP_SINK - (tex.get_height() - _ground_margin(path)))
-			var shadow := _add_contact_shadow(parent, top_left.x, w)
 			var hp := HitProp.new()
-			hp.setup(tex, top_left, shadow)
+			hp.setup(tex, top_left)
 			parent.add_child(hp)
 			props_hit.append(hp)
+			prop_shadows.add_caster(hp, tex)
 		"sentry":
 			# 바닥 격납형 센트리건. 프랍 층 맨 앞(z3)에 두어 다른 프랍보다 앞, 인물(z5) 보다는 뒤에 선다.
 			# id 는 보안 단말기의 방어 그리드가 이 포탑을 지목하는 열쇠다 (TerminalData.sentries).
@@ -439,12 +444,17 @@ func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 			terminal.setup(tid, x, floor_y, wall_y)
 			parent.add_child(terminal)
 			terminals.append(terminal)
+			# 바닥형 단말기는 방에서 제일 큰 프랍이다 — 그림자를 안 주면 혼자 떠 보인다 (벽걸이는 접지가 없어 제외)
+			if not TerminalData.is_wall(tid):
+				prop_shadows.add_caster(terminal, Lighting.textured(TerminalData.texture_of(tid)))
 		"npc":
 			# 생존자. 인물·대사는 id 로 NpcData 에서 끌어온다 (배치만 여기, 내용은 저쪽 — 단말기와 같은 규칙).
 			# parent(프랍 층)가 아니라 인물 층에 붙인다.
 			var person := Npc.new()
 			person.setup(str(prop.get("id", "")), x, floor_y, int(prop.get("facing", -1)))
 			_npc_layer.add_child(person)
+			# roam 이 있으면 배치점 둘레를 오간다. 구간은 방 벽 안쪽으로 잘린다 — 문 밖으로는 나가지 않는다.
+			person.set_roam(float(prop.get("roam", 0.0)), NPC_WALL_MARGIN, float(width) - NPC_WALL_MARGIN)
 			npcs.append(person)
 		"breaker":
 			var breaker := Sprite2D.new()
@@ -458,19 +468,24 @@ func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 			parent.add_child(breaker)
 
 
-## 프랍 아래 짧고 단단한 사각 픽셀 접촉 그림자 (GameReady 노트 권장)
-func _add_contact_shadow(parent: Node2D, left_x: float, w: float) -> ColorRect:
-	var shadow := ColorRect.new()
-	shadow.color = Color(0, 0, 0, 0.35)
-	shadow.position = Vector2(left_x + 18.0, floor_y - 2.0)
-	shadow.size = Vector2(maxf(w - 36.0, 18.0), 10.0)
-	parent.add_child(shadow)
-	return shadow
-
-
 ## 배경 라이팅 무드 프리셋 적용 (앰비언트 색 + 보조 광원)
 func apply_mood(i: int) -> void:
 	LightMood.apply(self, _lights, _ambient, i)
+	# 무드 광원이 갈아 끼워졌으니 그림자도 새 광원 목록으로 다시 잡는다
+	if prop_shadows:
+		prop_shadows.build(_lights, PropShadow.index)
+
+
+## 기본 그림자 프리셋 적용 (F6 순환 — PropShadow.BASE_PRESETS)
+func apply_prop_shadow(i: int) -> void:
+	if prop_shadows:
+		prop_shadows.apply(i)
+
+
+## 동적 광원(총구 화염·탄착·불·아크·비상등) 그림자 프리셋 적용 (F8 순환 — PropShadow.DYN_PRESETS)
+func apply_dyn_shadow(i: int) -> void:
+	if prop_shadows:
+		prop_shadows.apply_dynamic(i)
 
 
 func _add_crawler(x: float, facing: int) -> Crawler:

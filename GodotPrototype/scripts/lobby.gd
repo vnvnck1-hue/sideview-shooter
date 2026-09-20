@@ -71,9 +71,17 @@ func _ready() -> void:
 	lab.pressed.connect(func(): AppFlow.start_foreground_lab(get_tree(), "workshop"))
 	box.add_child(lab)
 
+	var amb := _button("♪   앰비언스 랩 — 방별 환경음 듣고 수치 조정", "에어록에서 시작해 실제로 걸어 다니며 방마다 어떤 앰비언스가 울리는지 보고 그 자리에서 음량·파일을 바꿔 Ctrl+S 로 저장한다. Tab 대상 · -/= 음량 · ,/. 파일 · F1 로비")
+	amb.pressed.connect(func(): AppFlow.start_ambience_lab(get_tree()))
+	box.add_child(amb)
+
 	var dlg := _button("✎   대화 UI 랩 — 대사 표시 방식 비교", "실제 방·인물 위에서 대사 표시 방식 5종(카타나 제로 · 비주얼 노벨 · 자막 · 누적 로그 · 레트로 박스)을 1~5 로 바꿔 가며 본다. [ ] 상대 바꾸기 · R 다시 · F1 로비")
 	dlg.pressed.connect(func(): AppFlow.start_dialogue_lab(get_tree()))
 	box.add_child(dlg)
+
+	var shadow := _button("☀   조명·그림자 랩 — 마우스가 광원", "그레이박스 상자·공·기둥 위에서 마우스 포인터가 곧 광원이 된다. 빛과 물체의 각도로 그림자가 어떻게 만들어지는지 보면서 그 자리에서 수치를 고친다. H 기하 디버그 · F6·F8 프리셋 · F1 로비")
+	shadow.pressed.connect(func(): AppFlow.start_shadow_lab(get_tree()))
+	box.add_child(shadow)
 
 	box.add_child(_spacer(6))
 	box.add_child(_crt_row())

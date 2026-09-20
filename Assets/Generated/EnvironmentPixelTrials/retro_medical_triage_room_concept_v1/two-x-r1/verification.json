@@ -1,0 +1,34 @@
+﻿{
+    "name":  "retro_medical_triage_room_concept_v1",
+    "pixelPitch":  2,
+    "source":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\Environments\\retro_medical_triage_room_concept_v1.png",
+    "sourceWidth":  1672,
+    "sourceHeight":  941,
+    "sourceSHA256":  "FFF87BB13E201C0B628B3E200FD78249406AC5C77D7D4212D5338A3C2D08011E",
+    "preparationSource":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\EnvironmentPixelTrials\\retro_medical_triage_room_concept_v1\\r2\\prepared\\retro_medical_triage_room_concept_v1.aseprite",
+    "preparationSHA256":  "3DEACD3F1A5516B608BBB2FD4DC9ABEC0C35D9F5D1FB39DC66AA9785FFD67849",
+    "preparationPNG_SHA256":  "957BB35A5D0EE40BDBDAB27BED87C637CF7DC45B775350A6722DA7289CBB2077",
+    "preparationSettings":  {
+                                "passes":  3,
+                                "coherent":  true,
+                                "snap":  20,
+                                "tolerance":  4
+                            },
+    "metrics":  {
+                    "width":  838,
+                    "height":  473,
+                    "colours":  2472,
+                    "partialAlpha":  0,
+                    "foreignColours":  0,
+                    "maskIoUAtSourceSize":  1.000000,
+                    "meanRGBErrorOnOverlap":  2.5058
+                },
+    "roundtripMatch":  true,
+    "referenceAndLayersVerified":  true,
+    "pngSHA256":  "3DA87A3A208299EDBD15EC2E6FD0A84FAD1AF5AA1CDFE41ECF0876241E6DAF73",
+    "asepriteSHA256":  "AC2AC6EFB3E3171345639926C4FA953193A555815C815683693637E0033324D7",
+    "gridGeneratorSHA256":  "E2BCD087A343D66C805B06B510BA15FE4496ED04024F0C16245BF5AC431BBE40",
+    "userDirection":  "Use 2x; 3x and 4x lose too much detail",
+    "userApproval":  "pixel_pitch_selected_final_visual_pending",
+    "gameImported":  false
+}

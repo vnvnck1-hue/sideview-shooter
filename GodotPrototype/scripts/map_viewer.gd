@@ -29,7 +29,6 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_font = SystemFont.new()
 	_font.font_names = PackedStringArray(["Malgun Gothic", "맑은 고딕", "Segoe UI", "Noto Sans CJK KR"])
-	DepthPreset.activate()
 	_camera = Camera2D.new()
 	_camera.name = "Camera"
 	add_child(_camera)

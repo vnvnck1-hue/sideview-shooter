@@ -58,15 +58,8 @@ func _ready() -> void:
 	sprite.position = Vector2.ZERO if wall else Vector2(0.0, -h * 0.5)
 	sprite.material = Lighting.shader_material("prop_surface")
 
-	if not wall:
-		# 바닥에 닿는 짧고 단단한 접촉 그림자 (다른 프랍과 같은 규칙)
-		var shadow := ColorRect.new()
-		shadow.name = "ContactShadow"
-		shadow.color = Color(0.0, 0.0, 0.0, 0.38)
-		shadow.position = Vector2(-w * 0.5 + 24.0, -8.0)
-		shadow.size = Vector2(maxf(w - 48.0, 24.0), 10.0)
-		shadow.z_index = -1
-		add_child(shadow)
+	# 접지·각도 그림자는 프랍 그림자 층(PropShadow)이 그린다 — Room 이 바닥형 단말기를 캐스터로 등록한다.
+	# 여기서 따로 접촉 띠를 깔면 두 겹으로 겹쳐 이 프랍만 유독 어두워진다.
 	add_child(sprite)
 
 	_screen_light = PointLight2D.new()

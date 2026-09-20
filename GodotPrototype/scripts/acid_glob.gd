@@ -50,6 +50,7 @@ func _ready() -> void:
 	_light.energy = 0.6
 	_light.height = Lighting.FLASH_HEIGHT
 	add_child(_light)
+	Lighting.register_dynamic(_light, 0.6, "ambient")           # 날아가는 독액 — 지나가며 그림자를 쓸고 간다
 	_light.position = _p
 
 

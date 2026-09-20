@@ -1,0 +1,20 @@
+80 CC0 creature SFX — rubberduck (OpenGameArt)
+https://opengameart.org/content/80-cc0-creature-sfx
+
+License: CC0 1.0 Universal (Public Domain Dedication)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+저작자 표기 의무 없음. 상업적 사용·개작·재배포 모두 허용.
+
+이 프로젝트에서 쓰는 파일 (전부 개작본 — 모노 합성 · 무음 제거 · RMS -20dBFS 정규화):
+  sfx/creature/aggro_01.ogg  <- alien_02.ogg
+  sfx/creature/aggro_02.ogg  <- alien_03.ogg
+  sfx/creature/aggro_03.ogg  <- bug_04.ogg
+  sfx/creature/hurt_01.ogg   <- alien_01.ogg
+  sfx/creature/hurt_02.ogg   <- alien_04.ogg
+  sfx/creature/death_01.ogg  <- misc_01.ogg
+  sfx/creature/death_02.ogg  <- spit_01.ogg
+  sfx/creature/death_03.ogg  <- spit_02.ogg
+  sfx/creature/idle_01.ogg   <- alien_06.ogg
+
+가공 규칙은 Tools/stage_creature_audio.py 에 전부 적혀 있다.

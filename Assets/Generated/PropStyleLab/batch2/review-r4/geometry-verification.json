@@ -1,0 +1,32 @@
+﻿[
+    {
+        "name":  "microscope_station",
+        "sourceSHA256":  "D5DA8775757ACC471C17679CD39F8A8D5AA854851974F3E386060B7AB5342E85",
+        "pngSHA256":  "EBB84C68DE01FDEF06D908006FD6804CFD917F04C055A142D3EA049256C80829",
+        "geometryContracts":  true,
+        "negativeControl":  true,
+        "reproducedStructureAndFinalPixels":  true,
+        "reproducedAsepriteBytes":  true,
+        "artApproval":  "not-evaluated-by-validator"
+    },
+    {
+        "name":  "sample_cart",
+        "sourceSHA256":  "2A0F0F247656EDA06F89BAF090EADB6D3D479E0B1DA38A8649C3D9670EF0DE76",
+        "pngSHA256":  "7D56B458AA62D413C1C6E2D2093A0B7190A99CC558964CB7480C4B4924E3ED67",
+        "geometryContracts":  true,
+        "negativeControl":  true,
+        "reproducedStructureAndFinalPixels":  true,
+        "reproducedAsepriteBytes":  true,
+        "artApproval":  "not-evaluated-by-validator"
+    },
+    {
+        "name":  "server_rack",
+        "sourceSHA256":  "0C8C020DECB9F80FD614DFDFD52DFC5EFBBA90D79E806F3717A8541697BB34B7",
+        "pngSHA256":  "80DC870394714BFDD268EEEB3A38D0377E3233CCB830CA336D8FFBF0B116396E",
+        "geometryContracts":  true,
+        "negativeControl":  true,
+        "reproducedStructureAndFinalPixels":  true,
+        "reproducedAsepriteBytes":  true,
+        "artApproval":  "not-evaluated-by-validator"
+    }
+]

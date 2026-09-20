@@ -6,7 +6,8 @@ extends "res://scripts/main.gd"
 ##
 ##   1~5        표시 방식 직접 고르기 (DialogueBubble.STYLES).
 ##              단 "누적 로그" 방식에서 선택지가 떠 있는 동안에는 숫자가 선택지 단축키라 Tab 을 쓴다
-##   Tab / F7   다음 방식 (F7 은 게임 어디서나 통한다 — Main 이 처리)
+##   Tab / F7   다음 표시 방식 (게임 본편은 "자막"으로 확정됐다 — 바꿔 볼 수 있는 곳은 이 랩뿐이다)
+##   V / Shift+V 다음 · 이전 **음성 방식** (DialogueVoice.PRESETS — 아직 고르는 중이다)
 ##   [ / ]      말 거는 상대 바꾸기 (그 인물이 있는 방으로 바로 옮겨 간다)
 ##   R          지금 대화를 처음부터 다시
 ##   0          인과관계 플래그 초기화 (첫 만남 대사로 되돌린다)
@@ -31,7 +32,7 @@ func _ready() -> void:
 	_style_label = _lab_label(Vector2(24, 18), 30, Color(0.95, 0.92, 0.85))
 	layer.add_child(_style_label)
 	_keys_label = _lab_label(Vector2(24, 60), 20, Color(0.66, 0.70, 0.78))
-	_keys_label.size = Vector2(1100, 120)
+	_keys_label.size = Vector2(1560, 170)
 	_keys_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	layer.add_child(_keys_label)
 
@@ -90,6 +91,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_BRACKETRIGHT:
 			_goto_cast(_cast_index + 1)
 			get_viewport().set_input_as_handled()
+		KEY_V:
+			# 음성 방식은 **줄을 다시 찍어야** 비교가 된다 (줄머리 한마디·웅얼거림은 줄 시작에 붙는다)
+			DialogueVoice.cycle(-1 if k.shift_pressed else 1)
+			_begin_talk()
+			_update_labels()
+			get_viewport().set_input_as_handled()
 		KEY_R:
 			_begin_talk()
 			get_viewport().set_input_as_handled()
@@ -99,11 +106,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-## F7 은 Main 이 게임 어디서나 처리한다 (랩도 그대로 쓴다) — 여기서는 안내 라벨만 따라 갱신한다
+## F7 은 **이 랩에서만** 산다. 게임 쪽 Main 은 "자막"(DialogueBubble.FIXED_STYLE)으로 고정이다.
 func _process(delta: float) -> void:
 	super(delta)
 	if Input.is_action_just_pressed("dialogue_style"):
-		_update_labels()
+		_set_style(DialogueBubble.style_index + 1)
 
 
 func _set_style(i: int) -> void:
@@ -159,7 +166,9 @@ func _update_labels() -> void:
 	for i in DialogueBubble.STYLES.size():
 		var n: String = DialogueBubble.STYLES[i]["name"]
 		names.append("[%d %s]" % [i + 1, n] if i == DialogueBubble.style_index else " %d %s " % [i + 1, n])
-	_style_label.text = "대화 UI 랩   ·   %s" % "  ".join(names)
+	var voice := DialogueVoice.preset()
+	_style_label.text = "대화 UI 랩   ·   %s   ·   음성 %d/%d %s" % [
+		"  ".join(names), DialogueVoice.preset_index + 1, DialogueVoice.PRESETS.size(), voice["name"]]
 	var who: String = NpcData.get_cast(str(_cast[_cast_index]["id"])).get("short", "?") if not _cast.is_empty() else "?"
-	_keys_label.text = "%s\n상대: %s (%d/%d)    ·    1~5 방식  ·  Tab 다음 방식  ·  [ ] 상대 바꾸기  ·  R 대화 다시  ·  0 플래그 초기화  ·  F1 로비\n대화: Space/E 넘기기  ·  ↑/↓ 선택지  ·  숫자키 선택(번호 방식에서만)" % [
-		st["desc"], who, _cast_index + 1, _cast.size()]
+	_keys_label.text = "표시: %s\n음성: %s\n상대: %s (%d/%d)    ·    1~5 표시 방식  ·  Tab 다음  ·  V / Shift+V 음성 방식  ·  [ ] 상대 바꾸기  ·  R 대화 다시  ·  0 플래그 초기화  ·  F1 로비" % [
+		st["desc"], voice["desc"], who, _cast_index + 1, _cast.size()]
