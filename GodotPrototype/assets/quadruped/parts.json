@@ -1,0 +1,78 @@
+{
+  "source": "quadruped_side_transparent_v1.png",
+  "scale": 0.34,
+  "body_origin_art_px": [
+    717.0,
+    482.0
+  ],
+  "note": "크기·anchor 는 월드 px (1px = 게임 1px). walker_rig.gd 가 이 파일을 읽는다.",
+  "parts": {
+    "hull": {
+      "size": [
+        318,
+        208
+      ],
+      "anchor": [
+        158.8,
+        159.8
+      ],
+      "axis": "none"
+    },
+    "barrel": {
+      "size": [
+        240,
+        187
+      ],
+      "anchor": [
+        163.2,
+        88.4
+      ],
+      "axis": "right"
+    },
+    "sleeve": {
+      "size": [
+        74,
+        130
+      ],
+      "anchor": [
+        37.1,
+        2.7
+      ],
+      "axis": "down"
+    },
+    "shin": {
+      "size": [
+        72,
+        54
+      ],
+      "anchor": [
+        36.0,
+        2.0
+      ],
+      "axis": "down"
+    },
+    "cap": {
+      "size": [
+        50,
+        60
+      ],
+      "anchor": [
+        24.8,
+        29.9
+      ],
+      "axis": "none"
+    },
+    "rod": {
+      "size": [
+        44,
+        300
+      ],
+      "anchor": [
+        22.0,
+        0.0
+      ],
+      "axis": "down",
+      "synthesized": "원화에 노출된 로드가 없어 팔레트에서 새로 그렸다"
+    }
+  }
+}

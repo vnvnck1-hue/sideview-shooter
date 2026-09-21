@@ -23,9 +23,13 @@ extends Node2D
 ## 입력을 직접 읽지 않는다 — 랩에서도 본편에서도 같은 코드를 쓰기 위해서다.
 
 ## ── 그림 규격 ────────────────────────────────────────────────────────────────
-const BODY_HALF_W := 130.0        # 몸체 좌우 반폭
-const BODY_TOP := -160.0          # 몸체 윗면 (원점 = 고관절 줄 한가운데)
-const BODY_BOT := 62.0            # 몸체 아랫면
+## ── 규격은 **원화에서 재어 넣는다** (2026-09-22) ─────────────────────────────
+## quadruped_side_transparent_v1.png 을 0.34 배로 줄인 값이다. 조각을 자르는 도구가 같은 배율을
+## 쓰므로(Tools/ImageProcessing/cut_quadruped_rig_parts.py 의 SCALE), 여기 수치와 그림이 맞는다.
+## 이 수치를 고치면 그림이 관절에서 어긋난다 — 도구의 SCALE·상자와 **함께** 고쳐야 한다.
+const BODY_HALF_W := 159.0        # 몸체 좌우 반폭 (원화 몸통 935px)
+const BODY_TOP := -160.0          # 몸체 윗면 (원화 맨 위 후드까지, 원점 = 고관절 줄 한가운데)
+const BODY_BOT := 49.0            # 몸체 아랫면
 const BODY_SKIRT := 8.0           # 아랫면의 어두운 띠 시작 높이
 
 ## 다리는 2본 IK 가 아니다. **정강이(노랑)를 거의 수직으로 유지한다** — 관절마다 자이로가 달린 것처럼.
@@ -39,19 +43,28 @@ const BODY_SKIRT := 8.0           # 아랫면의 어두운 띠 시작 높이
 ## 두 마디가 모두 강체이면 다리의 자유도가 0 이 되어 발이 아예 못 움직인다.
 ## 즉 **정강이를 수직으로 묶는 순간 보폭은 허벅지 길이 변화가 흡수할 수밖에 없다.** 기하학적 결론이다.
 ## 정강이 기울기가 그 일부를 나눠 받는다 (±17° × 150 ≈ ±44px).
-const SHIN_LEN := 150.0           # 노랑 막대 (무릎 → 발). 2026-09-21: 188 → 150 (20% 단축)
+## 정강이 = 원화의 **발목·발판** 한 마디다 (장갑판 아래의 짧은 조각). 원화를 재니 149px → 50.
+## 150 에서 50 으로 줄면서 무릎이 고관절보다 **아래**로 내려왔다 — 원화의 다리가 실제로 그 모양이다
+## (긴 유압판이 몸에서 내려오고 그 끝에 짧은 발). 도달 한계도 380 → 280 으로 줄지만,
+## 여유 예산은 아래 계산대로 아직 넉넉하다.
+const SHIN_LEN := 50.0            # 무릎 → 발 (원화 149px)
 ## 정강이의 **기준 각** — 수직에서 바깥쪽(몸 반대 방향)으로 이만큼 눕힌다. 무릎보다 발이 바깥으로 나가
 ## 거미처럼 벌린 다리가 된다. 0 이면 수직.
 const SHIN_SPLAY := 0.26          # rad ≈ 15°
 const SHIN_TILT_MAX := 0.20       # rad ≈ 11°. **기준 각에서** 더 벗어날 수 있는 폭
 const THIGH_MIN := 34.0           # 스트럿이 줄어들 수 있는 최소 길이
-const THIGH_MAX := 230.0          # 스트럿이 늘어날 수 있는 최대 길이 = **다리의 도달 한계**
+## 스트럿이 늘어날 수 있는 최대 길이 = **다리의 도달 한계**.
+## 정강이가 원화대로 50 으로 짧아지면서 다리 길이를 스트럿이 거의 혼자 감당하게 됐다 —
+## 230 으로 두면 선 자세(172)에서 조금만 흔들려도 한계를 넘는다 (검증에서 250 까지 나왔다).
+## 늘어난 만큼은 슬리브(128) 밖으로 나온 **가는 로드**로 보인다 — 유압다리의 그림 그대로다.
+## 이 값을 바꿀 때는 로드 그림 길이(도구의 ROD_LEN)도 같이 바꿔야 한다.
+const THIGH_MAX := 300.0
 const LEASH_SCAN := 320.0         # 닿는 발자리를 찾아 훑는 좌우 범위 (px)
-const SLEEVE_LEN := 74.0          # 유압 슬리브(고정 길이 바깥통). 이 밖으로 나온 만큼이 로드다
-const THIGH_W := 56.0
-const SHIN_W := 50.0
-const HIP_R := 26.0               # 고관절 원
-const KNEE_R := 32.0              # 무릎 원
+const SLEEVE_LEN := 128.0         # 유압 슬리브 = 원화의 초록 장갑판 (375px). 이 밖이 로드다
+const THIGH_W := 74.0             # 원화 장갑판 폭
+const SHIN_W := 72.0              # 원화 발판 폭
+const HIP_R := 25.0               # 고관절 원 (원화 실린더 50px)
+const KNEE_R := 30.0              # 무릎 원
 ## 느슨한 상한 — 검증·공중 자세가 참고한다. 실제 한계는 THIGH_MAX 다
 const MAX_REACH := THIGH_MAX + SHIN_LEN
 ## ── 비례 규칙 (여기를 어기면 걸음이 통째로 무너진다) ──────────────────────────
@@ -90,6 +103,60 @@ const FAR_MUL := 0.62             # 먼 쌍을 어둡게 (DepthLayers 의 층 �
 const FAR_RAISE := 16.0           # 먼 쌍의 발을 이만큼 위로 **그린다** (판정은 그대로).
                                   # 측면뷰에서 두 쌍이 같은 줄에 붙으면 다리가 둘로만 보인다
 
+## ── 사선(3/4) 시점 ──────────────────────────────────────────────────────────
+## 컨셉 원화(quadruped_robot_faithful_detailed_pixel.png)는 완전 측면이 아니라 **살짝 사선**이다.
+## 네 다리가 2×2 로 흩어져 보이고, 몸통·포신이 두께를 가진 상자로 읽힌다.
+##
+## **걸음 계산은 손대지 않는다.** 보행은 지금처럼 순수 1차원(x) 측면 문제로 두고,
+## 깊이는 **그릴 때만** 화면 오프셋으로 얹는다 (오블리크/캐비닛 투영과 같은 방식):
+##     화면 위치 = 측면 위치 + DEPTH × z          z: 0 = 가까운 쌍 · 1 = 먼 쌍
+## 이렇게 하면 도달 한계·여유 예산·검증 도구(tools/validate_walker.gd)가 전부 그대로 성립한다.
+## 깊이를 판정에 넣으면 스트럿 길이 계산이 3차원이 되고 위 문서의 예산 계산이 전부 무효가 된다.
+##
+## dx 는 **바라보는 쪽 기준**이다 (facing 을 곱한다 — 스프라이트를 뒤집는 것과 같은 관례).
+## **양수 = 앞쪽 사선**(카메라가 로봇 앞에 있다. 원화처럼 앞면·포구가 보인다) · 음수 = 뒤쪽 사선.
+##
+## 부호를 거꾸로 잡아 한 번 헛디뎠다. 압출에서 **보이는 옆면은 밀린 방향(off) 쪽 변**이다 —
+## 먼 쪽을 뒤로 밀면 드러나는 면이 뒷면이라 뒷모습 사선이 된다.
+## 차를 떠올리면 쉽다: 오른쪽을 향한 차의 앞모습 사선에서는 **가까운 측면보다 먼 측면이 더 앞에 있어**
+## 그 사이로 앞범퍼가 보인다. 즉 먼 쪽이 바라보는 쪽으로 밀려야 앞면이 드러난다.
+const VIEW_DEFAULTS := {
+	"oblique": 1.0,    # 0 = 예전 순수 측면 · 1 = 사선
+	"dx": 92.0,        # 먼 쪽이 화면에서 밀리는 양 (바라보는 쪽 기준, 양수 = 앞으로 = 앞모습 사선)
+	"dy": -28.0,       # 먼 쪽이 올라가는 양 (음수 = 위로). **카메라 높이**다 —
+	                   # 0 에 가까울수록 눈높이(사이드뷰에 가깝고 윗면이 얇아진다),
+	                   # 크면 위에서 내려다본다. dx 가 있으니 0 에 가까워도 앞면은 그대로 보인다
+	"shrink": 0.18,    # 먼 쪽을 이만큼 가늘게 그린다 (원근)
+	"thick": 0.34,     # 팔다리 자체의 두께 — 깊이 벡터의 이 비율만큼 밀어 상자로 만든다
+}
+const SIDE_MUL := 0.80            # 옆면(밀려 나온 면) 밝기
+const TOP_MUL := 1.14             # 윗면 밝기 — 위에서 빛을 받는 면이라 살짝 밝게
+
+## ── 방향 전환 (yaw) ─────────────────────────────────────────────────────────
+## **좌우를 뒤집지 않는다.** facing 을 ±1 로 홱 바꾸면 그림이 한 프레임에 거울처럼 뒤집혀
+## 기계가 순간이동한 것으로 보인다. 대신 **몸이 실제로 돌아가는 각(yaw)** 을 들고 있는다.
+##     yaw = 0     오른쪽을 본다 (완전 측면)
+##     yaw = PI/2  **카메라를 정면으로** 본다 (돌아서는 중간)
+##     yaw = PI    왼쪽을 본다
+## 0 ↔ PI 사이를 단조롭게 지나가므로 전환은 늘 PI/2(정면)를 통과한다 — 앞모습을 스쳐 지나는 회전이다.
+##
+## 몸 로컬 좌표는 (a = 앞뒤 · u = 위아래 · s = 좌우 두께) 세 축으로 든다. s 는 **몸통 두께의 비율**로
+## 오른쪽 면이 +0.5, 왼쪽 면이 -0.5 다. project() 가 이걸 화면 좌표로 옮긴다:
+##     X = a·cos(yaw) + s·BODY_DEPTH·sin(yaw)
+##     Z = (-a·sin(yaw))/BODY_DEPTH + s·cos(yaw)        (Z = 카메라에서 멀어지는 깊이, 두께 단위)
+##     화면 = (X, u) + 깊이벡터 × Z
+## yaw=0 을 넣으면 예전 그림과 정확히 같다 (X=a · Z=s → 먼 쌍과 가까운 쌍이 깊이벡터만큼 벌어진다).
+## yaw=PI 에서는 X·Z 의 부호가 같이 뒤집힌다 — 좌우가 바뀌는 동시에 **먼 쌍과 가까운 쌍도 뒤바뀐다.**
+## 그게 이 방식의 값어치다. 플립으로는 다리의 앞뒤 순서가 바뀌지 않는다.
+const BODY_DEPTH := 150.0         # 몸통 두께(px). a 축 길이를 깊이 단위로 환산하는 자
+const BODY_LEN := BODY_HALF_W * 2.0
+## 돌아서는 데 걸리는 시간. 짧아야 한다 — 이 동안 실루엣이 납작해지므로.
+const TURN_TIME := 0.26
+## 측면 그림이 **너무 얇아지는 구간의 문턱**. fore_x() 의 절댓값이 이보다 작으면 측면 그림으로는
+## 더 이상 기체를 설명할 수 없다 (그 각도에서 실제 실루엣의 폭은 몸통 두께 ÷ 길이 = 이 값이다).
+## 그 구간을 **정면 전환 시트**로 덮는 것이 다음 단계다 — 지금은 문턱만 정해 두고 리그가 본다.
+const SQUASH_MIN := BODY_DEPTH / BODY_LEN
+
 ## ── 다리 배치 ────────────────────────────────────────────────────────────────
 ## hip  : 몸체 로컬 고관절 위치 (x 는 바라보는 쪽이 +). **몸통 양 끝**에 붙인다 —
 ##        가운데로 몰면 허벅지가 배를 가로질러, 다리가 배 밑에 매달린 벌레 같은 실루엣이 된다
@@ -98,25 +165,30 @@ const FAR_RAISE := 16.0           # 먼 쌍의 발을 이만큼 위로 **그린�
 ##        뒷발은 rest 가 이미 뒤에 있는데 몸이 앞서며 더 뒤로 밀려, 두 성분이 더해지기 때문이다.
 ##        (rest 를 ±258 로 벌렸을 때 걸음 106 개 중 101 개가 긴급 스텝으로 났다)
 ## group: 대각 조 (0 / 1)
+## side : 몸통 두께 축에서의 자리 (+0.5 = 오른쪽 면 · -0.5 = 왼쪽 면). 가운데를 0 으로 둔다 —
+##        한쪽을 0 으로 잡으면 돌아설 때 회전 중심이 몸 한쪽 면에 걸려 몸이 휘청이며 돈다
 const LEGS := [
-	{"name": "뒤·먼", "hip": Vector2(-132.0, 40.0), "rest": -162.0, "near": false, "group": 1},
-	{"name": "앞·먼", "hip": Vector2(132.0, 40.0), "rest": 162.0, "near": false, "group": 0},
-	{"name": "뒤·가까", "hip": Vector2(-118.0, 50.0), "rest": -150.0, "near": true, "group": 0},
-	{"name": "앞·가까", "hip": Vector2(118.0, 50.0), "rest": 150.0, "near": true, "group": 1},
+	{"name": "뒤·먼", "hip": Vector2(-132.0, 40.0), "rest": -162.0, "near": false, "group": 1, "side": 0.5},
+	{"name": "앞·먼", "hip": Vector2(132.0, 40.0), "rest": 162.0, "near": false, "group": 0, "side": 0.5},
+	{"name": "뒤·가까", "hip": Vector2(-118.0, 50.0), "rest": -150.0, "near": true, "group": 0, "side": -0.5},
+	{"name": "앞·가까", "hip": Vector2(118.0, 50.0), "rest": 150.0, "near": true, "group": 1, "side": -0.5},
 ]
 
 ## ── 기관총 (몸통 위 포탑) ────────────────────────────────────────────────────
 ## 센트리건(sentry_turret.gd)과 같은 규칙: 포인터를 **기계식 선회 속도로 늦게** 따라간다.
 ## 즉시 조준하면 기계 느낌이 죽고, 마우스를 휘두를 때 포신이 순간이동한다.
 ## 포탑은 바라보는 쪽 기준 ±TURRET_ARC 안에서만 돈다 — 그 밖을 겨누면 **몸이 돌아선다**(facing 전환).
-const TURRET_PIVOT := Vector2(-14.0, -196.0)  # 몸체 로컬 요동축 — 몸통 **위**에 올려 둔다 (x 는 바라보는 쪽이 +)
-const BARREL_LEN := 178.0
+## 요동축. **원화의 포가(금색 링) 중심**이다 — 포신이 몸통 위가 아니라 몸통 **안**에 박혀 있다.
+const TURRET_PIVOT := Vector2(-81.0, -55.0)
+const BARREL_LEN := 163.0         # 요동축 → 총구 (원화 480px)
 const BARREL_W := 46.0
 const MOUNT_R := 42.0
 const TURRET_ARC := 2.60                      # rad ≈ 149°. 바라보는 쪽 기준 위아래 한계.
                                               # 넓게 잡을수록 몸을 덜 돌려도 되고, 몸을 덜 돌릴수록 다리가 덜 꼬인다
 const TURRET_RATE := 8.5                      # rad/s — 선회 속도 (작을수록 굼뜬 기계)
-const FIRE_COOLDOWN := 0.11
+## 연사 간격. 센트리건(0.055초 ≈ 18발/초)과 **같은 연출에 연사력만 낮춘** 값이다 —
+## 이 로봇은 포신이 하나이고 구경이 굵다. 0.16초 ≈ 6발/초.
+const FIRE_COOLDOWN := 0.16
 const TURN_BEHIND := 160.0                    # 조준점이 몸보다 이만큼 뒤에 있어야 돌아선다 (경계에서 떨지 않게)
 const TURN_COOLDOWN := 0.5                    # 한 번 돌아서면 이만큼은 다시 돌지 않는다.
                                               # 없으면 조준이 몸을 가로지를 때마다 뒤집히며 다리가 꼬여 주저앉는다
@@ -146,8 +218,14 @@ const FALL_SLACK := 80.0          # 몸 밑 지면이 선 키보다 이만큼 �
 const DEFAULTS := {
 	"speed": 430.0,       # 최고 걷기 속도(px/s). 달리기는 × RUN_MUL.
 	                      # 걸음 타이밍이 정해지면 이 값도 따라 정해진다 — "여유 예산" 을 보고 맞출 것
-	"ride": 135.0,        # 지면에서 몸체 원점까지 (다리를 얼마나 펴고 서는가)
-	"stride": 1.18,       # **다리 벌림** — LEGS.rest 에 곱한다. 보폭이 아니다 (보폭은 trigger)
+	## 아래 두 값은 **원화의 선 자세에서 거꾸로 계산한 값**이다 (2026-09-22).
+	## 원화는 초록 유압판이 몸통에서 거의 **수직으로** 내려와 짧은 발에 닿는다. 그 그림이 나오려면
+	##   ride  = 발에서 고관절까지(원화 505px → 172) + hip.u(40) = 212
+	##   stride: 발이 고관절 **바로 아래**에 와야 하므로 rest×stride ≒ |hip| → 162×0.82 ≒ 133 ≒ 132
+	## 예전 값(135 / 1.18)은 그레이박스 시절의 긴 정강이(150)에 맞춘 것으로, 그대로 두면
+	## 유압판이 옆으로 누워 다리가 게처럼 벌어진다 (원화와 전혀 다른 실루엣이 나왔다).
+	"ride": 212.0,        # 지면에서 몸체 원점까지 (다리를 얼마나 펴고 서는가)
+	"stride": 0.82,       # **다리 벌림** — LEGS.rest 에 곱한다. 보폭이 아니다 (보폭은 trigger)
 	"trigger": 40.0,      # 발이 제자리에서 이만큼 어긋나면 새 자리로 옮긴다 (= 한 걸음 거리)
 	"lift": 80.0,        # 발을 드는 높이 (포물선 꼭대기)
 	"step_time": 0.15,    # 한 걸음에 걸리는 시간 (속도가 붙으면 이보다 짧아진다)
@@ -185,9 +263,15 @@ var drag_to = null                # Vector2 를 넣으면 몸체를 그 자리�
 var aim_target = null             # Vector2(월드) 를 넣으면 그 점을 겨눈다. null 이면 정면을 본다
 var firing := false               # true 인 동안 FIRE_COOLDOWN 간격으로 발사한다
 
+## 그레이박스 그림을 그릴 것인가. 원화 파츠 리그(walker_rig.gd)가 붙으면 끈다.
+var draw_greybox := true
+
 var tune := DEFAULTS.duplicate()
+var view := VIEW_DEFAULTS.duplicate()   # 그림 시점만 바꾼다 — 걸음 계산에는 들어가지 않는다
 var body_pos := Vector2.ZERO
-var facing := 1
+var facing := 1                   # 걸음 계산용 **이산** 방향. yaw 가 PI/2 를 지날 때 바뀐다
+var yaw := 0.0                    # 몸이 실제로 돌아간 각 (0 = 오른쪽 · PI = 왼쪽). 그림은 이걸 쓴다
+var _yaw_want := 0.0              # 목표 yaw (0 또는 PI)
 var speed := 0.0                  # 현재 수평 속도 (부호 있음)
 var airborne := false
 
@@ -201,6 +285,7 @@ var _recoil := 0.0
 var _fire_cd := 0.0
 var _flash := 0.0
 var _aim_pitch := 0.0             # -1(아래) ~ +1(위) — 몸이 조준을 따라 젖히는 정도
+var _turret_elev := 0.0           # 포신의 **몸 기준** 부앙각 (rad, + = 위). 그림·총구가 이걸 쓴다
 var _turn_cd := 0.0               # 방향 전환 제동 (초)
 
 ## 진단용 집계 — 걸음이 무엇 때문에 났는가. urgent 가 대부분이면 다리 길이/보폭 비례가 잘못된 것이다
@@ -219,7 +304,7 @@ func reset_stance() -> void:
 	for d in LEGS:
 		var leg := {
 			"name": d["name"], "hip": d["hip"] as Vector2, "rest": d["rest"] as float,
-			"near": d["near"] as bool, "group": d["group"] as int,
+			"near": d["near"] as bool, "group": d["group"] as int, "side": d["side"] as float,
 			"foot": Vector2.ZERO, "from": Vector2.ZERO, "to": Vector2.ZERO,
 			"t": 0.0, "dur": 0.2, "stepping": false,
 		}
@@ -240,7 +325,8 @@ func jump() -> void:
 
 ## 한 프레임. 쓰는 쪽이 input_dir / running / drag_to 를 채운 뒤 부른다.
 func tick(delta: float) -> void:
-	_tick_turret(delta)                     # 몸이 움직이기 전에 — 조준이 방향 전환(facing)을 정한다
+	_tick_yaw(delta)                        # 먼저 몸을 돌린다 — facing 이 여기서 바뀐다
+	_tick_turret(delta)                     # 조준이 다음 방향 전환을 정한다
 	_move_body(delta)
 	_tick_legs(delta)
 	if not airborne:
@@ -255,47 +341,66 @@ func tick(delta: float) -> void:
 
 ## 요동축의 월드 좌표. 몸 기울기를 같이 받는다.
 func turret_pivot() -> Vector2:
-	return body_pos + Vector2(TURRET_PIVOT.x * float(facing), TURRET_PIVOT.y).rotated(_angle)
+	return body_pos + project(TURRET_PIVOT.x, TURRET_PIVOT.y, 0.0).rotated(_angle)
 
 
-## 총구의 월드 좌표 (반동만큼 물러난 위치)
+## 포신 끝(총구)의 월드 좌표. **포신도 몸과 같이 돌아간다** —
+## 포신 방향을 몸 기준 부앙각(_turret_elev)으로 들고 있다가 project 를 통과시키므로,
+## 몸이 카메라 쪽으로 돌면 포신이 짧아지며 정면을 향한다 (측면 그림에 화면 각을 그대로 쓰면
+## 돌아서는 동안 포신만 제 길이로 남아 몸에서 떨어져 나간 것처럼 보인다).
 func muzzle() -> Vector2:
-	return turret_pivot() + Vector2.RIGHT.rotated(_turret) * (BARREL_LEN - _recoil)
+	return _barrel_tip(BARREL_LEN - _recoil)
 
 
+## 포신 방향(월드 화면). 탄·예광이 이걸 쓴다 — 그려진 포신과 탄도가 어긋나지 않게 **그림에서 뽑는다**.
 func aim_dir() -> Vector2:
-	return Vector2.RIGHT.rotated(_turret)
+	var d := _barrel_tip(BARREL_LEN) - turret_pivot()
+	return d.normalized() if d.length() > 0.001 else Vector2.RIGHT.rotated(_turret)
 
 
+## 요동축에서 포신 방향으로 len 만큼 간 점 — **몸통 원점 기준 화면 좌표**.
+## 포신은 몸 기준 부앙각으로 뻗어 있고 project 가 yaw 를 먹인다 (돌아서면 짧아진다).
+func _turret_local(len: float) -> Vector2:
+	return project(
+		TURRET_PIVOT.x + cos(_turret_elev) * len,
+		TURRET_PIVOT.y - sin(_turret_elev) * len, 0.0)
+
+
+## 같은 점의 월드 좌표
+func _barrel_tip(len: float) -> Vector2:
+	return body_pos + _turret_local(len).rotated(_angle)
+
+
+## 포탑은 **몸 기준 부앙각(_turret_elev) 하나**로 관리한다. 화면 각이 아니다.
+##
+## 예전엔 화면 각을 들고 "facing 이 +면 0, -면 PI" 를 기준으로 삼았는데, 돌아서는 도중 facing 이
+## 바뀌는 순간 기준이 PI 만큼 튀어 **포신이 한 프레임에 180° 뒤집혔다** (몸은 부드럽게 도는데
+## 포신만 순간이동했다 — 필름에서 바로 보였다). 몸 기준으로 들고 있으면 그 경계가 아예 없다.
 func _tick_turret(delta: float) -> void:
 	_recoil = move_toward(_recoil, 0.0, RECOIL_DECAY * RECOIL_BACK * delta)
 	_flash = maxf(_flash - delta, 0.0)
 	_fire_cd = maxf(_fire_cd - delta, 0.0)
 	_turn_cd = maxf(_turn_cd - delta, 0.0)
 
-	var pivot := turret_pivot()
-	var want := 0.0 if facing > 0 else PI
+	var want := 0.0
 	if aim_target != null:
+		var pivot := turret_pivot()
 		var to: Vector2 = (aim_target as Vector2) - pivot
 		if to.length() > 1.0:
-			want = to.angle()
+			want = _elev_for(to)
 			# 포탑이 닿지 않는 뒤쪽을 겨누면 **몸이 돌아선다**. 경계에서 떨지 않게 여유와 제동을 둔다.
 			var behind: float = (aim_target as Vector2).x - body_pos.x
 			var want_face := 1 if behind > 0.0 else -1
 			if absf(behind) > TURN_BEHIND and want_face != facing and _turn_cd <= 0.0:
-				facing = want_face
+				face(want_face)              # 즉시 뒤집지 않는다 — 몸이 TURN_TIME 동안 돌아간다
 				_turn_cd = TURN_COOLDOWN
-				_all_down = tune["hold"]     # 돌아선 직후엔 접지 유지를 건너뛴다 — 네 발이 빨리 제자리를 찾게
-	# 바라보는 쪽 기준 ±TURRET_ARC 로 묶는다
-	var base := 0.0 if facing > 0 else PI
-	var off := wrapf(want - base, -PI, PI)
-	want = base + clampf(off, -TURRET_ARC * 0.5, TURRET_ARC * 0.5)
-	_turret = _rotate_toward(_turret, want, TURRET_RATE * delta)
+	want = clampf(want, -TURRET_ARC * 0.5, TURRET_ARC * 0.5)
+	_turret_elev = _rotate_toward(_turret_elev, want, TURRET_RATE * delta)
+	_turret = aim_dir().angle()             # 화면 각은 **그림에서 뽑아** 남겨 둔다 (쓰는 쪽 호환)
 
 	# 몸이 조준을 따라 젖힌다 — 위를 겨누면 앞이 들리고, 아래를 겨누면 앞이 숙는다.
 	# 다리가 이 변화를 받아내는 것이 절차적 보행의 값어치가 드러나는 자리다.
-	var elev := wrapf(_turret - base, -PI, PI) * float(facing)
-	_aim_pitch = clampf(elev / (TURRET_ARC * 0.5), -1.0, 1.0)
+	_aim_pitch = clampf(_turret_elev / (TURRET_ARC * 0.5), -1.0, 1.0)
 
 	if firing and _fire_cd <= 0.0:
 		_fire_cd = FIRE_COOLDOWN
@@ -304,6 +409,19 @@ func _tick_turret(delta: float) -> void:
 		var d := aim_dir()
 		body_pos -= d * RECOIL_PUSH        # 반동으로 밀린다. 다리가 알아서 자리를 다시 잡는다
 		fired.emit(muzzle(), d)
+
+
+## 이 화면 방향을 겨누려면 몸 기준 부앙각이 얼마여야 하는가.
+## 돌아서는 동안 앞뒤 축은 cos(yaw) 만큼 **눌려 보이므로**, 화면의 가로 성분을 그만큼 되돌려야
+## 실제 부앙을 얻는다. 0 으로 나누지 않게 하한을 두는데, 그 구간(거의 정면)에서는 포신이
+## 카메라를 향하고 있어 부앙이 포화되는 편이 자연스럽다.
+func _elev_for(to_screen: Vector2) -> float:
+	var d := (to_screen).rotated(-_angle)                    # 몸 기울기를 뺀 화면 방향
+	var c := cos(yaw)
+	var sgn := 1.0 if c >= 0.0 else -1.0
+	var a := d.x / maxf(absf(c), 0.25) * sgn                 # 앞뒤 성분 (눌린 것을 되돌린다)
+	var u := -d.y                                            # 위 성분 (화면 y 는 아래가 +)
+	return atan2(u, a)
 
 
 static func _rotate_toward(from: float, to: float, step: float) -> float:
@@ -388,9 +506,26 @@ func _plant_feet() -> void:
 
 func _update_facing() -> void:
 	if speed > TURN_SPEED:
-		facing = 1
+		face(1)
 	elif speed < -TURN_SPEED:
-		facing = -1
+		face(-1)
+
+
+## 이쪽을 보게 한다. **즉시 뒤집지 않는다** — 목표 yaw 만 정해 두고 _tick_yaw 가 돌린다.
+func face(want: int) -> void:
+	_yaw_want = 0.0 if want > 0 else PI
+
+
+## 몸을 목표 방향으로 돌린다. facing(걸음 계산용)은 **정면(PI/2)을 지나는 순간** 바뀐다 —
+## 전환의 가운데에서 바뀌므로, 다리는 몸이 반쯤 돌아간 시점부터 새 자리를 찾아 나선다.
+func _tick_yaw(delta: float) -> void:
+	if is_equal_approx(yaw, _yaw_want):
+		return
+	yaw = move_toward(yaw, _yaw_want, PI / TURN_TIME * delta)
+	var want := 1 if yaw < PI * 0.5 else -1
+	if want != facing:
+		facing = want
+		_all_down = tune["hold"]     # 돌아선 순간엔 접지 유지를 건너뛴다 — 네 발이 빨리 제자리를 찾게
 
 
 ## 딛고 있는 발들의 평균 높이 (없으면 네 발 평균)
@@ -455,8 +590,13 @@ func _sync_body_to_feet(w: float) -> void:
 # ── 다리 ─────────────────────────────────────────────────────────────────────
 
 ## 이 다리가 지금 놓여야 할 자리 (몸체 위치 + 벌어짐 + 예측) 를 지면에 붙인 값
+## 이 다리가 지금 놓여야 할 자리. **rest 도 yaw 를 통과한다** —
+## 돌아서는 동안 네 발의 목표가 몸 가운데로 모였다가 반대쪽으로 벌어지므로,
+## 다리가 제자리에서 종종거리며 방향을 바꾼다 (facing 만 뒤집으면 목표가 한 프레임에 건너뛰고,
+## 네 발이 동시에 긴급 스텝을 내며 주저앉았다).
 func _desired(leg: Dictionary, vel: float) -> Vector2:
-	var x: float = body_pos.x + (leg["rest"] as float) * tune["stride"] * float(facing) + vel * tune["lead"]
+	var rest: float = (leg["rest"] as float) * tune["stride"]
+	var x: float = body_pos.x + project(rest, 0.0, leg["side"] as float).x + vel * tune["lead"]
 	return Vector2(x, ground_at.call(x))
 
 
@@ -656,9 +796,11 @@ func _reachable(leg: Dictionary, want: Vector2) -> Vector2:
 	return out
 
 
+## 고관절의 월드 좌표. **yaw 를 통과한 자리**다 — 돌아서는 동안 고관절이 몸 가운데로 모였다가
+## 반대쪽으로 벌어지고, 발은 월드에 박혀 있으므로 다리가 그 차이를 받아낸다. 그게 회전의 그림이다.
 func _hip_world(leg: Dictionary) -> Vector2:
 	var h: Vector2 = leg["hip"]
-	return body_pos + Vector2(h.x * float(facing), h.y).rotated(_angle)
+	return body_pos + project(h.x, h.y, leg["side"] as float).rotated(_angle)
 
 
 ## 이 다리의 기준 정강이 각. 바깥쪽(몸 중심 반대편)으로 SHIN_SPLAY 만큼 눕힌다.
@@ -700,75 +842,191 @@ static func solve_knee_v(hip: Vector2, foot: Vector2, phi0: float) -> Vector2:
 	return _knee_at(foot, hi)
 
 
+# ── 파츠 리그가 쓰는 공개 창구 ────────────────────────────────────────────────
+## 그림(스프라이트) 쪽에서 필요한 값만 내보낸다. 내부 상태를 직접 뒤지지 않게 —
+## 나중에 본편에서 이 로봇을 쓸 때 리그가 유일한 소비자가 된다.
+
+func legs() -> Array:
+	return _legs
+
+
+## 이 다리의 고관절 월드 좌표 (yaw 를 통과한 자리)
+func hip_world(leg: Dictionary) -> Vector2:
+	return _hip_world(leg)
+
+
+## 이 다리의 기준 정강이 각
+func phi0(leg: Dictionary) -> float:
+	return _phi0(leg)
+
+
+## 요동축에서 포신 방향으로 len 만큼 간 점 (몸통 원점 기준 화면 좌표)
+func turret_local(len: float) -> Vector2:
+	return _turret_local(len)
+
+
 # ── 그리기 ───────────────────────────────────────────────────────────────────
 
+## 그레이박스. 원화 파츠 리그(walker_rig.gd)를 붙이면 draw_greybox 를 꺼서 이 그림을 지운다.
+## 리그가 붙기 전까지 이게 기준 그림이고, 리그가 붙은 뒤에도 자리맞춤 확인용으로 남긴다.
 func _draw() -> void:
+	if not draw_greybox:
+		return
+	# **깊이 순으로 그린다.** 몸통보다 먼 다리를 먼저, 가까운 다리를 나중에 —
+	# 돌아서는 동안 어느 쌍이 먼 쪽인지가 바뀌므로 near 플래그로는 안 된다 (플립의 흔적이다)
+	var order: Array = []
 	for leg in _legs:
-		if not leg["near"]:
-			_draw_leg(leg, FAR_MUL)
+		order.append({"leg": leg, "z": leg_depth(leg)})
+	order.sort_custom(func(a, b): return a["z"] > b["z"])
+	for o in order:
+		if o["z"] > 0.0:
+			_draw_leg(o["leg"])
 	_draw_body()
 	_draw_turret()
-	for leg in _legs:
-		if leg["near"]:
-			_draw_leg(leg, 1.0)
+	for o in order:
+		if o["z"] <= 0.0:
+			_draw_leg(o["leg"])
 
 
-func _draw_leg(leg: Dictionary, mul: float) -> void:
-	var f := float(facing)
-	var h: Vector2 = leg["hip"]
-	var hip := Vector2(h.x * f, h.y)
-	var foot := to_local(leg["foot"])
-	if not leg["near"]:
-		foot.y -= FAR_RAISE
+## 깊이 한 칸(두께 1)이 화면에서 밀리는 벡터. **yaw 를 곱하지 않는다** — 카메라는 고정이고,
+## 몸이 돌아가면 Z 값 자체가 바뀌기 때문이다 (예전처럼 facing 을 곱하면 이중으로 뒤집힌다).
+func depth_vec() -> Vector2:
+	if not oblique():
+		return Vector2(0.0, -FAR_RAISE)
+	return Vector2(float(view["dx"]), float(view["dy"]))
+
+
+## 깊이 z (두께 단위) → 화면 오프셋
+func _depth_off(z: float) -> Vector2:
+	return depth_vec() * z
+
+
+## 몸 로컬 (a = 앞뒤 · u = 위아래 · s = 좌우 두께 비율) → **몸통 원점 기준 화면 좌표**.
+## 몸 기울기(_angle)는 포함하지 않는다 — 노드 회전이 그걸 처리한다.
+func project(a: float, u: float, s: float) -> Vector2:
+	return Vector2(a * fore_x(), u + a * fore_y()) + extrude_vec() * s
+
+
+## 앞뒤 축(a)이 화면에서 차지하는 **가로 배율**. cos 만이 아니다 —
+## 깊이 오프셋의 가로 성분이 같이 들어간다 (몸이 카메라 쪽으로 돌면 깊이로도 옆으로 밀리므로).
+##
+## **하한을 두지 않는다.** 예전엔 |배율| 의 하한(SQUASH_MIN)을 뒀는데, 이 값은 yaw≈58° 에서
+## 0 을 지나며 부호가 바뀌므로 하한이 그 자리에서 **+0.58 → -0.58 로 튀었다** — 이름만 다른 플립이다.
+## 0 을 그냥 지나가게 두면 측면 그림이 한두 프레임 얇아졌다 반대로 펴진다 (문이 닫히듯).
+## 다리·포신은 따로 그려지므로 그 순간에도 사라지지 않는다.
+## 그 구간을 정면 시트로 덮는 것이 다음 단계다 (walker_rig.gd 의 turn sheet 자리).
+func fore_x() -> float:
+	return cos(yaw) - depth_vec().x * sin(yaw) / BODY_DEPTH
+
+
+## 앞뒤 축이 화면에서 **위아래로** 밀리는 양 (기울어 보이게 만드는 성분)
+func fore_y() -> float:
+	return -depth_vec().y * sin(yaw) / BODY_DEPTH
+
+
+## 그 점의 깊이 Z (두께 단위, 클수록 멀다). 밝기·그리는 순서가 이걸 본다 — 위치에는 쓰지 않는다.
+func depth_of(a: float, s: float) -> float:
+	return (-a * sin(yaw)) / BODY_DEPTH + s * cos(yaw)
+
+
+func oblique() -> bool:
+	return float(view["oblique"]) > 0.5
+
+
+## 깊이에 따른 밝기·굵기. 사선일 때만 가늘어진다 (측면에서는 예전처럼 어둡기만 했다)
+func _depth_mul(z: float) -> float:
+	return lerpf(1.0, FAR_MUL, z)
+
+
+func _depth_scale(z: float) -> float:
+	return 1.0 - (float(view["shrink"]) if oblique() else 0.0) * z
+
+
+## 이 다리의 깊이 Z (두께 단위). 양수 = 몸통보다 멀다
+func leg_depth(leg: Dictionary) -> float:
+	return depth_of((leg["hip"] as Vector2).x, leg["side"] as float)
+
+
+func _draw_leg(leg: Dictionary) -> void:
+	var z := leg_depth(leg)
+	var hip := to_local(_hip_world(leg))
+	var foot := to_local(leg["foot"]) + _depth_off(z)
+	# 발은 월드에 박혀 있다 — 깊이 오프셋만 얹어 그 다리의 평면으로 옮긴다.
+	# 고관절은 project 를 통과한 자리라, 돌아서는 동안 둘의 간격이 벌어지고 다리가 그걸 받아낸다
 	var knee := solve_knee_v(hip, foot, _phi0(leg))
+	var mul := _depth_mul(maxf(z, 0.0) * 2.0)
+	var s := _depth_scale(maxf(z, 0.0) * 2.0)
+	# 팔다리 자체의 두께 — 깊이 벡터를 조금만 써서 상자로 만든다 (다리 하나가 납작한 판으로 보이지 않게)
+	var t := _depth_off(1.0) * (float(view["thick"]) if oblique() else 0.0)
 
 	# 정강이 — 거의 수직으로 유지되는 강체
-	_limb(knee, foot, SHIN_W, _dim(C_SHIN, mul))
+	_limb3(knee, foot, SHIN_W * s, _dim(C_SHIN, mul), t)
 	# 허벅지 — 길이가 변하는 유압 스트럿. 가는 로드를 전 구간에 깔고 그 위에 **고정 길이 슬리브**를 덮어,
 	# 길이 변화가 고무줄이 아니라 "실린더에서 로드가 나온다" 로 읽히게 한다.
 	var d := knee - hip
 	var span := d.length()
 	if span > 1.0:
 		var n := d / span
-		_limb(hip, knee, THIGH_W - 18.0, _dim(C_THIGH_ROD, mul))
-		_limb(hip, hip + n * minf(SLEEVE_LEN, span), THIGH_W, _dim(C_THIGH, mul))
-	draw_circle(knee, KNEE_R, _dim(C_JOINT, mul))
-	draw_circle(hip, HIP_R, _dim(C_JOINT, mul))
+		_limb3(hip, knee, (THIGH_W - 18.0) * s, _dim(C_THIGH_ROD, mul), t)
+		_limb3(hip, hip + n * minf(SLEEVE_LEN, span), THIGH_W * s, _dim(C_THIGH, mul), t)
+	draw_circle(knee, KNEE_R * s, _dim(C_JOINT, mul))
+	draw_circle(hip, HIP_R * s, _dim(C_JOINT, mul))
 
 
+## 몸통. **가까운 면(s=-0.5)의 폴리곤을 그리고 두께만큼 밀어** 상자로 만든다.
+## 폴리곤 점을 전부 project 로 통과시키므로, 돌아서는 동안 상자가 비스듬한 평행사변형으로 눕는다 —
+## 좌우를 뒤집는 대신 **실제로 돌아가는** 그림이 나오는 자리다.
 func _draw_body() -> void:
-	var f := float(facing)
-	draw_colored_polygon(PackedVector2Array([
-		Vector2(-BODY_HALF_W, BODY_TOP), Vector2(BODY_HALF_W, BODY_TOP),
-		Vector2(BODY_HALF_W, BODY_BOT), Vector2(-BODY_HALF_W, BODY_BOT),
-	]), C_BODY)
-	# 아랫면 어두운 띠 — 다리가 몸에 파묻히는 자리를 정리한다
-	draw_colored_polygon(PackedVector2Array([
+	var nose := BODY_HALF_W + 34.0
+	_extrude([
+		{"pts": _face([
+			Vector2(-BODY_HALF_W, BODY_TOP), Vector2(BODY_HALF_W, BODY_TOP),
+			Vector2(BODY_HALF_W, BODY_BOT), Vector2(-BODY_HALF_W, BODY_BOT),
+		]), "col": C_BODY},
+		# 바라보는 쪽 앞머리 (a 가 + 인 쪽이 늘 앞이다 — facing 을 곱하지 않는다)
+		{"pts": _face([
+			Vector2(BODY_HALF_W, -128.0), Vector2(nose, -112.0),
+			Vector2(nose, -58.0), Vector2(BODY_HALF_W, -44.0),
+		]), "col": C_BODY},
+	], extrude_vec())
+	# 아랫면 어두운 띠 — 다리가 몸에 파묻히는 자리를 정리한다. 가까운 면에만 얹는 무늬다
+	draw_colored_polygon(_face([
 		Vector2(-BODY_HALF_W, BODY_SKIRT), Vector2(BODY_HALF_W, BODY_SKIRT),
 		Vector2(BODY_HALF_W, BODY_BOT), Vector2(-BODY_HALF_W, BODY_BOT),
 	]), C_BODY_DARK)
-	# 바라보는 쪽 앞머리를 조금 내밀어 방향을 읽게 한다 (포신은 이제 따로 있는 포탑이다)
-	var nose := (BODY_HALF_W + 34.0) * f
-	draw_colored_polygon(PackedVector2Array([
-		Vector2(BODY_HALF_W * f, -128.0), Vector2(nose, -112.0),
-		Vector2(nose, -58.0), Vector2(BODY_HALF_W * f, -44.0),
-	]), C_BODY)
 
 
-## 포탑. _turret 은 월드 각이므로 그릴 때 몸 회전을 빼서 로컬 각으로 바꾼다.
+## (a, u) 점들을 가까운 면(s = -0.5)의 화면 좌표로
+func _face(pts: Array) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for v in pts:
+		out.append(project((v as Vector2).x, (v as Vector2).y, -0.5))
+	return out
+
+
+## 두께 한 칸(가까운 면 → 먼 면)이 화면에서 밀리는 벡터.
+## yaw=0 이면 깊이벡터 그대로, yaw=PI/2 면 몸통 두께만큼 가로로, yaw=PI 면 반대쪽으로 — 연속이다.
+func extrude_vec() -> Vector2:
+	return Vector2(BODY_DEPTH * sin(yaw), 0.0) + depth_vec() * cos(yaw)
+
+
+## 포탑. 요동축·포신 모두 project 를 통과한 점으로 그린다.
 func _draw_turret() -> void:
-	var f := float(facing)
-	var pivot := Vector2(TURRET_PIVOT.x * f, TURRET_PIVOT.y)
-	var a := _turret - rotation
-	var dir := Vector2.RIGHT.rotated(a)
-	var tip := pivot + dir * (BARREL_LEN - _recoil)
+	var pivot := _turret_local(0.0)
+	var tip := _turret_local(BARREL_LEN - _recoil)
+	var d := tip - pivot
+	var dir := d.normalized() if d.length() > 0.001 else Vector2.RIGHT
+	var ex := extrude_vec() * 0.72
 
 	# 요동축을 몸통 윗면에 잇는 받침 — 포신을 들어도 공중에 뜨지 않게
-	_limb(pivot + Vector2(0.0, 70.0), pivot, 70.0, C_BODY_DARK)
-	# 약실(요동축 뒤로 튀어나온 덩어리) → 포신 → 총구 블록
-	_limb(pivot - dir * 62.0, pivot + dir * 20.0, BARREL_W + 22.0, C_GUN)
-	_limb(pivot, tip, BARREL_W, C_GUN)
-	_limb(tip - dir * 30.0, tip + dir * 8.0, BARREL_W + 16.0, C_GUN_LIT)
+	var mount_foot := project(TURRET_PIVOT.x, TURRET_PIVOT.y + 70.0, 0.0)
+	_extrude([
+		{"pts": _limb_pts(mount_foot, pivot, 70.0), "col": C_BODY_DARK},
+		# 약실(요동축 뒤로 튀어나온 덩어리) → 포신 → 총구 블록
+		{"pts": _limb_pts(_turret_local(-62.0), _turret_local(20.0), BARREL_W + 22.0), "col": C_GUN},
+		{"pts": _limb_pts(pivot, tip, BARREL_W), "col": C_GUN},
+		{"pts": _limb_pts(tip - dir * 30.0, tip + dir * 8.0, BARREL_W + 16.0), "col": C_GUN_LIT},
+	], ex)
 	draw_circle(pivot, MOUNT_R, C_JOINT)
 
 	if _flash > 0.0:
@@ -783,19 +1041,72 @@ func _draw_turret() -> void:
 
 
 func _limb(a: Vector2, b: Vector2, w: float, col: Color) -> void:
+	var pts := _limb_pts(a, b, w)
+	if pts.size() > 0:
+		draw_colored_polygon(pts, col)
+
+
+## 막대 하나의 네 점 (이음매를 메우려 양 끝을 조금 늘린 사각형)
+func _limb_pts(a: Vector2, b: Vector2, w: float) -> PackedVector2Array:
 	var d := b - a
 	if d.length() < 0.01:
-		return
+		return PackedVector2Array()
 	var n := d.normalized()
 	var p := Vector2(-n.y, n.x) * (w * 0.5)
 	var a2 := a - n * (w * 0.35)                                  # 관절 원 밑으로 조금 물려 이음매를 메운다
 	var b2 := b + n * (w * 0.2)
-	draw_colored_polygon(PackedVector2Array([a2 + p, b2 + p, b2 - p, a2 - p]), col)
+	return PackedVector2Array([a2 + p, b2 + p, b2 - p, a2 - p])
+
+
+## 막대 하나를 상자로 (다리용)
+func _limb3(a: Vector2, b: Vector2, w: float, col: Color, off: Vector2) -> void:
+	var pts := _limb_pts(a, b, w)
+	if pts.size() > 0:
+		_extrude([{"pts": pts, "col": col}], off)
+
+
+## 볼록 다각형 여러 장을 off 만큼 밀어 **상자**로 만든다.
+## parts = [{"pts": PackedVector2Array, "col": Color}, ...] — 앞면 기준 좌표.
+##
+## 순서가 전부다: 뒷면 전부 → 옆면 전부 → 앞면 전부.
+## 파츠별로 (뒷·옆·앞) 을 한 묶음씩 그리면, 뒤에 그려진 파츠의 **뒷면**이 이미 그린 파츠의
+## 앞면 위에 얹힌다 (앞머리를 밀면 몸통 앞면 위로 넘어온다 — 실제로 그렇게 보였다).
+##
+## 옆면 색은 그 변이 위를 향하는지로 가른다. 위를 향하는 변 = 윗면이라 밝게,
+## 나머지 = 측면이라 어둡게. 이것만으로 상자의 세 면이 구분된다.
+func _extrude(parts: Array, off: Vector2) -> void:
+	if off.length() < 0.5:                                        # 사선을 끈 상태 — 예전처럼 납작하게
+		for part in parts:
+			draw_colored_polygon(part["pts"], part["col"])
+		return
+
+	for part in parts:
+		var pts: PackedVector2Array = part["pts"]
+		var back := PackedVector2Array()
+		for p in pts:
+			back.append(p + off)
+		draw_colored_polygon(back, _dim(part["col"], FAR_MUL))
+
+	for part in parts:
+		var pts: PackedVector2Array = part["pts"]
+		var c: Vector2 = Vector2.ZERO
+		for p in pts:
+			c += p
+		c /= float(pts.size())
+		for i in range(pts.size()):
+			var a: Vector2 = pts[i]
+			var b: Vector2 = pts[(i + 1) % pts.size()]
+			var up := ((a + b) * 0.5 - c).y < 0.0                 # 이 변이 덩어리의 위쪽인가
+			var col: Color = _dim(part["col"], TOP_MUL if up else SIDE_MUL)
+			draw_colored_polygon(PackedVector2Array([a, b, b + off, a + off]), col)
+
+	for part in parts:
+		draw_colored_polygon(part["pts"], part["col"])
 
 
 ## Color × float 는 알파까지 깎는다 — 색만 어둡게 한다
 static func _dim(c: Color, mul: float) -> Color:
-	return Color(c.r * mul, c.g * mul, c.b * mul, c.a)
+	return Color(minf(c.r * mul, 1.0), minf(c.g * mul, 1.0), minf(c.b * mul, 1.0), c.a)
 
 
 # ── 디버그 (랩이 켠다) ────────────────────────────────────────────────────────
@@ -868,4 +1179,13 @@ func tune_text() -> String:
 	return "ride %.0f · stride %.2f · trigger %.0f · lift %.0f · step %.2fs · lead %.2f · tilt %.2f · bob %.0f · hold %.2fs · 동시 %d발" % [
 		tune["ride"], tune["stride"], tune["trigger"], tune["lift"],
 		tune["step_time"], tune["lead"], tune["tilt"], tune["bob"], tune["hold"], int(tune["legs_up"]),
+	]
+
+
+## 시점 수치 (사선 시점) — HUD·콘솔 출력용
+func view_text() -> String:
+	if not oblique():
+		return "시점 측면 (사선 끔)"
+	return "시점 사선 — 깊이 x %.0f · y %.0f · 원근 %.2f · 두께 %.2f" % [
+		view["dx"], view["dy"], view["shrink"], view["thick"],
 	]
