@@ -8,6 +8,7 @@ const TEST_SCENE := "res://scenes/Main.tscn"
 const MAP_VIEWER_SCENE := "res://scenes/MapViewer.tscn"
 const DIALOGUE_LAB_SCENE := "res://scenes/DialogueLab.tscn"
 const SHADOW_LAB_SCENE := "res://scenes/ShadowLab.tscn"
+const WALKER_LAB_SCENE := "res://scenes/WalkerLab.tscn"
 
 ## 디자인 캔버스 = 창 기본 크기 = 스트레치 기준 (project.godot display/window/size 와 반드시 같은 값).
 ## HUD·CRT 오버레이·말풍선 등 창 좌표를 쓰는 모든 곳이 여기를 본다.
@@ -102,6 +103,13 @@ static func start_shadow_lab(tree: SceneTree) -> void:
 	lab_mode = false
 	amb_lab = false
 	tree.change_scene_to_file(SHADOW_LAB_SCENE)
+
+
+## 사족보행 랩: 기복 있는 그레이박스 지면 위에서 절차적 보행(ProcWalker)을 직접 끌고 다녀 본다 (scripts/walker_lab.gd)
+static func start_walker_lab(tree: SceneTree) -> void:
+	lab_mode = false
+	amb_lab = false
+	tree.change_scene_to_file(WALKER_LAB_SCENE)
 
 
 ## 맵 뷰어: 방을 게임 없이 조립해 자유 카메라로 본다 ([ ] 로 방 전환)

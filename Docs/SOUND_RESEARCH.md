@@ -78,6 +78,9 @@
 
 ## 2. 음악 (BGM)
 
+> 폐쇄 기지 SF 호러 방향의 후보 비교, 곡별 오디션, 첫 25분 배치와 동적 상태 설계는
+> [`BGM_RESEARCH.md`](BGM_RESEARCH.md)를 기준으로 한다. 아래 표는 범용 무료 음악 소스 목록으로 유지한다.
+
 | 소스 | 라이선스 | 특징 | 링크 |
 |---|---|---|---|
 | **Abstraction — Three Red Hearts** | 저작권 포기(CC0 상당) | 24개 심리스 루프. 크레딧 불필요(권장: "Abstraction"). **NFT/AI 학습/무수정 재판매는 작가가 비권장** | https://tallbeard.itch.io/three-red-hearts-prepare-to-dev |

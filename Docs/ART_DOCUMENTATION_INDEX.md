@@ -9,6 +9,7 @@
 1. [`ART_GUIDE.md`](ART_GUIDE.md) **§0 승인 원화 보존**을 먼저 읽는다. 자연어 요청 → 기존 그림체로 원화 생성 → 사용자 승인 → 보존형 Aseprite 픽셀화 순서를 따른다. Native4는 현행 호환 프로파일이며 보존 손실이 크면 규격을 재검토한다.
 2. 대상이 인물·특수 몬스터·센트리면 아래의 자산별 전문 문서를 추가로 확인한다.
    프랍이면 [`PROP_STYLE_REVIEW.md`](PROP_STYLE_REVIEW.md)의 기존 런타임 분석·실패 반례를 읽되, 과거 재설계 시험을 승인된 전환 방식으로 쓰지 않는다.
+   애니메이션을 만들거나 수정할 때는 [`PIXEL_ANIMATION_GUIDE.md`](PIXEL_ANIMATION_GUIDE.md)에서 동작별 프레임 수·표시 속도와 현재 구현 차이를 확인한다.
 3. [`ASEPRITE_PIPELINE.md`](ASEPRITE_PIPELINE.md)의 **현재 실행 경로**에서 자산별 설정과 재현 명령을 확인한다. `crisp-final-r1`의 원본색·경계 보존을 기본으로 하되, 의료실은 원본 기반 준비 단계 뒤 pixelPitch=2.0을 선택했다. 이는 전 자산의 강제값이나 게임 출력 배율이 아니다. 과거 평균 축소·대비 강화 명령을 신규 작업에 쓰지 않는다.
 4. [`RESOURCE_USAGE_GUIDE.md`](RESOURCE_USAGE_GUIDE.md)에서 피벗·레이어·방 조립 방식을 확인한다.
 5. 승인 원화/후보의 형태·색·재질·디테일 보존 비교를 먼저 한다. 이어 기존 게임 리소스와 현행 1×·화면 ×2·×3·×6 및 흑백/조립 비교를 한다. 새 프로파일은 별도 합의한 배율로 검수한다. 원화 승인·보존 결과 승인·규격 통과·런타임 승인을 구분하고 허용된 파일만 반입한다.
@@ -25,6 +26,7 @@
 | 프랍 검수·실패 사례 | [`PROP_STYLE_REVIEW.md`](PROP_STYLE_REVIEW.md) | 기존 프랍 분석, 이전 재설계·밀도·형태 시험과 한계 | 과거 절차는 최신 §0과 ASEPRITE_PIPELINE을 대체하지 않음 |
 | 조립·사용 | [`RESOURCE_USAGE_GUIDE.md`](RESOURCE_USAGE_GUIDE.md) | 타일 조립, 피벗, 레이어, 기존 자산 배치 | 신규 제작 수치는 ART_GUIDE에 위임 |
 | 분야별 규격 | [`CHARACTER_ART_GUIDE.md`](CHARACTER_ART_GUIDE.md) | 인물 비율, 얼굴, 복장, 애니메이션 | 인물에 한해 공통 규칙을 구체화 |
+| 분야별 규격·감사 | [`PIXEL_ANIMATION_GUIDE.md`](PIXEL_ANIMATION_GUIDE.md) | 동작별 프레임 수·표시 속도 기준과 현재 런타임 일치도 | 프레임 타이밍 판단은 이 문서, 인물 형태·픽셀 규격은 CHARACTER_ART_GUIDE에 위임 |
 | 자산별 규격 | [`TOXIC_TUMOR_CRAWLER_ANATOMY.md`](TOXIC_TUMOR_CRAWLER_ANATOMY.md) | 크롤러 해부 구조와 벽 이동 프레임 잠금값 | 해당 몬스터에만 적용 |
 | 자산별 규격 | [`SENTRY_TURRET_HEAD_STRUCTURE.md`](SENTRY_TURRET_HEAD_STRUCTURE.md) | 센트리 헤드 구조, 축, 회전·받침 관계 | 해당 센트리에만 적용 |
 | 제작 요청 기록 | [`SENTRY_HEAD_ANGLE_FAN_REQUEST.md`](SENTRY_HEAD_ANGLE_FAN_REQUEST.md) | 특정 센트리 각도 리소스의 납품 명세와 검사값 | 해당 요청에 명시된 캔버스·축만 예외 |

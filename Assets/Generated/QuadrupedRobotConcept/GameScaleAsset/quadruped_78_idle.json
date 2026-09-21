@@ -1,0 +1,38 @@
+{
+  "id": "quadruped_78_idle_candidate",
+  "status": "generated_candidate_pending_visual_and_runtime_approval",
+  "style": "chunky_pixel_art_native4",
+  "forward": "left",
+  "source": {
+    "file": "quadruped_78_source_cutout.png",
+    "sha256": "71630E8F49FDF4DD81137067518ACD5C71CF94EF0BFC91248DFB558808AAE5B0",
+    "note": "Built-in image generation transparent cutout; preservation source only, not a runtime sprite."
+  },
+  "native": {
+    "file": "quadruped_78_idle_native.png",
+    "size": [72, 52],
+    "opaque_bounds": [1, 2, 69, 47],
+    "pivot": [36, 52],
+    "alpha": "binary_0_or_255",
+    "sha256": "F1AB02BCFCB6D20E2752A5BF3C3287076CDF5FF2473CC64A707B0A362C5B9975"
+  },
+  "world": {
+    "file": "quadruped_78_idle_4x.png",
+    "size": [288, 208],
+    "opaque_bounds": [4, 8, 276, 188],
+    "pivot": [144, 208],
+    "nearest_scale": 4,
+    "sha256": "B3D9DEA8A402C7FEAE9E4851B30ADE0FC8552EC445B8A21D6AF46036438C4B22"
+  },
+  "verification": {
+    "nearest_4x_mismatch_pixels": 0,
+    "native_alpha_values": [0, 255],
+    "world_alpha_values": [0, 255]
+  },
+  "integration": {
+    "runtime_imported": false,
+    "collision_defined": false,
+    "animation_defined": false,
+    "aseprite_cleanup_complete": false
+  }
+}

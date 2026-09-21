@@ -5,6 +5,7 @@ extends Control
 ##   [센트리건]    가장 큰 방(격납고)의 센트리건 옆에서 바로 시작 — 전개·조종·과열 사격 확인
 ##   [맵 뷰어]     방을 게임 없이 조립해 자유 카메라로 본다. [ ] 로 방 전환 (scenes/MapViewer.tscn)
 ##   [대화 UI 랩]  대사 표시 방식 5종을 실제 화면에서 1~5 로 바꿔 가며 비교한다 (scenes/DialogueLab.tscn)
+##   [사족보행 랩] 절차적 사족보행 로봇을 기복 있는 지면 위에서 직접 끌고 다니며 본다 (scenes/WalkerLab.tscn)
 ##   [CRT 모니터]  전역 CRT 후처리 프리셋 드롭다운 (scripts/crt_preset.gd · autoload CrtFx). 게임 안에서는 F4 / Shift+F4
 ##   [종료]
 ## 게임·뷰어 안에서는 F1 로 이 로비로 돌아온다.
@@ -82,6 +83,10 @@ func _ready() -> void:
 	var shadow := _button("☀   조명·그림자 랩 — 마우스가 광원", "그레이박스 상자·공·기둥 위에서 마우스 포인터가 곧 광원이 된다. 빛과 물체의 각도로 그림자가 어떻게 만들어지는지 보면서 그 자리에서 수치를 고친다. H 기하 디버그 · F6·F8 프리셋 · F1 로비")
 	shadow.pressed.connect(func(): AppFlow.start_shadow_lab(get_tree()))
 	box.add_child(shadow)
+
+	var walker := _button("⮟   사족보행 랩 — 다리가 스스로 자리를 잡는다", "기복 있는 그레이박스 지면 위에서 절차적 보행(ProcWalker) 을 직접 끌고 다니며 본다. 마우스 조준 · 좌클릭 사격 · ←→ 걷기 · 우클릭 드래그로 몸체 잡아끌기 · 1·2·3 걸음새 · H 디버그 · F1 로비")
+	walker.pressed.connect(func(): AppFlow.start_walker_lab(get_tree()))
+	box.add_child(walker)
 
 	box.add_child(_spacer(6))
 	box.add_child(_crt_row())
