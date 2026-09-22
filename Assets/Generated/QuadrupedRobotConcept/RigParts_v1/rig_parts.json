@@ -1,0 +1,598 @@
+{
+  "view": "strict left-facing side view",
+  "alpha": {
+    "mode": "binary",
+    "threshold": 240
+  },
+  "body": {
+    "name": "body_main",
+    "file": "body_main.png",
+    "size": [
+      1405,
+      872
+    ],
+    "suggested_root_pivot_px": [
+      702,
+      436
+    ],
+    "source_crop_bounds": [
+      79,
+      62,
+      1484,
+      934
+    ]
+  },
+  "layer_order_back_to_front": [
+    "front_far",
+    "rear_far",
+    "body_main",
+    "rear_near",
+    "front_near",
+    "joint_caps"
+  ],
+  "legs": [
+    {
+      "name": "front_near_upper",
+      "file": "front_near_upper.png",
+      "size": [
+        285,
+        318
+      ],
+      "suggested_root_pivot_px": [
+        142,
+        32
+      ],
+      "source_cell": [
+        0,
+        0
+      ],
+      "source_bounds": [
+        0,
+        0,
+        362,
+        362
+      ],
+      "cell_crop_bounds": [
+        59,
+        29,
+        344,
+        347
+      ]
+    },
+    {
+      "name": "front_near_lower",
+      "file": "front_near_lower.png",
+      "size": [
+        224,
+        290
+      ],
+      "suggested_root_pivot_px": [
+        112,
+        30
+      ],
+      "source_cell": [
+        1,
+        0
+      ],
+      "source_bounds": [
+        362,
+        0,
+        724,
+        362
+      ],
+      "cell_crop_bounds": [
+        95,
+        60,
+        319,
+        350
+      ]
+    },
+    {
+      "name": "front_near_foot",
+      "file": "front_near_foot.png",
+      "size": [
+        166,
+        277
+      ],
+      "suggested_root_pivot_px": [
+        83,
+        29
+      ],
+      "source_cell": [
+        2,
+        0
+      ],
+      "source_bounds": [
+        724,
+        0,
+        1086,
+        362
+      ],
+      "cell_crop_bounds": [
+        89,
+        83,
+        255,
+        360
+      ]
+    },
+    {
+      "name": "rear_near_upper",
+      "file": "rear_near_upper.png",
+      "size": [
+        303,
+        322
+      ],
+      "suggested_root_pivot_px": [
+        153,
+        32
+      ],
+      "source_cell": [
+        0,
+        1
+      ],
+      "source_bounds": [
+        0,
+        362,
+        362,
+        724
+      ],
+      "cell_crop_bounds": [
+        59,
+        18,
+        362,
+        340
+      ]
+    },
+    {
+      "name": "rear_near_lower",
+      "file": "rear_near_lower.png",
+      "size": [
+        237,
+        298
+      ],
+      "suggested_root_pivot_px": [
+        118,
+        31
+      ],
+      "source_cell": [
+        1,
+        1
+      ],
+      "source_bounds": [
+        362,
+        362,
+        724,
+        724
+      ],
+      "cell_crop_bounds": [
+        82,
+        38,
+        319,
+        336
+      ]
+    },
+    {
+      "name": "rear_near_foot",
+      "file": "rear_near_foot.png",
+      "size": [
+        163,
+        285
+      ],
+      "suggested_root_pivot_px": [
+        81,
+        30
+      ],
+      "source_cell": [
+        2,
+        1
+      ],
+      "source_bounds": [
+        724,
+        362,
+        1086,
+        724
+      ],
+      "cell_crop_bounds": [
+        103,
+        70,
+        266,
+        355
+      ]
+    },
+    {
+      "name": "front_far_upper",
+      "file": "front_far_upper.png",
+      "size": [
+        285,
+        357
+      ],
+      "suggested_root_pivot_px": [
+        142,
+        36
+      ],
+      "source_cell": [
+        0,
+        2
+      ],
+      "source_bounds": [
+        0,
+        724,
+        362,
+        1086
+      ],
+      "cell_crop_bounds": [
+        59,
+        5,
+        344,
+        362
+      ]
+    },
+    {
+      "name": "front_far_lower",
+      "file": "front_far_lower.png",
+      "size": [
+        234,
+        296
+      ],
+      "suggested_root_pivot_px": [
+        117,
+        30
+      ],
+      "source_cell": [
+        1,
+        2
+      ],
+      "source_bounds": [
+        362,
+        724,
+        724,
+        1086
+      ],
+      "cell_crop_bounds": [
+        86,
+        21,
+        320,
+        317
+      ]
+    },
+    {
+      "name": "front_far_foot",
+      "file": "front_far_foot.png",
+      "size": [
+        161,
+        280
+      ],
+      "suggested_root_pivot_px": [
+        80,
+        29
+      ],
+      "source_cell": [
+        2,
+        2
+      ],
+      "source_bounds": [
+        724,
+        724,
+        1086,
+        1086
+      ],
+      "cell_crop_bounds": [
+        108,
+        50,
+        269,
+        330
+      ]
+    },
+    {
+      "name": "rear_far_upper",
+      "file": "rear_far_upper.png",
+      "size": [
+        303,
+        306
+      ],
+      "suggested_root_pivot_px": [
+        155,
+        24
+      ],
+      "source_cell": [
+        0,
+        3
+      ],
+      "source_bounds": [
+        0,
+        1086,
+        362,
+        1448
+      ],
+      "cell_crop_bounds": [
+        59,
+        0,
+        362,
+        306
+      ]
+    },
+    {
+      "name": "rear_far_lower",
+      "file": "rear_far_lower.png",
+      "size": [
+        319,
+        300
+      ],
+      "suggested_root_pivot_px": [
+        155,
+        30
+      ],
+      "source_cell": [
+        1,
+        3
+      ],
+      "source_bounds": [
+        362,
+        1086,
+        724,
+        1448
+      ],
+      "cell_crop_bounds": [
+        0,
+        0,
+        319,
+        300
+      ]
+    },
+    {
+      "name": "rear_far_foot",
+      "file": "rear_far_foot.png",
+      "size": [
+        175,
+        290
+      ],
+      "suggested_root_pivot_px": [
+        87,
+        30
+      ],
+      "source_cell": [
+        2,
+        3
+      ],
+      "source_bounds": [
+        724,
+        1086,
+        1086,
+        1448
+      ],
+      "cell_crop_bounds": [
+        110,
+        29,
+        285,
+        319
+      ]
+    }
+  ],
+  "joint_caps": [
+    {
+      "name": "front_near_hip_cap",
+      "file": "front_near_hip_cap.png",
+      "size": [
+        408,
+        361
+      ],
+      "suggested_root_pivot_px": [
+        204,
+        180
+      ],
+      "source_cell": [
+        0,
+        0
+      ],
+      "source_bounds": [
+        0,
+        0,
+        444,
+        444
+      ],
+      "cell_crop_bounds": [
+        28,
+        83,
+        436,
+        444
+      ]
+    },
+    {
+      "name": "rear_near_hip_cap",
+      "file": "rear_near_hip_cap.png",
+      "size": [
+        405,
+        361
+      ],
+      "suggested_root_pivot_px": [
+        202,
+        180
+      ],
+      "source_cell": [
+        1,
+        0
+      ],
+      "source_bounds": [
+        444,
+        0,
+        887,
+        444
+      ],
+      "cell_crop_bounds": [
+        20,
+        83,
+        425,
+        444
+      ]
+    },
+    {
+      "name": "front_far_hip_cap",
+      "file": "front_far_hip_cap.png",
+      "size": [
+        402,
+        361
+      ],
+      "suggested_root_pivot_px": [
+        201,
+        180
+      ],
+      "source_cell": [
+        2,
+        0
+      ],
+      "source_bounds": [
+        887,
+        0,
+        1330,
+        444
+      ],
+      "cell_crop_bounds": [
+        19,
+        83,
+        421,
+        444
+      ]
+    },
+    {
+      "name": "rear_far_hip_cap",
+      "file": "rear_far_hip_cap.png",
+      "size": [
+        405,
+        361
+      ],
+      "suggested_root_pivot_px": [
+        202,
+        180
+      ],
+      "source_cell": [
+        3,
+        0
+      ],
+      "source_bounds": [
+        1330,
+        0,
+        1774,
+        444
+      ],
+      "cell_crop_bounds": [
+        11,
+        83,
+        416,
+        444
+      ]
+    },
+    {
+      "name": "front_near_knee_cap",
+      "file": "front_near_knee_cap.png",
+      "size": [
+        306,
+        366
+      ],
+      "suggested_root_pivot_px": [
+        153,
+        183
+      ],
+      "source_cell": [
+        0,
+        1
+      ],
+      "source_bounds": [
+        0,
+        444,
+        444,
+        887
+      ],
+      "cell_crop_bounds": [
+        76,
+        0,
+        382,
+        366
+      ]
+    },
+    {
+      "name": "rear_near_knee_cap",
+      "file": "rear_near_knee_cap.png",
+      "size": [
+        305,
+        366
+      ],
+      "suggested_root_pivot_px": [
+        152,
+        183
+      ],
+      "source_cell": [
+        1,
+        1
+      ],
+      "source_bounds": [
+        444,
+        444,
+        887,
+        887
+      ],
+      "cell_crop_bounds": [
+        71,
+        0,
+        376,
+        366
+      ]
+    },
+    {
+      "name": "front_far_knee_cap",
+      "file": "front_far_knee_cap.png",
+      "size": [
+        306,
+        367
+      ],
+      "suggested_root_pivot_px": [
+        153,
+        183
+      ],
+      "source_cell": [
+        2,
+        1
+      ],
+      "source_bounds": [
+        887,
+        444,
+        1330,
+        887
+      ],
+      "cell_crop_bounds": [
+        66,
+        0,
+        372,
+        367
+      ]
+    },
+    {
+      "name": "rear_far_knee_cap",
+      "file": "rear_far_knee_cap.png",
+      "size": [
+        306,
+        366
+      ],
+      "suggested_root_pivot_px": [
+        153,
+        183
+      ],
+      "source_cell": [
+        3,
+        1
+      ],
+      "source_bounds": [
+        1330,
+        444,
+        1774,
+        887
+      ],
+      "cell_crop_bounds": [
+        63,
+        0,
+        369,
+        366
+      ]
+    }
+  ],
+  "rig_note": "Place each segment pivot on its parent joint center; overlap circular pads beneath the matching cap to hide rotation seams."
+}

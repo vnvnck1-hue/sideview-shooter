@@ -21,9 +21,17 @@ extends Node2D
 ##       정의는 audio_manager.SOUNDS 의 crawler_* 네 항목. 원본은 CC0(Docs/CREDITS.md).
 ## 쫀득함: 발을 축으로 한 스케일 스프링(_squash). 걷기 바운스·점프 웅크림/늘어남/착지 눌림·공격 예비동작을 모두 여기로 표현한다.
 
+## 거대종(Giant): 같은 크롤러를 5배로 키운 변종. make_giant() 를 setup() **앞에** 부르면 된다.
+##       크기·체력·이동속도·사거리·점프가 모두 한 배율(size)을 타고, 공격은 전용 두 가지로 **갈아 끼운다** —
+##       멀면 독액 부채꼴 산탄(SPRAY), 가까우면 몸을 세웠다 내리꽂는 내려찍기(SLAM). 벽·천장은 타지 않는다.
+##       자세한 설계 의도는 아래 "거대종" 상수 블록 주석에 있다.
+
 signal died(pos: Vector2)
 signal spat(glob: Node2D)
-signal roared(pos: Vector2)
+## power: 덩치 배율 (일반 1.0 · 거대종 GIANT_SIZE). Main 이 카메라 흔들림 크기·사거리에 쓴다.
+signal roared(pos: Vector2, power: float)
+## 거대종의 내려찍기가 바닥에 닿았다 — Main 이 카메라를 크게 울린다
+signal slammed(pos: Vector2)
 
 const DIR := "res://assets/character/ToxicTumorCrawler/"
 const SCALE := 0.4                    # 원본(543×756 셀)의 40% — 60% 축소. 플레이어 무릎 높이 정도
@@ -118,7 +126,63 @@ const WALK_BOB := Vector2(0.05, 0.08)         # 걷기 바운스 진폭 (x 줄�
 const CHUNK_CELL := 90.0              # 죽음 육편 조각 크기 (텍스처 px)
 const CHUNK_COUNT := 9
 
-enum State { IDLE, WALK, JUMP, ATTACK, ROAR, WALL_JUMP, WALL, CORNER, FALL, DEAD }
+# ─── 거대종 (Giant) ──────────────────────────────────────────────────────────
+# 크기만 5배로 키우면 "큰 크롤러"일 뿐이다. 덩치가 데려오는 것들을 함께 바꿔야 다른 적이 된다.
+#   느리다   — 세계 기준 속도를 GIANT_SPEED 로 깎는다. 5배 몸이 같은 속도로 오면 미끄러지듯 순간이동한다.
+#   질기다   — GIANT_HP. 소총 한 탄창(MAG_SIZE)으로는 못 잡는다. 물러나며 쏘는 싸움이 된다.
+#   무겁다   — 넉백·멈칫을 덩치로 나눈다. 맞아도 거의 밀리지 않아, 계속 다가온다는 압박이 남는다.
+#   못 탄다  — 벽·천장에 붙지 않고 돌진 점프도 하지 않는다. 저 몸이 천장에 매달리면 우스워지고,
+#             무엇보다 "피할 수 없는 바닥의 벽"이라는 인상이 이 적의 전부다.
+#   다르게 친다 — 일반 크롤러의 단발 뱉기를 **쓰지 않는다**. 멀면 부채꼴 산탄(SPRAY),
+#             가까우면 내려찍기(SLAM). 전자는 서 있던 자리를 지우고, 후자는 붙어 있던 것을 벌한다.
+const GIANT_SIZE := 5.0               # 그림·히트박스·사거리·점프·먼지가 모두 이 배율을 탄다
+const GIANT_HP := 30                  # MAX_HP(3) × 10 — 덩치(5배)보다 더 질기게
+const GIANT_SPEED := 0.32             # WALK_SPEED 대비 (270 → 86px/s. 플레이어 걷기 380 의 1/4)
+const GIANT_ANIM_SPEED := 0.5         # 전진할 때 걷기 애니가 도는 배속.
+                                      # 보폭이 5배라 발을 물리적으로 맞추면 초당 한 프레임도 못 넘긴다 —
+                                      # 발 미끄러짐을 받아들이고 "무겁게 보이는" 쪽을 택한 값이다.
+const GIANT_COOLDOWN := Vector2(2.6, 4.2)       # 공격 간격 (일반 1.5~2.6 보다 느릿하게)
+const GIANT_ROAR_INTERVAL := Vector2(5.0, 9.0)  # 대신 더 자주 운다 — 거대종은 존재 자체가 연출이다
+const GIANT_VOICE_PITCH := 0.62       # 목소리 배율. 같은 샘플을 이만큼 끌어내려 몸집을 만든다
+## 사거리는 **덩치를 따라가지 않는다.** AcidGlob 은 FLIGHT_TIME(0.55초) 안에 닿도록 속도를 잡고
+## MAX_SPEED(1500)에서 자르므로, 대략 800px 넘게는 애초에 날아가지 않는다. 사거리만 5배로 키우면
+## 방 건너편에서 허공에 대고 뱉는 그림이 된다. 입이 높아진 만큼만(720 → 1100) 늘린다.
+const GIANT_ATTACK_MAX := 1100.0
+const GIANT_CHUNK_COUNT := 16         # 죽을 때 뜯겨 나가는 육편 수
+
+## 거대종의 실제 부피 (월드 px) — crawler_meta.json 의 클립별 최대 내용 영역 × (SCALE × GIANT_SIZE).
+## **이 몸은 이 게임의 방보다 크다.** 방은 열마다 천장이 다른 계단형이라 "이 방" 이 아니라
+## "이 자리" 가 문제이고, 그래서 Room 이 배치·스폰마다 설 수 있는 구간을 뽑아 그 안에 가둔다
+## (Room._giant_spans · tools/validate_giant.gd 가 같은 규칙으로 다시 잰다).
+##
+## 높이 조건을 자세별로 나눈 이유: 가장 높은 자세는 내려찍기(jump 클립, 886px)인데 그건 **가끔**이고,
+## 평소 자세인 걷기(614)·포효(768)는 훨씬 낮다. 한 값으로 묶으면 걸어 다니기만 해도 되는 자리까지
+## 전부 막혀 거대종이 설 방이 station 전체에 네 곳밖에 남지 않는다.
+const GIANT_HALF_W := 525.0           # 몸 절반 폭 — 벽에서 이만큼은 떨어져야 벽을 파고든다
+const GIANT_CLEARANCE := 790.0        # 걷기·포효가 들어가는 높이 (포효 768 + 여유). 여기 설 수 있나
+const GIANT_SLAM_CLEARANCE := 900.0   # 내려찍기 자세가 들어가는 높이 (886 + 여유). 없으면 산탄으로 바꾼다
+
+## 산탄 (SPRAY) — 입을 벌려 독액 덩어리를 부채꼴로 흩뿌린다. 한 발은 비켜서면 그만이지만
+## 부채꼴은 **서 있던 자리**를 지워서, 플레이어를 옆으로 움직이게 만든다.
+const SPRAY_COUNT := 5
+const SPRAY_ARC := 0.30               # 가장자리 탄이 조준선에서 틀어지는 각 (rad)
+const SPRAY_GAP := 0.07               # 발 사이 간격 (초) — 동시에 나가면 한 덩어리로 보인다
+const SPRAY_GLOB_SIZE := 1.7          # 덩어리 크기 배율
+
+## 내려찍기 (SLAM) — 몸을 세웠다가 앞으로 내리꽂아 바닥을 때린다.
+## 세우는 구간(SLAM_REAR)이 길고 내리꽂는 구간(SLAM_DROP)이 짧아야 "쿵" 이 된다.
+## 찍고 난 뒤 SLAM_RECOVER 동안 굳는다 — 이 틈이 플레이어의 반격 구간이다.
+const SLAM_RANGE := 620.0             # 이 안이면 뱉기 대신 내려찍는다 (월드 px)
+const SLAM_REAR := 0.42
+const SLAM_RISE := 220.0              # 세울 때 뜨는 높이 (월드 px)
+const SLAM_DROP := 0.13
+const SLAM_LUNGE := 150.0             # 내리꽂으며 앞으로 나가는 거리 (월드 px)
+const SLAM_RECOVER := 0.5
+const SLAM_SHOCK_RANGE := 520.0       # 충격파가 플레이어를 걷어차는 거리 (구르기로 피한다)
+const SLAM_REAR_SQUASH := Vector2(0.86, 1.26)   # 세울 때 위로 늘어남
+const SLAM_HIT_SQUASH := Vector2(1.45, 0.62)    # 찍는 순간 납작하게
+
+enum State { IDLE, WALK, JUMP, ATTACK, SPRAY, SLAM, ROAR, WALL_JUMP, WALL, CORNER, FALL, DEAD }
 enum Surface { FLOOR, WALL, CEILING }       # 지금 어느 면에 붙어 있나 (WALL 은 _wall_side 쪽 수직면)
 
 var room: Node2D                      # Room — player·바닥·경계 참조
@@ -128,6 +192,22 @@ var max_x := 10000.0
 var facing := 1
 var hp := MAX_HP
 var state: State = State.IDLE
+
+## ─── 크기 프로필 ───
+## 같은 스크립트가 일반종과 거대종을 모두 굴린다 (GDScript 는 const 를 상속으로 덮을 수 없어
+## 서브클래스를 만들면 이 파일이 통째로 복제된다). 크기에 따라 달라지는 값만 여기 변수로 빼 두고,
+## 나머지 상수는 size 를 곱해 쓴다. make_giant() 가 이 묶음을 한 번에 갈아 끼운다.
+var is_giant := false
+var size := 1.0                       # 세계 길이 배율 — 사거리·점프·먼지·넉백 저항이 이 값을 탄다
+var art_scale := SCALE                # 스프라이트 배율 (= SCALE × size)
+var max_hp := MAX_HP
+var walk_speed := WALK_SPEED
+var walk_anim_speed := WALK_ANIM_SPEED
+var attack_max := ATTACK_MAX          # 공격을 걸기 시작하는 거리 (월드 px)
+var attack_cooldown := ATTACK_COOLDOWN
+var roar_interval := ROAR_INTERVAL
+var chunk_count := CHUNK_COUNT
+var voice_pitch := 1.0                # 울음·피격·죽음 소리의 음정 배율
 
 var _meta := {}
 var _cell := Vector2(543, 756)
@@ -157,6 +237,15 @@ var _jump_t := 0.0
 var _jump_from := Vector2.ZERO
 var _jump_dx := 0.0
 var _jump_phase := 0                  # 0 웅크림 · 1 공중 · 2 착지
+
+var _spray_left := 0                  # 남은 산탄 수 (거대종)
+var _spray_i := 0                     # 부채꼴 순번 — 0 → SPRAY_COUNT-1 로 한쪽에서 반대쪽으로 훑는다
+var _spray_t := 0.0                   # 다음 한 발까지
+var _slam_phase := 0                  # 0 세움 · 1 내리꽂기 · 2 굳음
+var _slam_t := 0.0
+var _slam_from := Vector2.ZERO
+var _slam_dx := 0.0                   # 내리꽂으며 앞으로 나가는 거리 (경계로 잘린 값)
+var _slam_rise := SLAM_RISE           # 이번 내려찍기에서 실제로 세울 높이 (천장이 허락하는 만큼)
 var _air_y := 0.0                     # 공중에서 발이 바닥 위로 뜬 높이 (월드 px)
 # 벽·천장
 var _surface: Surface = Surface.FLOOR
@@ -180,6 +269,24 @@ var _bob_phase := 0.0                 # 걷기 바운스 위상
 var _bob := Vector2.ONE
 
 
+## 거대종으로 만든다 — **setup() 보다 먼저** 불러야 한다 (체력·타이머가 여기 값으로 잡힌다).
+## 크기 하나만 바꾸는 게 아니라 위 "거대종" 블록이 정한 프로필을 통째로 갈아 끼운다.
+func make_giant() -> void:
+	is_giant = true
+	size = GIANT_SIZE
+	art_scale = SCALE * GIANT_SIZE
+	max_hp = GIANT_HP
+	hp = GIANT_HP
+	walk_speed = WALK_SPEED * GIANT_SPEED
+	# 전진할 때 걷기 애니가 정확히 GIANT_ANIM_SPEED 배속으로 돌도록 역산한다
+	walk_anim_speed = walk_speed / GIANT_ANIM_SPEED
+	attack_max = GIANT_ATTACK_MAX
+	attack_cooldown = GIANT_COOLDOWN
+	roar_interval = GIANT_ROAR_INTERVAL
+	chunk_count = GIANT_CHUNK_COUNT
+	voice_pitch = GIANT_VOICE_PITCH
+
+
 func setup(room_node: Node2D, x: float, floor_line: float, left: float, right: float, face_dir := -1) -> void:
 	room = room_node
 	floor_y = floor_line
@@ -188,7 +295,7 @@ func setup(room_node: Node2D, x: float, floor_line: float, left: float, right: f
 	position = Vector2(clampf(x, min_x, max_x), floor_y)
 	facing = face_dir
 	_jump_timer = randf_range(JUMP_INTERVAL.x, JUMP_INTERVAL.y) * 0.6
-	_roar_timer = randf_range(ROAR_INTERVAL.x, ROAR_INTERVAL.y) * 0.5
+	_roar_timer = randf_range(roar_interval.x, roar_interval.y) * 0.5
 	_wall_timer = randf_range(WALL_INTERVAL.x, WALL_INTERVAL.y) * 0.5
 	_attack_cd = randf_range(0.8, 1.6)
 	# 개체마다 위상을 흩어 둔다. 같은 값으로 시작하면 한 방에 둘 이상 있을 때 동시에 울어
@@ -201,9 +308,11 @@ func _ready() -> void:
 	_sprite = AnimatedSprite2D.new()
 	_sprite.name = "Body"
 	_sprite.centered = false
-	_sprite.scale = Vector2(SCALE, SCALE)
+	_sprite.scale = Vector2(art_scale, art_scale)
 	_sprite.sprite_frames = _build_frames()
-	_mat = Lighting.character_material("prop_surface", SCALE)   # lit_surface + 피격 플래시 (파츠 마스크는 흰색 그대로) + 캐릭터 림 프리셋 (폭은 0.4 배 스케일 보정)
+	# lit_surface + 피격 플래시 (파츠 마스크는 흰색 그대로) + 캐릭터 림 프리셋.
+	# 림 폭은 스프라이트 배율로 보정된다 — 거대종은 그림이 커진 만큼 텍스처 기준 폭이 얇아져 화면 두께가 같다.
+	_mat = Lighting.character_material("prop_surface", art_scale)
 	_mat.set_shader_parameter("grid", Vector2(1, 1))
 	_sprite.material = _mat
 	_sprite.frame_changed.connect(_apply_frame_offset)
@@ -268,7 +377,7 @@ func _pose_facing() -> Vector2:
 
 ## 접지점 기준 셀 px 좌표(오른쪽을 보는 자세 기준)를 월드 좌표로 — 뒤집기·회전·배율을 모두 적용한다
 func _pose_point(local: Vector2) -> Vector2:
-	var p := Vector2(-local.x if _sprite.flip_h else local.x, local.y) * SCALE
+	var p := Vector2(-local.x if _sprite.flip_h else local.x, local.y) * art_scale
 	return position + p.rotated(_sprite.rotation)
 
 
@@ -279,13 +388,13 @@ func _bbox_cell() -> Rect2:
 
 ## 몸의 절반 길이 (머리-꼬리 축, 월드 px) — 천장에서 벽에 처박히지 않게 남길 여유
 func _body_half_len() -> float:
-	return _bbox_cell().size.x * SCALE * 0.5
+	return _bbox_cell().size.x * art_scale * 0.5
 
 
 ## 프레임마다 접지 줄이 달라서, 그 줄이 노드 원점(= 붙어 있는 면과 닿는 점)에 오도록 오프셋을 다시 잡는다
 func _apply_frame_offset() -> void:
 	var feet: float = _frame_feet.get(_frame_key(), _cell.y)
-	_sprite.offset = Vector2(-_cell.x * 0.5, -feet - _air_y / SCALE)
+	_sprite.offset = Vector2(-_cell.x * 0.5, -feet - _air_y / art_scale)
 
 
 ## 현재 프레임 내용 영역의 월드 히트 박스. 벽·천장에서는 스프라이트가 돌아가 있으므로 네 귀퉁이를 돌려 AABB 로 감싼다
@@ -295,10 +404,10 @@ func hit_rect() -> Rect2:
 		b.position.x = _cell.x - b.end.x
 	if _sprite.flip_v:
 		b.position.y = _cell.y - b.end.y
-	var lo := (_sprite.offset + b.position) * SCALE
-	var hi := lo + b.size * SCALE
+	var lo := (_sprite.offset + b.position) * art_scale
+	var hi := lo + b.size * art_scale
 	if is_zero_approx(_sprite.rotation):
-		return Rect2(position + lo, b.size * SCALE)
+		return Rect2(position + lo, b.size * art_scale)
 	var r := Rect2(position + lo.rotated(_sprite.rotation), Vector2.ZERO)
 	for c in [Vector2(hi.x, lo.y), Vector2(lo.x, hi.y), hi]:
 		r = r.expand(position + c.rotated(_sprite.rotation))
@@ -334,8 +443,8 @@ func spawn_in() -> void:
 
 func _spawn_burst() -> void:
 	var sb := _burst_node()
-	sb.burst(position, 10, Vector2(0, -1), 1.0, Vector2(100, 300), ACID_HOT, ACID_COLD,
-		Vector2(0.3, 0.6), 2000.0, 3.5, false)
+	sb.burst(position, int(10 * size), Vector2(0, -1), 1.0, Vector2(100, 300) * size, ACID_HOT, ACID_COLD,
+		Vector2(0.3, 0.6), 2000.0, 3.5 * size, false)
 
 
 ## 스케일 스프링 갱신 + 걷기 바운스 → 스프라이트 스케일 (발 밑이 축)
@@ -353,7 +462,7 @@ func _update_squash(delta: float) -> void:
 	else:
 		_bob_phase = 0.0
 	_bob = _bob.lerp(want_bob, minf(1.0, 14.0 * delta))
-	_sprite.scale = Vector2(SCALE, SCALE) * _squash * _bob
+	_sprite.scale = Vector2(art_scale, art_scale) * _squash * _bob
 
 
 ## 스케일 펀치: 즉시 그 배율로 튀고 스프링이 (1,1) 로 되돌린다
@@ -407,6 +516,10 @@ func _process(delta: float) -> void:
 			_attack_cd = maxf(_attack_cd - delta, 0.0)
 			if not _spat and _sprite.frame >= SPIT_FRAME:
 				_spit()
+		State.SPRAY:
+			_process_spray(delta)
+		State.SLAM:
+			_process_slam(delta)
 		State.ROAR:
 			_attack_cd = maxf(_attack_cd - delta, 0.0)
 			_process_roar(delta)
@@ -419,7 +532,7 @@ func _decide() -> void:
 		_enter_idle(randf_range(IDLE_TIME.x, IDLE_TIME.y))
 		return
 	var dx := absf(t.position.x - position.x)
-	if dx <= ATTACK_MAX and _attack_cd <= 0.0:
+	if dx <= attack_max and _attack_cd <= 0.0:
 		_start_attack()
 	else:
 		state = State.WALK
@@ -466,44 +579,48 @@ func _process_walk(delta: float) -> void:
 	var dx := t.position.x - position.x
 	var dist := absf(dx)
 	_vocalize(delta, dist)
-	# 사거리 안이고 쿨다운이 끝났으면 뱉는다
-	if dist <= ATTACK_MAX and _attack_cd <= 0.0:
+	# 사거리 안이고 쿨다운이 끝났으면 뱉는다 (거대종은 여기서 산탄·내려찍기로 갈린다)
+	if dist <= attack_max and _attack_cd <= 0.0:
 		_start_attack()
 		return
 	# 가끔 멈춰 서서 포효한다 (플레이어가 코앞이면 건너뛴다)
 	_roar_timer -= delta
 	if _roar_timer <= 0.0:
-		_roar_timer = randf_range(ROAR_INTERVAL.x, ROAR_INTERVAL.y)
-		if dist >= ROAR_MIN_DIST:
+		_roar_timer = randf_range(roar_interval.x, roar_interval.y)
+		if dist >= ROAR_MIN_DIST * size:
 			_start_roar()
 			return
-	# 가끔 옆 벽으로 뛰어올라 붙는다 (벽이 손 닿는 거리에 있을 때만)
-	_wall_timer -= delta
-	if _wall_timer <= 0.0:
-		_wall_timer = randf_range(WALL_INTERVAL.x, WALL_INTERVAL.y)
-		if _try_wall_jump():
-			return
-	# 가끔 점프로 성큼 다가간다
-	_jump_timer -= delta
-	if _jump_timer <= 0.0:
-		_jump_timer = randf_range(JUMP_INTERVAL.x, JUMP_INTERVAL.y)
-		if dist >= JUMP_MIN_DIST:
-			_start_jump(signf(dx) * clampf(dist - 120.0, JUMP_RANGE.x, JUMP_RANGE.y))
-			return
-	# 너무 가까우면 조금 물러나고, 아니면 다가간다 (플레이어 앞 ATTACK_MIN 거리에서 멈춘다)
+	# 벽 타기·돌진 점프는 일반종만 한다. 거대종에게는 **바닥에서 꾸준히 걸어온다**는 것이
+	# 위협의 전부라, 천장에 매달리거나 훌쩍 뛰어넘는 순간 그 인상이 깨진다.
+	if not is_giant:
+		# 가끔 옆 벽으로 뛰어올라 붙는다 (벽이 손 닿는 거리에 있을 때만)
+		_wall_timer -= delta
+		if _wall_timer <= 0.0:
+			_wall_timer = randf_range(WALL_INTERVAL.x, WALL_INTERVAL.y)
+			if _try_wall_jump():
+				return
+		# 가끔 점프로 성큼 다가간다
+		_jump_timer -= delta
+		if _jump_timer <= 0.0:
+			_jump_timer = randf_range(JUMP_INTERVAL.x, JUMP_INTERVAL.y)
+			if dist >= JUMP_MIN_DIST:
+				_start_jump(signf(dx) * clampf(dist - 120.0, JUMP_RANGE.x, JUMP_RANGE.y))
+				return
+	# 너무 가까우면 조금 물러나고, 아니면 다가간다 (플레이어 앞 _stand_off() 거리에서 멈춘다)
+	var stand_off := _stand_off()
 	var move_dir := 0.0
-	if dist > ATTACK_MIN + 40.0:
+	if dist > stand_off + 40.0 * size:
 		move_dir = signf(dx)
-	elif dist < ATTACK_MIN - 40.0:
+	elif dist < stand_off - 40.0 * size:
 		move_dir = -signf(dx)
 	if move_dir == 0.0:
 		_enter_idle(randf_range(IDLE_TIME.x, IDLE_TIME.y) * 0.6)
 		return
 	var forward := move_dir == signf(float(facing))
-	var v := WALK_SPEED * (1.0 if forward else 0.6)
+	var v := walk_speed * (1.0 if forward else 0.6)
 	position.x = clampf(position.x + move_dir * v * delta, min_x, max_x)
 	# 뒷걸음이면 역재생
-	_sprite.speed_scale = (v / WALK_ANIM_SPEED) * (1.0 if forward else -1.0)
+	_sprite.speed_scale = (v / walk_anim_speed) * (1.0 if forward else -1.0)
 
 
 ## 배회 중 이따금 내는 웅얼거림. 포효와 역할이 다르다 —
@@ -514,6 +631,13 @@ func _process_walk(delta: float) -> void:
 ##      또렷하면 "분위기"가 아니라 "소음"이다.
 ##   2) 아주 멀면(VOCAL_MAX_DIST) 아예 내지 않는다. 방 하나에 여럿 깔린 상황에서
 ##      전부 울면 크리처 소리가 앰비언스가 되어 버려 정작 가까운 놈이 안 들린다.
+## 플레이어 앞에서 멈춰 서는 거리 (월드 px).
+## 거대종은 내려찍기 사거리 **안쪽**에 선다 — 밖에 서면 영영 다가가지 않아 산탄만 쓰게 된다.
+## 덩치대로 ATTACK_MIN × 5(750px)를 쓰면 정확히 그렇게 된다(SLAM_RANGE 620 밖).
+func _stand_off() -> float:
+	return SLAM_RANGE * 0.65 if is_giant else ATTACK_MIN
+
+
 func _vocalize(delta: float, dist: float) -> void:
 	_vocal_t -= delta
 	if _vocal_t > 0.0:
@@ -522,16 +646,26 @@ func _vocalize(delta: float, dist: float) -> void:
 	if dist > VOCAL_MAX_DIST:
 		return
 	var far := clampf((dist - VOCAL_FAR_FADE) / (VOCAL_MAX_DIST - VOCAL_FAR_FADE), 0.0, 1.0)
-	Audio.play_at("crawler_idle", hit_center(), VOCAL_FAR_DB * far)
+	Audio.play_at("crawler_idle", hit_center(), VOCAL_FAR_DB * far, voice_pitch)
 
 
 func _start_attack() -> void:
+	# 거대종은 단발 뱉기를 쓰지 않는다 — 거리에 따라 산탄과 내려찍기로 갈린다.
+	# 멀면 서 있던 자리를 지우고(SPRAY), 가까우면 붙어 있던 것을 벌한다(SLAM).
+	if is_giant:
+		var gt := _target()
+		var gd: float = absf(gt.position.x - position.x) if gt else 1e9
+		if gd <= SLAM_RANGE and _slam_headroom() >= 0.0:
+			_start_slam()
+		else:
+			_start_spray()
+		return
 	state = State.ATTACK
 	_face_target()
 	# 뱉기 전 짧은 예고. 독액이 날아오기까지 SPIT_FRAME 만큼의 여유가 있는데, 그 사이를
 	# 그림만으로 알리면 화면 밖·시야 밖에서 날아오는 탄을 피할 방법이 없다. 소리가 그 예고다.
 	# 포효와 같은 샘플이되 -5dB — 같은 개체의 같은 목소리이면서 "포효는 아닌" 크기여야 한다.
-	Audio.play_at("crawler_aggro", hit_center(), -5.0)
+	Audio.play_at("crawler_aggro", hit_center(), -5.0, voice_pitch)
 	_punch(ATTACK_ANTICIPATION)
 	_spat = false
 	_sprite.speed_scale = 1.0
@@ -541,15 +675,151 @@ func _start_attack() -> void:
 
 func _spit() -> void:
 	_spat = true
-	_attack_cd = randf_range(ATTACK_COOLDOWN.x, ATTACK_COOLDOWN.y)
+	_attack_cd = randf_range(attack_cooldown.x, attack_cooldown.y)
 	var t := _target()
 	if t == null:
 		return
 	_punch(Vector2(1.12, 0.92))                 # 뱉는 반동
-	var mouth := position + Vector2(MOUTH_LOCAL.x * facing, MOUTH_LOCAL.y) * SCALE
+	var mouth := position + Vector2(MOUTH_LOCAL.x * facing, MOUTH_LOCAL.y) * art_scale
 	var glob := AcidGlob.new()
 	glob.setup(mouth, t, floor_y, room)
 	spat.emit(glob)
+
+
+# ─── 거대종 전용 공격 ────────────────────────────────────────────────────────
+
+## 산탄(SPRAY) — 입을 벌려 독액을 부채꼴로 흩뿌린다.
+## attack 클립을 그대로 쓰되 독액이 나가는 프레임(SPIT_FRAME)에서 **멈춰 세워**,
+## 입을 벌린 자세 그대로 SPRAY_GAP 간격으로 연사한다. 다 뱉으면 멈춘 자리에서 클립을 이어 입을 다문다.
+func _start_spray() -> void:
+	state = State.SPRAY
+	_face_target()
+	Audio.play_at("crawler_aggro", hit_center(), -3.0, voice_pitch)
+	_punch(ATTACK_ANTICIPATION)
+	_attack_cd = randf_range(attack_cooldown.x, attack_cooldown.y)
+	_spray_left = SPRAY_COUNT
+	_spray_i = 0
+	_spray_t = 0.0
+	_sprite.speed_scale = 1.0
+	_sprite.play("attack")
+	_apply_frame_offset()
+
+
+func _process_spray(delta: float) -> void:
+	_attack_cd = maxf(_attack_cd - delta, 0.0)
+	if _spray_left <= 0:
+		return                                   # 다 뱉었다 — 클립이 끝나기를 기다린다
+	if _sprite.frame < SPIT_FRAME:
+		return
+	if _sprite.is_playing():
+		_sprite.pause()                          # 입을 가장 크게 벌린 자세에서 붙잡아 둔다
+	_spray_t -= delta
+	if _spray_t > 0.0:
+		return
+	_spray_t = SPRAY_GAP
+	_spit_fan(_spray_i)
+	_spray_i += 1
+	_spray_left -= 1
+	if _spray_left <= 0:
+		_sprite.play("attack")                   # 멈춘 자리에서 이어서 — 입을 다물며 끝난다
+
+
+## 부채꼴 한 발. i 번째 탄은 조준선에서 -SPRAY_ARC → +SPRAY_ARC 로 훑어 나간다.
+func _spit_fan(i: int) -> void:
+	var t := _target()
+	if t == null:
+		_spray_left = 0
+		return
+	_punch(Vector2(1.10, 0.93))                  # 뱉을 때마다 반동
+	var k := (float(i) / maxf(1.0, float(SPRAY_COUNT - 1))) * 2.0 - 1.0
+	var mouth := position + Vector2(MOUTH_LOCAL.x * facing, MOUTH_LOCAL.y) * art_scale
+	var glob := AcidGlob.new()
+	glob.setup(mouth, t, floor_y, room, k * SPRAY_ARC, SPRAY_GLOB_SIZE)
+	spat.emit(glob)
+
+
+## 내려찍기(SLAM) — 몸을 세워 버텼다가 앞으로 내리꽂아 바닥을 때린다.
+## 전용 그림 없이 jump 클립의 네 자세(웅크림·도약·공중·착지)를 빌려 쓴다.
+## 세우는 구간이 길고(SLAM_REAR) 내리꽂는 구간이 짧아야(SLAM_DROP) "쿵" 으로 읽힌다.
+func _start_slam() -> void:
+	state = State.SLAM
+	_face_target()
+	_slam_phase = 0
+	_slam_t = 0.0
+	_slam_from = position
+	_slam_dx = clampf(float(facing) * SLAM_LUNGE, min_x - position.x, max_x - position.x)
+	# 세울 높이는 머리 위 천장이 허락하는 만큼만. 서 있는 것만으로도 천장에 닿을락 말락 한 몸이라
+	# SLAM_RISE 를 그대로 쓰면 낮은 구역에서 천장을 뚫고 올라간다.
+	_slam_rise = clampf(_slam_headroom(), 0.0, SLAM_RISE)
+	_attack_cd = randf_range(attack_cooldown.x, attack_cooldown.y)
+	_sprite.speed_scale = 1.0
+	_sprite.play("jump")
+	_sprite.pause()
+	_sprite.frame = 0
+	_apply_frame_offset()
+	_punch(SLAM_REAR_SQUASH)
+	Audio.play_at("crawler_aggro", hit_center(), -1.0, voice_pitch)
+
+
+## 지금 자리에서 내려찍기 자세를 취하고도 남는 천장 여유 (월드 px).
+## 음수면 이 자리에서는 몸을 세울 수 없다 — 그럴 땐 아예 내려찍지 않고 산탄으로 간다.
+func _slam_headroom() -> float:
+	if room == null or not room.has_method("ceiling_at"):
+		return SLAM_RISE
+	return floor_y - float(room.ceiling_at(position.x)) - GIANT_SLAM_CLEARANCE
+
+
+func _process_slam(delta: float) -> void:
+	_slam_t += delta
+	match _slam_phase:
+		0:   # 몸을 세운다 — 천천히 올라가 버틴다. 이 구간이 플레이어에게 주는 유일한 예고다
+			var k := clampf(_slam_t / SLAM_REAR, 0.0, 1.0)
+			_air_y = _slam_rise * sin(k * PI * 0.5)
+			_sprite.frame = 1
+			_apply_frame_offset()
+			if k >= 1.0:
+				_slam_phase = 1
+				_slam_t = 0.0
+				_sprite.frame = 2
+				_apply_frame_offset()
+		1:   # 내리꽂기 — 앞으로 나가며 가속해 떨어진다
+			var kd := clampf(_slam_t / SLAM_DROP, 0.0, 1.0)
+			position.x = clampf(_slam_from.x + _slam_dx * kd, min_x, max_x)
+			_air_y = _slam_rise * (1.0 - kd * kd)
+			_apply_frame_offset()
+			if kd >= 1.0:
+				_air_y = 0.0
+				_slam_phase = 2
+				_slam_t = 0.0
+				_sprite.frame = 3
+				_apply_frame_offset()
+				_punch(SLAM_HIT_SQUASH)
+				_slam_impact()
+		2:   # 찍고 굳어 있는 구간 — 여기가 플레이어의 반격 틈이다
+			if _slam_t >= SLAM_RECOVER:
+				_enter_idle(randf_range(IDLE_TIME.x, IDLE_TIME.y))
+
+
+## 바닥을 때린 순간: 양옆으로 훑는 먼지 충격파 + 카메라(Main) + 가까이 서 있던 플레이어를 걷어찬다.
+func _slam_impact() -> void:
+	_land_dust()
+	var sb := _burst_node()
+	var dust := Color(0.58, 0.54, 0.5)
+	var dark := Color(0.30, 0.28, 0.26)
+	for side in [-1.0, 1.0]:
+		sb.burst(position + Vector2(side * 120.0 * size, 0.0), int(9 * size), Vector2(side, -0.45),
+			0.45, Vector2(340, 980), dust, dark, Vector2(0.45, 1.0), 1900.0, 5.0 * size, false)
+	# 울음 샘플을 가장 낮게 끌어내려 타격음으로 쓴다 — 전용 샘플이 없어 여기서만 이렇게 쓴다
+	Audio.play_at("crawler_death", position, -5.0, voice_pitch * 0.8)
+	slammed.emit(position)
+	# 바닥에 붙어 있던 것은 벌한다. 구르기 중이면 넘어간다 — 독액과 같은 회피 규칙이다.
+	var t := _target()
+	if t == null or room == null or not room.has_signal("player_hit"):
+		return
+	var rolling: bool = t.has_method("is_rolling") and t.is_rolling()
+	if rolling or absf(t.position.x - position.x) > SLAM_SHOCK_RANGE:
+		return
+	room.player_hit.emit(Vector2(t.position.x, floor_y - 60.0), signf(t.position.x - position.x))
 
 
 func _start_roar() -> void:
@@ -579,8 +849,8 @@ func _process_roar(delta: float) -> void:
 			_punch(ROAR_STRETCH)
 			# 소리는 포효 **시작**이 아니라 여기서 낸다 — roar_01·02 는 숨을 들이켜는 예비동작이고
 			# 입이 실제로 벌어지는 건 roar_03 이다. 시작에 걸면 입을 다문 채 소리가 나 어긋나 보인다.
-			Audio.play_at("crawler_aggro", hit_center())
-			roared.emit(position)
+			Audio.play_at("crawler_aggro", hit_center(), 0.0, voice_pitch)
+			roared.emit(position, size)
 	if _roar_hold > 0.0:
 		_roar_hold -= delta
 		# 몸 떨림: 스프링 목표는 그대로 두고 현재값만 살짝 흔든다
@@ -596,7 +866,7 @@ func _process_roar(delta: float) -> void:
 ## 입에서 침 방울. frame: 입 위치 기준 프레임, strength: 속도·크기 배율 (트리클은 약하게)
 func _spit_saliva(frame: int, count: int, strength: float) -> void:
 	var local: Vector2 = ROAR_MOUTH.get(frame, ROAR_MOUTH[ROAR_HOLD_FRAME])
-	var mouth := position + Vector2(local.x * facing, local.y - _air_y / SCALE) * SCALE
+	var mouth := position + Vector2(local.x * facing, local.y - _air_y / art_scale) * art_scale
 	var dir: Vector2 = SALIVA_DIR.get(frame, SALIVA_DIR[ROAR_HOLD_FRAME])
 	dir.x *= facing
 	var sb := _burst_node()
@@ -606,16 +876,29 @@ func _spit_saliva(frame: int, count: int, strength: float) -> void:
 
 ## 개발용: 지금 바로 포효 (공격 중이면 끊고 포효 — 스크린샷 타이밍이 스폰 난수에 흔들리지 않게)
 func force_roar() -> void:
-	if state == State.DEAD or state == State.JUMP or state == State.ROAR:
+	if state == State.DEAD or state == State.JUMP or state == State.ROAR or state == State.SLAM:
 		return
 	_start_roar()
 
 
 ## 개발용: 지금 바로 독액 공격
 func force_attack() -> void:
-	if state == State.DEAD or state == State.JUMP or state == State.ATTACK or state == State.ROAR:
+	if state == State.DEAD or state == State.JUMP or state == State.ATTACK or state == State.ROAR 			or state == State.SPRAY or state == State.SLAM:
 		return
 	_start_attack()
+
+
+## 개발용: 거대종의 산탄 / 내려찍기를 지금 바로 (일반종에서는 아무 일도 없다)
+func force_spray() -> void:
+	if not is_giant or state == State.DEAD or state == State.SPRAY or state == State.SLAM:
+		return
+	_start_spray()
+
+
+func force_slam() -> void:
+	if not is_giant or state == State.DEAD or state == State.SPRAY or state == State.SLAM:
+		return
+	_start_slam()
 
 
 ## 개발용: 지금 바로 옆 벽으로 뛰어오른다 (붙을 벽이 없으면 아무 일도 없다)
@@ -630,8 +913,8 @@ func force_jump() -> void:
 	if state == State.DEAD or state == State.JUMP:
 		return
 	var t := _target()
-	var dx := (t.position.x - position.x) if t else float(facing) * JUMP_RANGE.y
-	_start_jump(signf(dx) * clampf(absf(dx) - 120.0, JUMP_RANGE.x, JUMP_RANGE.y))
+	var dx := (t.position.x - position.x) if t else float(facing) * JUMP_RANGE.y * size
+	_start_jump(signf(dx) * clampf(absf(dx) - 120.0 * size, JUMP_RANGE.x * size, JUMP_RANGE.y * size))
 
 
 func _start_jump(dx: float) -> void:
@@ -663,7 +946,7 @@ func _process_jump(delta: float) -> void:
 		1:   # 공중 — 포물선. 노드는 바닥에 두고 스프라이트만 띄운다(히트 박스도 함께 뜬다)
 			var k := clampf(_jump_t / JUMP_AIR_TIME, 0.0, 1.0)
 			position.x = _jump_from.x + _jump_dx * k
-			_air_y = 4.0 * JUMP_HEIGHT * k * (1.0 - k)
+			_air_y = 4.0 * JUMP_HEIGHT * size * k * (1.0 - k)
 			_sprite.frame = 1 if k < 0.38 else 2
 			_apply_frame_offset()
 			if k >= 1.0:
@@ -684,10 +967,11 @@ func _land_dust() -> void:
 	var sb := _burst_node()
 	var dust := Color(0.55, 0.52, 0.48)
 	var dark := Color(0.35, 0.33, 0.3)
-	sb.burst(position + Vector2(-90 * SCALE, 0), 7, Vector2(-1, -0.25), 0.35, Vector2(120, 260),
-		dust, dark, Vector2(0.3, 0.55), 1800.0, 4.0, false)
-	sb.burst(position + Vector2(90 * SCALE, 0), 7, Vector2(1, -0.25), 0.35, Vector2(120, 260),
-		dust, dark, Vector2(0.3, 0.55), 1800.0, 4.0, false)
+	# 덩치가 크면 발자국도 넓고 알갱이도 굵다
+	sb.burst(position + Vector2(-90 * art_scale, 0), int(7 * size), Vector2(-1, -0.25), 0.35,
+		Vector2(120, 260) * size, dust, dark, Vector2(0.3, 0.55), 1800.0, 4.0 * size, false)
+	sb.burst(position + Vector2(90 * art_scale, 0), int(7 * size), Vector2(1, -0.25), 0.35,
+		Vector2(120, 260) * size, dust, dark, Vector2(0.3, 0.55), 1800.0, 4.0 * size, false)
 
 
 # ─── 벽·천장 이동 ────────────────────────────────────────────────────────────
@@ -925,13 +1209,13 @@ func _crawl_ceiling(delta: float) -> void:
 		_wall_hold = randf_range(WALL_HOLD.x, WALL_HOLD.y)
 		_punch(Vector2(1.16, 0.86))
 		return
-	if _attack_cd <= 0.0 and absf(dx) <= ATTACK_MAX:
+	if _attack_cd <= 0.0 and absf(dx) <= attack_max:
 		_spit_from_wall(t)
 
 
 ## 벽·천장에 붙은 채로 뱉기 — 그 자세의 공격 그림이 없어 애니메이션 대신 반동만 준다
 func _spit_from_wall(t: Node2D) -> void:
-	_attack_cd = randf_range(ATTACK_COOLDOWN.x, ATTACK_COOLDOWN.y)
+	_attack_cd = randf_range(attack_cooldown.x, attack_cooldown.y)
 	_punch(Vector2(1.14, 0.90))
 	var mouth := _pose_point(MOUTH_LOCAL)             # 바닥 자세와 같은 입 위치를 그대로 돌려 쓴다
 	var glob := AcidGlob.new()
@@ -1000,36 +1284,37 @@ func hit(point: Vector2, dir: float, power := 1.0) -> void:
 	# 죽는 타격에서는 피격음을 내지 않는다 — 죽음 소리와 겹치면 둘 다 뭉개진다.
 	# 마지막 한 발의 소리는 _die() 가 맡는다.
 	if hp > 0:
-		Audio.play_at("crawler_hurt", point, lerpf(-2.0, 2.0, clampf(power, 0.0, 1.0)))
+		Audio.play_at("crawler_hurt", point, lerpf(-2.0, 2.0, clampf(power, 0.0, 1.0)), voice_pitch)
 	_flash = 1.0
 	_mat.set_shader_parameter("flash", HIT_FLASH_PEAK)
 	_mat.set_shader_parameter("radius_px", HIT_FLASH_RADIUS)
 	# 셰이더 UV 는 셀 전체 기준 (벽·천장이면 스프라이트 회전을 먼저 되돌리고, 뒤집힌 축은 반전)
-	var cell_uv := ((point - position).rotated(-_sprite.rotation) / SCALE - _sprite.offset) / _cell
+	var cell_uv := ((point - position).rotated(-_sprite.rotation) / art_scale - _sprite.offset) / _cell
 	if _sprite.flip_h:
 		cell_uv.x = 1.0 - cell_uv.x
 	if _sprite.flip_v:
 		cell_uv.y = 1.0 - cell_uv.y
 	_mat.set_shader_parameter("hit_uv", cell_uv.clamp(Vector2.ZERO, Vector2.ONE))
-	_knock = HIT_KNOCKBACK * power
-	_knock_rate = HIT_KNOCKBACK * power / KNOCK_TIME        # 세게 밀려도 같은 시간 안에 밀린다
+	# 덩치로 나눈다 — 거대종은 맞아도 거의 제자리다. "밀리지 않는다"가 곧 압박이다.
+	_knock = HIT_KNOCKBACK * power / size
+	_knock_rate = _knock / KNOCK_TIME                      # 세게 밀려도 같은 시간 안에 밀린다
 	_knock_dir = signf(dir) if dir != 0.0 else -float(facing)
 	# 스케일 펀치: 탄이 온 쪽이 눌리듯 옆으로 퍼진다 (위력이 크면 더 깊게)
 	_punch(Vector2.ONE.lerp(HIT_PUNCH, power))
 	# 독액 방울: 탄 진행 방향 뒤쪽 원뿔로 튄다 + 체액이 탄 방향으로 벽에 튄다
 	var sb := _burst_node()
 	sb.burst(point, int(9 * power), Vector2(-signf(dir), -0.6), 0.9, Vector2(140, 420) * power, ACID_HOT, ACID_COLD,
-		Vector2(0.3, 0.7), 2000.0, 4.5 * (0.7 + 0.3 * power), false)
+		Vector2(0.3, 0.7), 2000.0, 4.5 * (0.7 + 0.3 * power) * size, false)
 	sb.burst(point, int(7 * power), Vector2(signf(dir), -0.3), 0.7, Vector2(200, 520) * power, BLOOD_HOT, BLOOD_COLD,
-		Vector2(0.25, 0.6), 2200.0, 3.5 * (0.7 + 0.3 * power), false, BLOOD_GLOW)
+		Vector2(0.25, 0.6), 2200.0, 3.5 * (0.7 + 0.3 * power) * size, false, BLOOD_GLOW)
 	# 큰 위력에는 살아 있어도 살점이 뜯겨 날아간다
 	if power >= HIT_CHUNK_POWER:
 		_spawn_chunks(point, dir, int(power), power)
 	if room and room.has_method("add_stain"):
-		room.add_stain(point + Vector2(signf(dir) * 30.0, 0.0), Vector2(signf(dir), -0.15), int(6 * power), 40.0 * power)
+		room.add_stain(point + Vector2(signf(dir) * 30.0, 0.0), Vector2(signf(dir), -0.15), int(6 * power), 40.0 * power * size)
 		# 가끔(35%, 위력에 비례) 체액이 탄 방향 벽면으로 부채꼴로 흩뿌려진다 — 덩어리가 순차적으로 찍히고 흘러내림
 		if randf() < 0.35 * power and room.has_method("add_spray"):
-			room.add_spray(point, Vector2(signf(dir), randf_range(-0.7, 0.1)), int(14 * power), 160.0 * power, 0.9)
+			room.add_spray(point, Vector2(signf(dir), randf_range(-0.7, 0.1)), int(14 * power), 160.0 * power * size, 0.9)
 	if hp <= 0:
 		_die(dir, power)
 	elif _off_floor():
@@ -1056,7 +1341,7 @@ func _die(dir: float, power := 1.0) -> void:
 	if _dead_falling:
 		_knock = 0.0
 	else:
-		_knock = HIT_KNOCKBACK * 1.5 * power
+		_knock = HIT_KNOCKBACK * 1.5 * power / size
 		_knock_rate = _knock / KNOCK_TIME
 	_corpse_t = 0.0
 	_sprite.speed_scale = 1.0
@@ -1066,21 +1351,21 @@ func _die(dir: float, power := 1.0) -> void:
 	var sb := _burst_node()
 	var c := hit_center()
 	# 위력이 클수록 크게. 육편이 많이 튀는데 소리가 같으면 그림만 화려해진다.
-	Audio.play_at("crawler_death", c, lerpf(-2.5, 1.5, clampf(power, 0.0, 1.0)))
+	Audio.play_at("crawler_death", c, lerpf(-2.5, 1.5, clampf(power, 0.0, 1.0)), voice_pitch)
 	# 독액 + 초록 체액이 사방으로 분출 (체액은 더 많이·굵게·오래)
 	sb.burst(c, int(22 * power), Vector2(-signf(dir) * 0.4, -1.0), 1.1, Vector2(160, 560) * power, ACID_HOT, ACID_COLD,
-		Vector2(0.45, 1.1), 2000.0, 5.0 * (0.7 + 0.3 * power), true)
+		Vector2(0.45, 1.1), 2000.0, 5.0 * (0.7 + 0.3 * power) * size, true)
 	sb.burst(c, int(34 * power), Vector2(signf(dir) * 0.3, -0.8), PI, Vector2(220, 760) * power, BLOOD_HOT, BLOOD_COLD,
-		Vector2(0.5, 1.3), 2300.0, 6.0 * (0.7 + 0.3 * power), false, BLOOD_GLOW)
+		Vector2(0.5, 1.3), 2300.0, 6.0 * (0.7 + 0.3 * power) * size, false, BLOOD_GLOW)
 	# 육편: 현재 프레임 텍스처를 조각내 사방으로 날린다
-	_spawn_chunks(c, dir, CHUNK_COUNT, power)
+	_spawn_chunks(c, dir, chunk_count, power)
 	# 벽에 큰 체액 자국 (탄 방향으로 길게) + 바닥 쪽 작은 자국
 	if room and room.has_method("add_stain"):
-		room.add_stain(c + Vector2(signf(dir) * 40.0, -10.0), Vector2(signf(dir), -0.2), int(22 * power), 110.0 * power)
-		room.add_stain(Vector2(position.x, floor_y - 6.0), Vector2(signf(dir), 0.0), int(8 * power), 70.0 * power)
+		room.add_stain(c + Vector2(signf(dir) * 40.0, -10.0), Vector2(signf(dir), -0.2), int(22 * power), 110.0 * power * size)
+		room.add_stain(Vector2(position.x, floor_y - 6.0), Vector2(signf(dir), 0.0), int(8 * power), 70.0 * power * size)
 		# 죽을 때는 대개(75%) 넓게 분사 — 탄 방향으로 위쪽 부채꼴, 멀리까지
 		if randf() < 0.75 * power and room.has_method("add_spray"):
-			room.add_spray(c, Vector2(signf(dir), -0.35), int(26 * power), 280.0 * power, 1.3)
+			room.add_spray(c, Vector2(signf(dir), -0.35), int(26 * power), 280.0 * power * size, 1.3)
 	died.emit(position)
 
 
@@ -1106,7 +1391,7 @@ func _spawn_chunks(center: Vector2, dir: float, count := CHUNK_COUNT, power := 1
 			local.x = _cell.x - local.x
 		if _sprite.flip_v:
 			local.y = _cell.y - local.y
-		var world := position + ((_sprite.offset + local) * SCALE).rotated(_sprite.rotation)
+		var world := position + ((_sprite.offset + local) * art_scale).rotated(_sprite.rotation)
 		# 피격당한 쪽 반대편(탄 진행 방향)으로 튄다 — 부채꼴로 조금 퍼지고, 위로도 솟는다
 		var fwd := Vector2(signf(dir), 0.0).rotated(randf_range(-0.55, 0.55))
 		var away := (world - center)
@@ -1115,7 +1400,7 @@ func _spawn_chunks(center: Vector2, dir: float, count := CHUNK_COUNT, power := 1
 			+ Vector2(0, -randf_range(200.0, 560.0))
 		var chunk := ChunkDebris.new()
 		chunk.setup(tex, region, world, vel, floor_y)
-		chunk.scale = Vector2(SCALE, SCALE)
+		chunk.scale = Vector2(art_scale, art_scale)
 		chunk.rotation = _sprite.rotation             # 몸에 붙어 있던 방향 그대로 떨어져 나간다
 		chunk.flip_h = _sprite.flip_h
 		chunk.z_index = 1
@@ -1147,6 +1432,14 @@ func _on_animation_finished() -> void:
 			if not _spat:
 				_spit()
 			_enter_idle(randf_range(IDLE_TIME.x, IDLE_TIME.y))
+		State.SPRAY:
+			if _spray_left > 0:
+				# 아직 뱉을 게 남았는데 클립이 끝났다 — 입 벌린 자세로 되돌려 마저 뱉는다
+				_sprite.frame = SPIT_FRAME
+				_sprite.pause()
+				_apply_frame_offset()
+			else:
+				_enter_idle(randf_range(IDLE_TIME.x, IDLE_TIME.y))
 		State.ROAR:
 			_enter_idle(randf_range(IDLE_TIME.x, IDLE_TIME.y) * 0.8)
 		State.DEAD:

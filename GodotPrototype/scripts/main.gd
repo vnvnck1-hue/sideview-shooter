@@ -41,6 +41,7 @@ var zoom_index := ZOOM_DEFAULT
 var zoom_label: Label                   # 우상단: 줌 프리셋 (F3)
 var shadow_label: Label                 # 우상단 둘째 줄: 기본 그림자 프리셋 (F6)
 var dyn_shadow_label: Label             # 우상단 셋째 줄: 동적 광원 그림자 프리셋 (F8)
+var idle_label: Label                   # 우상단 넷째 줄: 아이들 모션 프리셋 (F5)
 
 var world_vp: SubViewport                  # 월드 뷰포트
 var world: Node2D                          # 방·플레이어·탄 등 월드 노드의 부모 (world_vp 안)
@@ -96,7 +97,7 @@ const ABERRATION_DECAY := 18.0
 
 
 func _ready() -> void:
-	var room_id := AppFlow.start_room if RoomData.ROOMS.has(AppFlow.start_room) else RoomData.START_ROOM
+	var room_id := AppFlow.start_room if RoomData.has_room(AppFlow.start_room) else RoomData.START_ROOM
 	Lighting.apply_light_range()
 	_setup_input_map()
 	_setup_view()
@@ -261,6 +262,12 @@ func _process(_delta: float) -> void:
 		set_dyn_shadow(PropShadow.dyn_index + dstep)
 		return
 
+	# 아이들 모션 프리셋 순환 (F5 다음 · Shift+F5 이전) — 가만히 서서 바로 비교한다
+	if not transitioning and Input.is_action_just_pressed("idle_cycle"):
+		var istep := -1 if Input.is_key_pressed(KEY_SHIFT) else 1
+		set_idle_preset(Player.idle_index + istep)
+		return
+
 	if current_room == null:
 		return
 
@@ -279,7 +286,8 @@ func _process(_delta: float) -> void:
 	crosshair.position = mouse_world
 	# 조준점: 소총 모드는 연사 열로 벌어지고, 센트리건 조종 중에는 총열 과열이 링으로 표시된다
 	if controlled_turret != null:
-		crosshair.heat = 0.0
+		# 보행 기체는 연사할수록 산포가 커진다 (WalkerUnit.spread_ratio). 센트리건은 그 창구가 없어 0 이다.
+		crosshair.heat = controlled_turret.spread_ratio() if controlled_turret.has_method("spread_ratio") else 0.0
 		crosshair.sentry_heat = controlled_turret.heat
 		crosshair.sentry_overheated = controlled_turret.overheated
 	else:
@@ -367,6 +375,7 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	current_room.player = player
 	current_room.player_hit.connect(_on_player_hit)
 	current_room.monster_roared.connect(_on_monster_roared)
+	current_room.monster_slammed.connect(_on_monster_slammed)
 	world.add_child(current_room)
 	world.move_child(current_room, 0)
 	Audio.set_room_ambience(id)
@@ -843,11 +852,22 @@ func _on_player_hit(_point: Vector2, dir: float) -> void:
 		player.knockback(dir * PLAYER_HIT_KNOCKBACK)   # 원격 조종 중이면 맞는 것은 포탑이다 — 몸은 밀리지 않는다
 
 
-## 몬스터 포효: 가까울수록 카메라가 낮게 울린다 (플레이어 피격 7 대비 최대 2.2)
-func _on_monster_roared(pos: Vector2) -> void:
+## 몬스터 포효: 가까울수록 카메라가 낮게 울린다 (플레이어 피격 7 대비 최대 2.2).
+## power 는 덩치 배율 — 거대종은 더 멀리서, 더 크게 울린다.
+func _on_monster_roared(pos: Vector2, power := 1.0) -> void:
+	var reach := Crawler.ROAR_SHAKE_RANGE * power
 	var d := absf(pos.x - player.position.x)
-	if d < Crawler.ROAR_SHAKE_RANGE:
-		camera.add_shake(lerpf(2.2, 0.4, d / Crawler.ROAR_SHAKE_RANGE))
+	if d < reach:
+		camera.add_shake(lerpf(2.2 * power, 0.4, d / reach))
+
+
+## 거대종 내려찍기: 바닥을 때린 충격이 방 전체로 퍼진다. 플레이어 피격(7)보다 크게 잡되,
+## 충격파에 실제로 맞았다면 _on_player_hit 의 7 이 여기에 더해져 add_shake 의 상한(10)에 붙는다.
+func _on_monster_slammed(pos: Vector2) -> void:
+	var d := absf(pos.x - player.position.x)
+	var reach := Crawler.SLAM_SHOCK_RANGE * 3.0      # 맞지 않아도 발밑이 울리는 범위
+	if d < reach:
+		camera.add_shake(lerpf(9.0, 1.2, d / reach))
 
 
 ## 불 스타일 (확정: 잉걸·검은 연기). 개발용 호출만 남긴다.
@@ -872,6 +892,20 @@ func set_dyn_shadow(i: int) -> void:
 	if current_room:
 		current_room.apply_dyn_shadow(PropShadow.dyn_index)
 	_update_shadow_label()
+
+
+## 플레이어 아이들 모션 프리셋 (F5 순환)
+func set_idle_preset(i: int) -> void:
+	Player.idle_index = wrapi(i, 0, Player.IDLE_PRESETS.size())
+	_update_idle_label()
+
+
+func _update_idle_label() -> void:
+	if idle_label == null:
+		return
+	var p := Player.idle_preset()
+	idle_label.text = "아이들 모션 (F5)  %d/%d  %s — %s" % [
+		Player.idle_index + 1, Player.IDLE_PRESETS.size(), p["name"], p["desc"]]
 
 
 func _update_shadow_label() -> void:
@@ -993,7 +1027,7 @@ func _setup_ui() -> void:
 	layer.add_child(title_label)
 
 	hint_label = Label.new()
-	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입 · 말 걸기    대화 중 Space/E 넘기기 · ↑/↓ 선택    R 재장전    F3 줌    F4 CRT 모니터    F6·F8 그림자    F11 전체화면"
+	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입 · 말 걸기    대화 중 Space/E 넘기기 · ↑/↓ 선택    R 재장전    F3 줌    F4 CRT 모니터    F5 아이들 모션    F6·F8 그림자    F11 전체화면"
 	hint_label.position = Vector2(24, 860)
 	hint_label.add_theme_font_override("font", font)
 	hint_label.add_theme_font_size_override("font_size", 20)
@@ -1031,6 +1065,17 @@ func _setup_ui() -> void:
 	dyn_shadow_label.add_theme_color_override("font_color", Color(0.86, 0.66, 0.52))
 	layer.add_child(dyn_shadow_label)
 	_update_shadow_label()
+
+	# 아이들 모션 프리셋 — 그 아래 한 줄 더 (F5 로 비교하는 동안 쓰는 개발용 표시)
+	idle_label = Label.new()
+	idle_label.position = Vector2(VIEW_SIZE.x - 24 - 1100, 104)
+	idle_label.size = Vector2(1100, 30)
+	idle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	idle_label.add_theme_font_override("font", font)
+	idle_label.add_theme_font_size_override("font_size", 20)
+	idle_label.add_theme_color_override("font_color", Color(0.72, 0.86, 0.68))
+	layer.add_child(idle_label)
+	_update_idle_label()
 
 	# 정면문 안내: 화면 하단 중앙(힌트 바로 위) — 우상단 디버그 라벨과 겹치지 않게
 	prompt_label = Label.new()
@@ -1092,6 +1137,7 @@ func _setup_input_map() -> void:
 	_add_action("zoom_cycle", [KEY_F3])     # 줌 프리셋 ×2 → ×3 → ×4 순환
 	_add_action("shadow_cycle", [KEY_F6])   # 기본(붙박이 광원) 그림자 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("shadow_dyn_cycle", [KEY_F8])  # 동적 광원 그림자 프리셋 순환 (Shift 동시 = 이전)
+	_add_action("idle_cycle", [KEY_F5])     # 플레이어 아이들 모션 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("dialogue_style", [KEY_F7])  # 대사 표시 방식 순환 — 대화 UI 랩 전용 (게임은 "자막" 고정)
 	# 대화: 넘기기/확인 · 선택지 이동. W/↑(interact)는 말을 **거는** 키라 확인에는 넣지 않는다
 	# — 한 번 누른 키가 말을 걸면서 첫 줄까지 넘겨 버리지 않게.

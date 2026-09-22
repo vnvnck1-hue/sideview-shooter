@@ -39,7 +39,7 @@ const HEAT_R := 64.0                # 과열 게이지 링 반지름
 
 var line_w := 4.0
 var mode: Mode = Mode.RIFLE
-var heat := 0.0                     # 연사 열 (Player.spread_ratio) — RIFLE 벌어짐 유지
+var heat := 0.0                     # 연사 열 (Player/WalkerUnit.spread_ratio) — 조준점 벌어짐 유지
 var sentry_heat := 0.0              # 총열 과열 0..1 (SENTRY 링)
 var sentry_overheated := false
 
@@ -98,7 +98,9 @@ func _draw_sentry() -> void:
 	var blink := (0.55 + 0.45 * sin(_blink * 14.0)) if over else 1.0
 	var tint := SENTRY_TINT if not over else HEAT_HOT_COL
 	tint.a = blink
-	var r := BRACKET_R + _spread
+	# 브래킷은 발사 반동(_spread)만이 아니라 **집탄 열(heat)** 로도 벌어진다 —
+	# 보행 기체는 붙잡고 쏘면 산포가 커지므로, 소총 조준점과 같은 방식으로 그 값을 보여 준다.
+	var r := BRACKET_R + _spread + heat * 18.0
 
 	# 네 귀퉁이 브래킷 (L 자) — 기계식 조준 장치 느낌
 	for sx: float in [-1.0, 1.0]:

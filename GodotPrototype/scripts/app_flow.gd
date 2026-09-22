@@ -11,6 +11,7 @@ const SHADOW_LAB_SCENE := "res://scenes/ShadowLab.tscn"
 const WALKER_LAB_SCENE := "res://scenes/WalkerLab.tscn"
 const WALKER_AUTHORING_LAB_SCENE := "res://scenes/WalkerAuthoringLab.tscn"
 const FACE_LAB_SCENE := "res://scenes/FaceLab.tscn"
+const SPACE_LAB_SCENE := "res://scenes/SpaceLab.tscn"
 
 ## 디자인 캔버스 = 창 기본 크기 = 스트레치 기준 (project.godot display/window/size 와 반드시 같은 값).
 ## HUD·CRT 오버레이·말풍선 등 창 좌표를 쓰는 모든 곳이 여기를 본다.
@@ -130,6 +131,16 @@ static func start_face_lab(tree: SceneTree, room := "") -> void:
 	start_room = room if RoomData.ROOMS.has(room) else "hall"
 	resume_x = -1.0
 	tree.change_scene_to_file(FACE_LAB_SCENE)
+
+
+## 공간 테스트 랩: 기본 배경 타일로 만든 20,000px 짜리 한 줄에서, 방과 방이 트랜지션 없이 이어지는 감각을 본다.
+## 본편과 같은 플레이 루프이고 방 데이터만 SpaceLabData 가 RoomData.extra 에 얹는다 (본 맵은 그대로).
+static func start_space_lab(tree: SceneTree) -> void:
+	lab_mode = false
+	amb_lab = false
+	visited = {}
+	resume_x = -1.0
+	tree.change_scene_to_file(SPACE_LAB_SCENE)
 
 
 ## 맵 뷰어: 방을 게임 없이 조립해 자유 카메라로 본다 ([ ] 로 방 전환)

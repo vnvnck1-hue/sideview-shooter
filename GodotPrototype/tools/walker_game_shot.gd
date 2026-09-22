@@ -47,9 +47,22 @@ func _process(_d: float) -> bool:
 	var room = _main.get("current_room")
 	var unit = room.walkers[0] if room != null and room.walkers.size() > 0 else null
 	if unit != null and _i >= 2:               # 마지막 장은 쏘는 순간을 찍는다
-		unit.aim_target = Vector2(unit.position.x - 700.0, unit.floor_y - 260.0)
-		unit._walker.firing = _i >= 3
-	if _i < PLAN.size() and _f >= int(PLAN[_i][0]):
+		# 조준은 **마우스**로 준다. 기체를 조종 중이면 Main 이 매 프레임 unit.aim_target 에
+		# 마우스 좌표를 다시 써 넣으므로, 여기서 aim_target 을 직접 정해도 곧바로 덮인다.
+		# 왼쪽을 겨누게 둔다 — 화염이 포신 방향으로 나가는지는 왼쪽에서 가장 잘 보인다.
+		Input.warp_mouse(Vector2(140.0, root.get_visible_rect().size.y * 0.62))
+		# 사격은 **입력으로** 넣는다. 기체를 조종 중이면 WalkerUnit._tick_input() 이 매 프레임
+		# Input 을 다시 읽어 firing 을 덮으므로, _walker.firing 에 직접 써 넣으면 한 발도 안 나간다.
+		if _i >= 3:
+			Input.action_press("shoot")
+		else:
+			Input.action_release("shoot")
+	# 사격 장면은 **화염이 막 터진 프레임**에서만 찍는다. 고정 프레임으로 찍으면 연사 간격
+	# (0.08초)과 어긋나 화염이 없는 틈만 계속 잡힌다 — 실제로 세 장 다 빈 총구가 나왔다.
+	var fresh := true
+	if _i >= 3 and unit != null:
+		fresh = unit._blast._t < 0.02
+	if _i < PLAN.size() and _f >= int(PLAN[_i][0]) and fresh:
 		if _i == 1 and unit != null:           # 두 번째 장 직전에 기동시킨다
 			unit.activate()
 		_armed = true

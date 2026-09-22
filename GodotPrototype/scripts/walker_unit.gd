@@ -50,7 +50,7 @@ const SLEEP_TINT := Color(0.46, 0.50, 0.62)
 ## 그래서 sentry_turret.gd 의 사격을 그대로 가져왔다 — 탄착점 계산(_impact_point) · 산포(SPREAD) ·
 ## 총구 화염(MuzzleBlast) · 위력/궤적/탄피 배율 · 발당 흔들림까지 같은 값이다.
 ##
-## **연사력만 다르다.** 이 기체는 포신이 하나에 구경이 굵다 (ProcWalker.FIRE_COOLDOWN 0.16 ≈ 초당 6발.
+## **연사력만 다르다.** 이 기체는 포신이 하나에 구경이 굵다 (ProcWalker.FIRE_COOLDOWN 0.08 ≈ 초당 12발.
 ## 센트리건은 0.055 ≈ 18발). 그래서 발당 열만 그 비율로 올려 **과열까지 걸리는 시간**을 맞춘다 —
 ## 센트리건과 같은 값을 쓰면 이 기체는 영영 과열되지 않는다.
 ## 센트리건의 절반. 탄착 플래시·파편·몬스터 넉백·체액이 그만큼 작아진다.
@@ -58,13 +58,22 @@ const SLEEP_TINT := Color(0.46, 0.50, 0.62)
 const SHOT_POWER := SentryTurret.SHOT_POWER * 0.5  # 탄착 플래시·파편·넉백
 const TRACER_SCALE := SentryTurret.TRACER_SCALE   # 궤적·탄두 두께
 const SHELL_SCALE := SentryTurret.SHELL_SCALE     # 탄피 크기
-const SPREAD := SentryTurret.SPREAD               # 총구 산포 (rad)
+## ── 집탄 ────────────────────────────────────────────────────────────────────
+## 첫 발은 센트리건과 같은 산포(SPREAD)로 정확하고, **붙잡고 쏠수록 벌어진다.**
+## 플레이어 소총(Player.SPREAD_BASE / SPREAD_HEAT)과 같은 규칙이다 — 긴 연사에 값을 치르게 해서
+## 끊어 쏘기를 유도한다. 열(heat)과는 **다른 눈금**이다: 집탄은 1.3초면 한계에 닿았다가 1초면
+## 회복하고, 과열은 5초를 쏴야 잠기고 한참을 식힌다. 같은 값으로 묶으면 둘 중 하나가 무의미해진다.
+const SPREAD := SentryTurret.SPREAD               # 첫 발 산포 (rad)
+const SPREAD_HEAT := 0.060                        # 집탄 열 1.0 에서 **더해지는** 산포 (rad)
+const SPREAD_PER_SHOT := 0.13                     # 한 발이 올리는 집탄 열 (연사 12발/초 → 초당 1.6)
+const SPREAD_DECAY := 0.85                        # 초당 회복 (쏘는 중에도 빠진다 — 순증은 초당 0.78)
 const SHAKE_PER_SHOT := SentryTurret.SHAKE_PER_SHOT
 const LASER_RANGE := SentryTurret.LASER_RANGE     # 무인일 때 탄착점을 잡는 기준 거리
 const MIN_SHOT_RANGE := 40.0                      # 조종 중 탄착점의 최소 거리 (총구 기준)
 const HEAT_COOL := SentryTurret.HEAT_COOL
 const HEAT_RESET := SentryTurret.HEAT_RESET
-## 발당 열 = 센트리건 값 × 연사 간격 비 (0.16 / 0.055). 과열까지 약 5초로 같아진다
+const HEAT_SMOKE := SentryTurret.HEAT_SMOKE       # 이 열부터 총구에서 연기가 샌다
+## 발당 열 = 센트리건 값 × 연사 간격 비 (0.08 / 0.055). 과열까지 약 5초로 같아진다
 const HEAT_PER_SHOT := SentryTurret.HEAT_PER_SHOT * (ProcWalker.FIRE_COOLDOWN / SentryTurret.FIRE_COOLDOWN)
 
 ## 총구 화염 크기. 센트리건 값을 기체 크기 비(SCALE 0.5 ÷ 센트리건 0.78)로 줄인다 —
@@ -102,6 +111,9 @@ var _idle := 0.0                  # 무인으로 서 있은 시간
 var _span := Vector2(-1e9, 1e9)   # 걸어다닐 수 있는 방 안의 좌우 끝 (월드 x)
 var _tune: Dictionary = {}        # 저장한 선 자세 설정. 전원 전환 중 ride와 분리해 보존한다.
 var _blast: MuzzleBlast           # 총구 화염 — 센트리건과 같은 연출 (한 발마다 총구로 옮겨 터뜨린다)
+var _barrel_smoke: CPUParticles2D # 달아오른 총구에서 새는 연기 (센트리건 _barrel_smoke 와 같은 규격)
+var _smoke_t := 0.0               # 다음 연기 뭉치까지 남은 시간
+var _spread_heat := 0.0           # 집탄 열 0..1 — 쏠수록 오르고 쉬면 빠진다 (spread_ratio)
 
 
 ## 방이 부른다. center_x = 처음 놓이는 자리 · floor_line = 바닥선 · fx = 방(Room)
@@ -150,6 +162,11 @@ func _build(center_x: float, fx: Node2D) -> void:
 	_blast.energy_scale = BLAST_ENERGY
 	add_child(_blast)
 	_blast.setup(BLAST_SIZE, floor_y)
+
+	# 총구에서 새는 연기. 화염과 같은 이유로 **이 노드**(배율 1)에 달아 월드 크기로 뽑고,
+	# 매 프레임 총구로 옮긴다 (_sync_blast). local_coords 를 끄므로 뱉어진 연기는 제자리에 남는다.
+	_barrel_smoke = _build_barrel_smoke()
+	add_child(_barrel_smoke)
 
 	_walker.fired.connect(_on_fired)
 	_walker.reset_stance()          # 꺼진 높이(SLEEP_RIDE)에 맞춰 네 발을 제자리에 내려놓는다
@@ -222,9 +239,11 @@ func _process(delta: float) -> void:
 	_tick_power(delta)
 	_tick_input()
 	_tick_heat(delta)
+	_tick_spread(delta)
 	_walker.tick(delta)
 	_clamp_span()
 	_sync_node()
+	_sync_blast()
 
 
 ## 웅크렸다 일어서기. **애니메이션 시트가 없다** — ride(몸 높이)를 옮기면 절차적 보행이
@@ -273,15 +292,95 @@ func _tick_input() -> void:
 		_walker.jump()
 
 
-## 열 — 센트리건과 같다. 과열 잠금 중에는 더 빨리 토해낸다 (연기를 뿜으며 식는 구간)
+## 열 — 센트리건 _tick_heat() 과 같은 규칙이다. 과열 잠금 중에는 더 빨리 토해낸다.
+##
+## **쏘는 동안에는 식지 않는다.** 예전엔 매 프레임 무조건 냉각(0.30/초)을 깎았는데, 연사로 오르는
+## 열은 초당 0.19(발당 0.0153 × 12.5발) 라 **냉각이 언제나 더 커서 게이지가 2% 언저리에 붙어 있었다** —
+## 과열이 이론상 불가능했다. 센트리건은 처음부터 `elif not firing` 이었고, 그걸 옮기다 빠뜨린 조건이다.
+## 이제 쏘는 동안에는 초당 0.19 씩 올라 약 5.2초에 잠기고, 손을 떼면 0.30/초(잠금 중엔 0.44/초)로 식는다.
 func _tick_heat(delta: float) -> void:
 	var was := heat
-	var rate := SentryTurret.HEAT_COOL_VENT if overheated else HEAT_COOL
-	heat = maxf(heat - rate * delta, 0.0)
-	if overheated and heat <= HEAT_RESET:
-		overheated = false
-	if not is_equal_approx(was, heat):
+	var was_over := overheated
+	if overheated:
+		heat = maxf(heat - SentryTurret.HEAT_COOL_VENT * delta, 0.0)
+		if heat <= HEAT_RESET:
+			overheated = false
+	elif not _walker.firing:
+		heat = maxf(heat - HEAT_COOL * delta, 0.0)
+	# 조금이라도 바뀌면 바로 알린다 — is_equal_approx 로 걸러 두면 고주사율에서 한 프레임 냉각량이
+	# 임계에 못 미쳐 게이지가 멈춘 것처럼 보인다 (센트리건이 같은 이유로 == 비교를 쓴다).
+	if heat != was or overheated != was_over:
 		heat_changed.emit(heat, overheated)
+	_rig.heat = heat
+	_tick_barrel_smoke(delta)
+
+
+## 집탄 열 — 쏘는 중에도 계속 빠진다. 한 발이 SPREAD_PER_SHOT 씩 올리므로 연사 중에는 순증이다.
+func _tick_spread(delta: float) -> void:
+	_spread_heat = maxf(_spread_heat - SPREAD_DECAY * delta, 0.0)
+
+
+## 지금 산포가 얼마나 벌어져 있는가 (0..1). Main 이 조준점을 벌리는 데 쓴다 —
+## 플레이어 소총의 Player.spread_ratio() 와 같은 창구다.
+func spread_ratio() -> float:
+	return _spread_heat
+
+
+## 달아오른 총구에서 연기가 샌다 — 뜨거울수록 자주, 과열 잠금 중엔 계속 (센트리건과 같은 값).
+func _tick_barrel_smoke(delta: float) -> void:
+	if _barrel_smoke == null or state != State.READY or heat < HEAT_SMOKE:
+		return
+	_smoke_t -= delta
+	if _smoke_t > 0.0:
+		return
+	var k := clampf((heat - HEAT_SMOKE) / (1.0 - HEAT_SMOKE), 0.0, 1.0)
+	_smoke_t = lerpf(0.42, 0.10, k)
+	_barrel_smoke.restart()
+
+
+## 과열 잠금: 총구에서 증기가 한꺼번에 터져 나오고 화면이 한 번 울린다 (센트리건 _overheat 과 같다)
+func _overheat() -> void:
+	overheated = true
+	_walker.firing = false
+	if _barrel_smoke != null:
+		_barrel_smoke.restart()
+	if _room != null:
+		var sb := SparkBurst.spawn(_room, floor_y)
+		sb.burst(_blast.global_position, 6, Vector2(0, -1), 0.9, Vector2(70, 220),
+			Color(1.0, 0.86, 0.66), Color(1.0, 0.32, 0.10), Vector2(0.2, 0.55), 1500.0, 3.0, false)
+	shake_requested.emit(3.0)
+
+
+## 총구 연기 — 센트리건 _build_barrel_smoke() 와 같은 규격을 기체 크기(SCALE)로 줄인 것.
+func _build_barrel_smoke() -> CPUParticles2D:
+	var p := CPUParticles2D.new()
+	p.name = "BarrelSmoke"
+	p.emitting = false
+	p.one_shot = true
+	p.explosiveness = 0.6
+	p.amount = 4
+	p.lifetime = 2.0
+	p.local_coords = false
+	p.texture = Lighting.smoke_canvas_texture()
+	p.direction = Vector2(0.25, -1.0)
+	p.spread = 22.0
+	p.initial_velocity_min = 30.0 * SCALE
+	p.initial_velocity_max = 90.0 * SCALE
+	p.gravity = Vector2(0, -55.0 * SCALE)
+	p.damping_min = 20.0
+	p.damping_max = 60.0
+	p.scale_amount_min = 1.0 * SCALE
+	p.scale_amount_max = 2.2 * SCALE
+	var curve := Curve.new()
+	curve.add_point(Vector2(0.0, 0.25))
+	curve.add_point(Vector2(0.4, 1.0))
+	curve.add_point(Vector2(1.0, 1.8))
+	p.scale_amount_curve = curve
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.76, 0.74, 0.72, 0.5))
+	grad.set_color(1, Color(0.40, 0.41, 0.46, 0.0))
+	p.color_ramp = grad
+	return p
 
 
 ## 방 밖으로 걸어 나가지 않게. 걸음 계산을 건드리지 않고 **결과만** 잘라낸다 —
@@ -303,6 +402,32 @@ func _sync_node() -> void:
 	_scaler.position = -position
 
 
+## 총구 화염을 **매 프레임** 총구에 다시 붙인다 (자리 + 포신 방향).
+##
+## 예전엔 쏘는 순간 자리만 옮기고 **회전을 아예 주지 않았다.** MuzzleBlast 는 로컬 +x 를 포신
+## 방향으로 삼아 그리는 노드라, 이 노드의 회전이 0 이면 화염이 늘 화면 오른쪽으로 뻗는다 —
+## 왼쪽을 보고 쏘면 화염이 총구가 아니라 **기체 뒤쪽으로** 터져 나왔다 (랩 walker_lab.gd 은
+## 쏠 때 rotation 을 주고 있어서 이 증상이 랩에서는 보이지 않았다).
+##
+## 자리·방향을 한 발 터뜨릴 때 한 번만 잡으면 안 된다. 화염이 보이는 동안(MuzzleBlast.LIFE)에도
+## 포탑은 계속 선회하고 기체는 걸어다니며 포신은 반동으로 물러난다 — 매 프레임 다시 잡아야
+## 화염이 총부리에 붙어 있고 총부리가 가리키는 쪽으로만 뻗는다.
+func _sync_blast() -> void:
+	if _blast == null or _walker == null:
+		return
+	# 워커가 주는 값은 그릇 안 좌표다. `* SCALE` 로 어림하지 않고 그릇의 변환으로 옮긴다.
+	var xf := _scaler.global_transform
+	_blast.global_position = xf * _walker.muzzle()
+	var world_dir := xf.basis_xform(_walker.aim_dir()).normalized()
+	if world_dir.length_squared() <= 0.0:
+		return
+	# 위쪽 층이 좌우로 뒤집혀 있어도 맞도록 **부모 공간으로 되돌려** 각을 잡는다
+	# (global_rotation 은 반전된 층 안에서 믿을 수 없다 — MuzzleBlast 주석과 같은 이유).
+	_blast.rotation = global_transform.affine_inverse().basis_xform(world_dir).angle()
+	if _barrel_smoke != null:
+		_barrel_smoke.position = _blast.position
+
+
 ## 한 발 — **센트리건의 _try_fire 와 같은 순서**다 (sentry_turret.gd).
 ## ProcWalker 는 총구 자리와 포신 방향만 준다. 탄착점·산포·화염·탄피·흔들림·열은 여기서 포탑과
 ## 똑같이 만든다. 탄 자체는 Main 의 공용 사격 경로가 처리한다.
@@ -314,15 +439,21 @@ func _on_fired(muzzle: Vector2, dir: Vector2) -> void:
 	var from: Vector2 = xf * muzzle
 	var aim_dir := (xf.basis_xform(dir)).normalized()
 	var to := _impact_point(from, aim_dir)
-	to = from + (to - from).rotated(randf_range(-SPREAD, SPREAD))
-	_blast.global_position = from
-	_blast.fire(randf_range(0.9, 1.15), (to - from).normalized())
+	# 산포는 **집탄 열에 비례해** 벌어진다. 안쪽 randf 를 한 번 더 곱해 가운데가 촘촘한 분포를 만든다
+	# (플레이어 소총과 같은 식 — 균등 분포로 두면 늘 가장자리에 맞는 것처럼 보인다).
+	var spread := SPREAD + SPREAD_HEAT * _spread_heat
+	to = from + (to - from).rotated(randf_range(-spread, spread) * randf_range(0.4, 1.0))
+	_spread_heat = minf(_spread_heat + SPREAD_PER_SHOT, 1.0)
+	# 화염은 **포신이 겨눈 방향**으로 터뜨린다 — 산포(SPREAD)는 탄에만 준다.
+	# 산포 방향으로 돌리면 한 발마다 화염이 총구에서 조금씩 어긋나 붙는다.
+	_sync_blast()
+	_blast.fire(randf_range(0.9, 1.15), aim_dir)
 	shoot_fired.emit(from, to)
 	shell_ejected.emit(from - aim_dir * 40.0, -1 if aim_dir.x > 0.0 else 1)
 	shake_requested.emit(SHAKE_PER_SHOT)
 	heat = minf(heat + HEAT_PER_SHOT, 1.0)
-	if heat >= 1.0:
-		overheated = true
+	if heat >= 1.0 and not overheated:
+		_overheat()
 	heat_changed.emit(heat, overheated)
 
 

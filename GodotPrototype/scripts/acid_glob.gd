@@ -24,12 +24,18 @@ var _flying := true
 var _t := 0.0
 var _puddle_w := 0.0
 var _light: PointLight2D
+## 덩어리 크기 배율. 거대종의 산탄은 덩어리 하나하나가 더 굵다 (1.0 = 일반 크롤러).
+var size := 1.0
 
 
-func setup(from: Vector2, player: Node2D, floor_line: float, room_node: Node2D) -> void:
+## spread: 조준선에서 틀어 쏘는 각(rad). 부채꼴 산탄은 같은 조준에 각만 달리해 여러 발을 만든다.
+## size_mul: 덩어리·꼬리·웅덩이·빛 반경 배율.
+func setup(from: Vector2, player: Node2D, floor_line: float, room_node: Node2D,
+		spread := 0.0, size_mul := 1.0) -> void:
 	target = player
 	room = room_node
 	floor_y = floor_line
+	size = size_mul
 	_p = from
 	var aim := player.position + Vector2(0, -PLAYER_HEIGHT * 0.45)
 	# 플레이어가 움직이는 쪽을 조금 예측
@@ -39,13 +45,15 @@ func setup(from: Vector2, player: Node2D, floor_line: float, room_node: Node2D) 
 	_v = (d - Vector2(0, 0.5 * GRAVITY * FLIGHT_TIME * FLIGHT_TIME)) / FLIGHT_TIME
 	if _v.length() > MAX_SPEED:
 		_v = _v.normalized() * MAX_SPEED
+	if not is_zero_approx(spread):
+		_v = _v.rotated(spread)
 	z_index = 1
 
 
 func _ready() -> void:
 	_light = PointLight2D.new()
 	_light.texture = Lighting.radial_texture()
-	_light.texture_scale = Lighting.scale_for_radius(150.0)
+	_light.texture_scale = Lighting.scale_for_radius(150.0 * size)
 	_light.color = Color(0.7, 0.95, 0.3)
 	_light.energy = 0.6
 	_light.height = Lighting.FLASH_HEIGHT
@@ -94,14 +102,14 @@ func _process(delta: float) -> void:
 func _splat(on_player: bool, puddle := true) -> void:
 	_flying = false
 	_t = 0.0
-	_puddle_w = randf_range(48.0, 72.0) if (puddle and not on_player) else 0.0
+	_puddle_w = randf_range(48.0, 72.0) * size if (puddle and not on_player) else 0.0
 	if not puddle:
 		_t = PUDDLE_LIFE - 0.3          # 벽에 튄 독액은 자국 없이 곧 사라진다
 	var sparks := SparkBurst.spawn(get_parent(), floor_y, false)
 	sparks.z_index = 1
 	var dir := Vector2(-signf(_v.x) * 0.3, -1.0)
-	sparks.burst(_p, 14 if on_player else 10, dir, 1.0, Vector2(120, 380), CORE, DARK,
-		Vector2(0.3, 0.7), 2000.0, 4.0, false)
+	sparks.burst(_p, int((14 if on_player else 10) * size), dir, 1.0, Vector2(120, 380), CORE, DARK,
+		Vector2(0.3, 0.7), 2000.0, 4.0 * size, false)
 	if on_player:
 		if room and room.has_signal("player_hit"):
 			room.player_hit.emit(_p, signf(_v.x))
@@ -114,23 +122,24 @@ func _draw() -> void:
 		# 꼬리 방울 (뒤로 갈수록 작고 어둡게)
 		for i in range(_trail.size()):
 			var k := float(i) / maxf(1.0, float(_trail.size() - 1))
-			var sz := lerpf(14.0, 5.0, k)
+			var sz := lerpf(14.0, 5.0, k) * size
 			var col := BODY.lerp(DARK, k)
 			col = Color(col.r * 2.2, col.g * 2.2, col.b * 2.2, 1.0 - k * 0.6)
 			draw_rect(Rect2(_trail[i] - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), col)
 		# 본체: 진행 방향으로 늘어진 덩어리 + 밝은 심 (발광 → 글로우)
 		var dirn := _v.normalized()
 		var body_col := Color(BODY.r * 2.6, BODY.g * 2.6, BODY.b * 2.6, 1.0)
-		draw_rect(Rect2(_p - Vector2(13, 13), Vector2(26, 26)), body_col)
-		draw_rect(Rect2(_p - dirn * 12.0 - Vector2(9, 9), Vector2(18, 18)), body_col)
-		draw_rect(Rect2(_p - Vector2(6, 6), Vector2(12, 12)), Color(CORE.r * 4.0, CORE.g * 4.0, CORE.b * 4.0, 1.0))
+		draw_rect(Rect2(_p - Vector2(13, 13) * size, Vector2(26, 26) * size), body_col)
+		draw_rect(Rect2(_p - dirn * 12.0 * size - Vector2(9, 9) * size, Vector2(18, 18) * size), body_col)
+		draw_rect(Rect2(_p - Vector2(6, 6) * size, Vector2(12, 12) * size),
+			Color(CORE.r * 4.0, CORE.g * 4.0, CORE.b * 4.0, 1.0))
 	elif _puddle_w > 0.0:
 		# 바닥 독 웅덩이: 얇은 타원형 픽셀 덩어리, 시간이 지나며 옅어진다
 		var k := clampf(_t / PUDDLE_LIFE, 0.0, 1.0)
 		var a := 1.0 - smoothstep(0.55, 1.0, k)
 		var w := _puddle_w * (0.6 + 0.4 * minf(1.0, _t / 0.15))
 		var col := Color(BODY.r * 1.1, BODY.g * 1.1, BODY.b * 1.1, 0.85 * a)     # 바닥 웅덩이는 덜 빛난다
-		draw_rect(Rect2(_p.x - w * 0.5, _p.y - 5.0, w, 5.0), col)
-		draw_rect(Rect2(_p.x - w * 0.3, _p.y - 9.0, w * 0.6, 4.0), col)
-		draw_rect(Rect2(_p.x - w * 0.12, _p.y - 12.0, w * 0.24, 3.0),
+		draw_rect(Rect2(_p.x - w * 0.5, _p.y - 5.0 * size, w, 5.0 * size), col)
+		draw_rect(Rect2(_p.x - w * 0.3, _p.y - 9.0 * size, w * 0.6, 4.0 * size), col)
+		draw_rect(Rect2(_p.x - w * 0.12, _p.y - 12.0 * size, w * 0.24, 3.0 * size),
 			Color(CORE.r * 1.2, CORE.g * 1.2, CORE.b * 1.2, 0.8 * a))

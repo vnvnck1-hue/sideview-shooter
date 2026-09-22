@@ -669,8 +669,9 @@ func _apply(player, cfg: Dictionary) -> void:
 	player.bus = cfg.get("bus", BUS_SFX)
 
 
-## 월드 좌표에서 한 발. db_offset 으로 호출부에서 개별 감쇠를 줄 수 있다.
-func play_at(key: String, pos: Vector2, db_offset := 0.0) -> void:
+## 월드 좌표에서 한 발. db_offset 으로 호출부에서 개별 감쇠를,
+## pitch_mul 로 개별 음정 배율을 줄 수 있다 (거대종처럼 같은 목소리를 몸집만큼 끌어내릴 때).
+func play_at(key: String, pos: Vector2, db_offset := 0.0, pitch_mul := 1.0) -> void:
 	if not enabled or not SOUNDS.has(key):
 		return
 	var cfg: Dictionary = SOUNDS[key]
@@ -685,6 +686,7 @@ func play_at(key: String, pos: Vector2, db_offset := 0.0) -> void:
 		return          # 풀이 꽉 찼으면 조용히 버린다 — 억지로 끼워 넣으면 소리가 뭉친다
 	_apply(p, cfg)
 	p.volume_db += db_offset
+	p.pitch_scale *= pitch_mul
 	p.global_position = pos
 	p.stream = s
 	p.play()
@@ -893,7 +895,7 @@ func set_room_ambience(room_id: String) -> void:
 	# 앰비언스보다 먼저 — 방을 옮기면 총성이 울리는 방식도 같이 바뀌어야 한다.
 	# 베드와 달리 이건 같은 구역 안에서 옆방으로 가도 매번 갱신한다. 통로와 홀은
 	# 같은 구역이어도 크기가 3배 차이 나고, 그 차이가 곧 공간감이기 때문이다.
-	if RoomData.ROOMS.has(room_id):
+	if RoomData.has_room(room_id):
 		_apply_room_space(float(RoomData.room_width(room_id)))
 
 	_room = room_id
@@ -973,7 +975,7 @@ func _start_texture(slot: int, s: AudioStream) -> void:
 ## 저장된 보정(TUNING_PATH)을 덮어 돌려준다. 랩 패널도 재생부도 전부 이 한 곳을 본다.
 ##   { "bed": 경로, "bed_db": float, "tex": [ {"file": 경로, "db": float}, ... ] }
 func plan_for(room_id: String) -> Dictionary:
-	var zone := String(RoomData.ROOMS.get(room_id, {}).get("zone", ""))
+	var zone := String(RoomData.get_room_or(room_id, {}).get("zone", ""))
 	var plan := {
 		"bed": String(ZONE_BEDS.get(zone, BED_FALLBACK)),
 		"bed_db": BED_DB,

@@ -13,6 +13,7 @@ extends RefCounted
 ##   front_doors              [{"x": 문 왼쪽 x, "target": 방 id, "target_door": 상대 방의 정면문 번호}]. 양쪽이 서로 가리켜야 한다.
 ##   props                    바닥 프랍 {"tex": assets/props/<이름>.png 또는 res:// 경로, "x": 바닥 중심 x} — y 는 실제 불투명 픽셀이 바닥에 닿게 자동.
 ##                            벽걸이는 "cy"(그 열 천장 상단에서 아래로) 또는 "fy"(바닥선에서 위로) 를 주면 그 높이에 붙는다.
+##                            벽걸이에 "flip": true 를 주면 좌우를 뒤집는다 (측벽문 문틀처럼 좌우가 한 쌍인 건축물).
 ##                            특수 {"type": "cabinet"(파츠 파괴)|"capacitor"|"cart"|"breaker"(벽걸이, cy/fy)|"sentry"(바닥 격납 센트리건)}.
 ##                            sentry 는 평소 바닥 해치로 묻혀 있다가 W/↑ 로 전개·조종한다 (SentryTurret). 받침 폭 376px · 높이 440px 자리를 비워 둘 것.
 ##                            사족보행 기체 {"type": "walker", "id": 맵에서 유일, "name": 단말기 표시 이름, "x"} —
@@ -28,8 +29,16 @@ extends RefCounted
 ##                            ceiling_lamp · dangling_lamp · fluorescent_lamp · wall_lamp · floor_work_light · indicator_beacon
 ##   fx                       환경 연출. 위치는 {"x", "cy"} (천장 기준) 로 적는다. beacon(회전 비상등) · leak(새는 수도관: dir, pressure) ·
 ##                            wire(끊긴 전선: length) · power_cable(전력 케이블: length) · fire({"x", "size"}: 바닥) · water({"level", x0/x1 선택}: 고인 물)
-##   monsters / spawn         시작 배치 [{"type": "crawler", "x", "facing"}] · 지속 스폰 {"max": 살아 있는 최대 수, "interval": [최소, 최대 초]}.
-##                            max 0 = 몬스터 없는 방. 2~5 = 적음. 9~14 = 아주 많음.
+##   monsters / spawn         시작 배치 [{"type": "crawler"|"giant", "x", "facing"}] · 지속 스폰 {"max": 살아 있는 최대 수,
+##                            "interval": [최소, 최대 초], "giant": 거대종이 섞일 확률 0~1}.
+##                            max 0 = 몬스터 없는 방. 2~5 = 적음. 9~14 = 아주 많음. **Room.MONSTER_HARD_CAP 을 넘지 못한다.**
+##                            선택 "band": px — 플레이어에서 이 거리 안에서만 나온다 (아주 긴 방용).
+##                            선택 "wave": {"interval": 초, "size": [최소, 최대], "gap": 마리 사이 초, "first": 첫 웨이브까지 초}
+##                            — 한 마리씩 흘리지 않고 interval 마다 한 무리씩 몰아서 내보낸다. 자리가 없으면 그 웨이브는 건너뛴다.
+##                            "giant" 은 크롤러를 5배로 키운 변종이다(Crawler.make_giant). 폭 1050 · 높이 890 px 라
+##                            천장이 낮은 방·열에는 **들어가지 못한다** — Room 이 설 수 있는 구간만 골라 가두고,
+##                            그런 구간이 없는 방의 지속 스폰은 조용히 일반종으로 되돌린다.
+##                            어느 방이 받는지는 tools/validate_giant.gd 가 출력한다 (현재 27개 중 6개).
 ##
 ## 맵 (측벽문 ⇄, 정면문 ↕):
 ##   정비 구역     [에어록] ⇄ [서쪽 통로] ⇄ [작업실] ⇄ [대형 정비 홀] ⇄ [짧은 통로] ⇄ [격납고] ⇄ [창고]
@@ -173,6 +182,8 @@ const ROOMS := {
 			{"type": "fire", "x": 1380, "size": Vector2(190.0, 240.0)},
 		],
 		"monsters": [
+			# 중앙 홀 가운데가 8행으로 트여 있다 — 거대종이 설 수 있는 몇 안 되는 자리(1165~1907)
+			{"type": "giant", "x": 1500, "facing": 1},
 			{"type": "crawler", "x": 1100, "facing": 1},
 			{"type": "crawler", "x": 1800, "facing": -1},
 			{"type": "crawler", "x": 2550, "facing": -1},
@@ -227,13 +238,15 @@ const ROOMS := {
 			{"type": "wire", "x": 2980, "cy": 44, "length": 200.0},
 		],
 		"monsters": [
+			# 왼쪽 9행 구역(525~2035)이 맵에서 거대종이 가장 넓게 움직일 수 있는 자리다.
+			# 오른쪽 낮은 천장으로는 못 넘어오니, 플레이어가 물러날 곳도 함께 남는다.
+			{"type": "giant", "x": 1200, "facing": 1},
 			{"type": "crawler", "x": 900, "facing": -1},
-			{"type": "crawler", "x": 1500, "facing": -1},
 			{"type": "crawler", "x": 2400, "facing": -1},
 			{"type": "crawler", "x": 3150, "facing": -1},
 			{"type": "crawler", "x": 3600, "facing": -1},
 		],
-		"spawn": {"max": 14, "interval": [1.2, 2.4]},
+		"spawn": {"max": 14, "interval": [1.2, 2.4], "giant": 0.08},
 	},
 	"storage": {
 		# 낮은 창고(9열) + 오른쪽 끝의 9행 굴뚝(수직 샤프트, 4열). 적음. 정면문으로 재배실 전실. 동쪽 막다른 끝.
@@ -538,12 +551,14 @@ const ROOMS := {
 			{"type": "beacon", "x": 3400, "cy": 74},
 		],
 		"monsters": [
+			# 피라미드 중앙만 9행이다 — 거대종은 그 한가운데를 차지하고 좌우로만 움직인다
+			{"type": "giant", "x": 1920, "facing": -1},
 			{"type": "crawler", "x": 800, "facing": 1},
 			{"type": "crawler", "x": 1600, "facing": -1},
 			{"type": "crawler", "x": 2400, "facing": -1},
 			{"type": "crawler", "x": 3200, "facing": -1},
 		],
-		"spawn": {"max": 12, "interval": [1.3, 2.5]},
+		"spawn": {"max": 12, "interval": [1.3, 2.5], "giant": 0.1},
 	},
 	"pump_corr": {
 		# 낮은 급수 통로, 가운데에 6행 펌프 알코브가 솟아 있다. 적음. 알코브의 정면문으로 연구 통로.
@@ -723,8 +738,9 @@ const ROOMS := {
 			{"type": "beacon", "x": 2300, "cy": 74},
 		],
 		"monsters": [
+			# 성당형 천장 아래 — 구역에서 거대종이 설 수 있는 유일한 자리
+			{"type": "giant", "x": 1400, "facing": -1},
 			{"type": "crawler", "x": 700, "facing": 1},
-			{"type": "crawler", "x": 1300, "facing": -1},
 			{"type": "crawler", "x": 1900, "facing": -1},
 			{"type": "crawler", "x": 2400, "facing": -1},
 		],
@@ -797,8 +813,29 @@ const ROOMS := {
 }
 
 
+## 본 맵에 없는 **임시 방**을 얹는 자리. 랩·테스트 씬이 자기 방을 여기에 등록하면
+## get_room / heights / layout 등 아래 조회 함수가 그대로 받아 준다.
+## ROOMS 자체는 건드리지 않으므로 지도(StationMap)·탐색 카운트·tools/validate_map.gd 는 영향을 받지 않는다.
+## (SpaceLabData.register 가 쓴다 — scripts/space_lab_data.gd)
+static var extra := {}
+
+
+static func register_extra(id: String, data: Dictionary) -> void:
+	extra[id] = data
+
+
+## 본 맵이든 임시 방이든 이 id 가 있는가
+static func has_room(id: String) -> bool:
+	return ROOMS.has(id) or extra.has(id)
+
+
 static func get_room(id: String) -> Dictionary:
-	return ROOMS[id]
+	return extra[id] if extra.has(id) else ROOMS[id]
+
+
+## 없는 id 도 안전하게 — 앰비언스처럼 "모르면 기본값" 인 곳이 쓴다
+static func get_room_or(id: String, fallback: Dictionary) -> Dictionary:
+	return get_room(id) if has_room(id) else fallback
 
 
 static func ids() -> Array:
@@ -812,7 +849,7 @@ static func random_id() -> String:
 
 ## 열별 높이(셀) 배열
 static func heights(id: String) -> Array:
-	return RoomTiles.expand(ROOMS[id]["shape"])
+	return RoomTiles.expand(get_room(id)["shape"])
 
 
 ## 방 기하: rows · origin(격자 원점) · width · ceiling_y(가장 높은 천장) · bottom_y
@@ -846,7 +883,7 @@ static func room_rect(id: String) -> Rect2:
 
 ## 정면문 index 의 바닥 중심 x (다른 방에서 이 문으로 들어올 때 등장 위치)
 static func front_door_center(id: String, index: int) -> float:
-	var doors: Array = ROOMS[id]["front_doors"]
+	var doors: Array = get_room(id)["front_doors"]
 	if index >= 0 and index < doors.size():
 		return float(doors[index]["x"]) + FRONT_DOOR_W * 0.5
 	return room_width(id) * 0.5
@@ -854,7 +891,7 @@ static func front_door_center(id: String, index: int) -> float:
 
 ## 몬스터 밀도 등급 — 없음 / 적음 / 아주 많음 (HUD·맵 표시용)
 static func danger(id: String) -> String:
-	var cap := int(ROOMS[id].get("spawn", {}).get("max", 0))
+	var cap := int(get_room(id).get("spawn", {}).get("max", 0))
 	if cap <= 0:
 		return "안전"
 	if cap <= 5:

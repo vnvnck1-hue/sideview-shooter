@@ -315,6 +315,7 @@ func _physics_process(delta: float) -> void:
 			_walker.firing = false
 
 	_walker.tick(delta)
+	_sync_blast()
 	_tick_fx(delta)
 	_shake = maxf(_shake - delta * 26.0, 0.0)
 	var jolt := Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake))
@@ -324,6 +325,15 @@ func _physics_process(delta: float) -> void:
 	_fx.queue_redraw()
 	_debug.queue_redraw()
 	_update_info()
+
+
+## 총구 화염을 매 프레임 총구에 다시 붙인다 (자리 + 포신 방향).
+## 랩의 워커는 변환 없는 루트 바로 아래에 있으므로 워커 좌표가 곧 월드 좌표다.
+func _sync_blast() -> void:
+	if _blast == null or _walker == null:
+		return
+	_blast.global_position = _walker.muzzle()
+	_blast.rotation = _walker.aim_dir().angle()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -436,11 +446,12 @@ func _on_fired(muzzle: Vector2, dir: Vector2) -> void:
 			break
 	_tracers.append({"a": muzzle, "b": hit, "t": TRACER_LIFE})
 
-	# 총구 화염 — 총구에 옮겨 붙이고 포신 방향으로 돌린다 (로컬 +x 가 포신 방향인 노드다)
+	# 총구 화염 — 총구에 옮겨 붙이고 포신 방향으로 돌린다 (로컬 +x 가 포신 방향인 노드다).
+	# 자리·방향은 _sync_blast() 가 매 프레임 다시 잡는다 — 화염이 보이는 동안에도 포탑이
+	# 선회하고 포신이 반동으로 물러나므로, 한 번만 잡아 두면 화염이 총구에서 떨어진다.
 	if _blast != null:
-		_blast.global_position = muzzle
-		_blast.rotation = dir.angle()
-		_blast.fire(randf_range(0.95, 1.2), dir)
+		_sync_blast()
+		_blast.fire(randf_range(0.95, 1.2), _walker.aim_dir())
 
 	# 탄피 — 센트리건과 같은 두 배 크기. 포신 **옆**으로 튀어나온다.
 	# **런타임에 불러온다.** shell_casing.gd 는 Audio 오토로드를 쓰는데, 검증·촬영 도구는

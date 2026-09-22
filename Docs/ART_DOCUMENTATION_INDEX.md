@@ -30,6 +30,7 @@
 | 조립·사용 | [`RESOURCE_USAGE_GUIDE.md`](RESOURCE_USAGE_GUIDE.md) | 타일 조립, 피벗, 레이어, 기존 자산 배치 | 신규 제작 수치는 ART_GUIDE에 위임 |
 | 분야별 규격 | [`CHARACTER_ART_GUIDE.md`](CHARACTER_ART_GUIDE.md) | 인물 비율, 얼굴, 복장, 애니메이션 | 인물에 한해 공통 규칙을 구체화 |
 | 분야별 규격·감사 | [`PIXEL_ANIMATION_GUIDE.md`](PIXEL_ANIMATION_GUIDE.md) | 동작별 프레임 수·표시 속도 기준과 현재 런타임 일치도 | 프레임 타이밍 판단은 이 문서, 인물 형태·픽셀 규격은 CHARACTER_ART_GUIDE에 위임 |
+| 분야별 규격 | [`IDLE_MOTION.md`](IDLE_MOTION.md) | 플레이어 아이들 모션 프리셋(절차적 채널·수치·비교 필름) | 정지 프레임 위에 코드로 얹는 움직임만 다룬다. 스프라이트 프레임 수·표시 속도는 PIXEL_ANIMATION_GUIDE에 위임 |
 | 자산별 규격 | [`TOXIC_TUMOR_CRAWLER_ANATOMY.md`](TOXIC_TUMOR_CRAWLER_ANATOMY.md) | 크롤러 해부 구조와 벽 이동 프레임 잠금값 | 해당 몬스터에만 적용 |
 | 자산별 규격 | [`SENTRY_TURRET_HEAD_STRUCTURE.md`](SENTRY_TURRET_HEAD_STRUCTURE.md) | 센트리 헤드 구조, 축, 회전·받침 관계 | 해당 센트리에만 적용 |
 | 제작 요청 기록 | [`SENTRY_HEAD_ANGLE_FAN_REQUEST.md`](SENTRY_HEAD_ANGLE_FAN_REQUEST.md) | 특정 센트리 각도 리소스의 납품 명세와 검사값 | 해당 요청에 명시된 캔버스·축만 예외 |

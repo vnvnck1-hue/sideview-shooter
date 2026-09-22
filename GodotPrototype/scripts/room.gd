@@ -12,7 +12,11 @@ const PropShadow := preload("res://scripts/prop_shadow.gd")
 
 ## 몬스터의 독액이 플레이어에 맞음 (Main 이 카메라 흔들림·밀림 처리)
 signal player_hit(point: Vector2, dir: float)
-signal monster_roared(pos: Vector2)
+## power: 운 개체의 덩치 배율 (일반 1.0 · 거대종 Crawler.GIANT_SIZE)
+signal monster_roared(pos: Vector2, power: float)
+## 거대종이 바닥을 내려찍었다 (Main 이 카메라를 크게 울린다)
+signal monster_slammed(pos: Vector2)
+signal wave_started(index: int, count: int)   # 웨이브 스폰이 한 무리를 내보내기 시작했다
 
 var room_id: String
 var width: int = 0
@@ -51,10 +55,17 @@ var _stains: Array = []       # BloodStain (오래된 것부터 정리)
 const MAX_STAINS := 120
 var _spawn_cfg: Dictionary = SPAWN_DEFAULT
 var _spawn_t := 0.0
+## 웨이브 스폰 상태 ("spawn": {"wave": {"interval": 초, "size": [최소, 최대], "gap": 마리 사이 초, "first": 첫 웨이브까지 초}})
+var wave_index := 0           # 지금까지 나온 웨이브 수 (HUD)
+var _wave_t := 0.0            # 다음 웨이브까지 남은 초
+var _wave_left := 0           # 이번 웨이브에서 아직 안 나온 마리
+var _wave_gap := 0.0
 var _lights: Node2D
 var _doors: Array = []        # [{sprite, rect, heat}]
 
 const MONSTER_MARGIN := 150.0
+## 한 방이 동시에 살려 둘 수 있는 몬스터 수의 **엔진 상한**. 방 데이터의 spawn.max 가 이보다 커도 여기서 잘린다.
+const MONSTER_HARD_CAP := 14
 ## 지속 스폰 기본값 — RoomData 의 "spawn": {"max": 살아 있는 최대 수, "interval": [최소, 최대 초]} 로 방마다 덮어쓴다
 const SPAWN_DEFAULT := {"max": 6, "interval": [1.8, 3.5]}
 const SPAWN_MIN_PLAYER_DIST := 900.0    # 플레이어에서 이만큼 떨어진 곳(가능하면 화면 밖)에 나온다
@@ -231,9 +242,13 @@ func build(id: String) -> void:
 	_monster_layer.z_index = 5
 	add_child(_monster_layer)
 	for m in data.get("monsters", []):
-		_add_crawler(float(m["x"]), int(m.get("facing", -1)))
+		_add_crawler(float(m["x"]), int(m.get("facing", -1)), String(m.get("type", "crawler")) == "giant")
 	_spawn_cfg = data.get("spawn", SPAWN_DEFAULT)
 	_spawn_t = _next_spawn_delay() * 0.5
+	# 첫 웨이브는 들어오자마자 덮치지 않는다 — 방을 한 번 둘러볼 틈(기본: 간격의 절반)을 준다
+	if _spawn_cfg.has("wave"):
+		var wv: Dictionary = _spawn_cfg["wave"]
+		_wave_t = float(wv.get("first", float(wv.get("interval", 30.0)) * 0.5))
 
 	# 부유 먼지 — 프랍 앞·빛 기둥 뒤(z3). 벽과 인물 사이의 "공기" 가 된다.
 	var dust := DustLayer.new()
@@ -358,11 +373,13 @@ func _add_prop(parent: Node2D, p: Dictionary) -> void:
 	var w := float(tex.get_width())
 	var h := float(tex.get_height())
 	if p.has("cy") or p.has("fy"):
-		# 벽걸이: 조명·피격 반응 없는 표면 스프라이트
+		# 벽걸이: 조명·피격 반응 없는 표면 스프라이트. "flip": true 면 좌우를 뒤집는다
+		# (측벽문 문틀처럼 좌우가 한 쌍인 건축물에 쓴다)
 		var s := Sprite2D.new()
 		s.centered = false
 		s.texture = tex
 		s.position = _fx_pos(p) - Vector2(w * 0.5, 0.0)
+		s.flip_h = bool(p.get("flip", false))
 		s.material = Lighting.shader_material("prop_surface")
 		parent.add_child(s)
 		return
@@ -507,12 +524,118 @@ func apply_dyn_shadow(i: int) -> void:
 		prop_shadows.apply_dynamic(i)
 
 
-func _add_crawler(x: float, facing: int) -> Crawler:
+## 거대종이 설 수 있는 열인가 — 머리 위로 Crawler.GIANT_CLEARANCE 가 남아야 한다.
+## 방은 열마다 천장 높이가 다른 계단형이라, "이 방" 이 아니라 "이 자리" 를 물어야 한다.
+func _giant_headroom_ok(x: float) -> bool:
+	return floor_y - ceiling_at(x) >= Crawler.GIANT_CLEARANCE
+
+
+## 거대종이 몸을 다 펴고 설 수 있는 연속 구간들 (몸 절반 폭만큼 안으로 들인 뒤).
+## 천장이 낮은 열에서 끊기므로 방 하나에 여러 구간이 나올 수 있고, 하나도 없을 수 있다.
+func _giant_spans() -> Array:
+	var out: Array = []
+	var step := float(RoomTheme.CELL)
+	var run_lo := -1.0
+	var c := step * 0.5
+	while c < float(width):
+		if _giant_headroom_ok(c):
+			if run_lo < 0.0:
+				run_lo = c - step * 0.5
+		elif run_lo >= 0.0:
+			_append_giant_span(out, run_lo, c - step * 0.5)
+			run_lo = -1.0
+		c += step
+	if run_lo >= 0.0:
+		_append_giant_span(out, run_lo, float(width))
+	return out
+
+
+## 구간을 몸 절반 폭만큼 안으로 들여 담는다. 몸이 다 들어가지 못하는 구간은 버린다.
+func _append_giant_span(out: Array, lo: float, hi: float) -> void:
+	var a := lo + Crawler.GIANT_HALF_W
+	var b := hi - Crawler.GIANT_HALF_W
+	if b > a:
+		out.append(Vector2(a, b))
+
+
+## 몬스터가 돌아다닐 좌우 한계.
+## 일반종은 벽 띠 안쪽 전체. 거대종은 x 가 든 **설 수 있는 구간** 하나로 가둔다 —
+## 낮은 천장 밑으로 걸어 들어가 타일을 뚫고 지나가는 그림을 막는 게 목적이다.
+## 받아 줄 구간이 아예 없는 방이면 그 자리 한 점으로 접힌다 (움직이지 않고 버티며 싸운다).
+## **닫힌 문의 x 목록** (오름차순). 방을 여러 구역으로 자른다 — 몬스터는 자기 구역 밖으로 나가지 못하고,
+## 지속 스폰은 **플레이어가 있는 구역 안에서만** 나온다. 빈 배열이면 방 전체가 한 구역이다(본 맵의 모든 방).
+## 공간 테스트 씬의 구역 문(SectionGate)이 열릴 때마다 여기서 그 x 를 빼고 refresh_sections() 를 부른다.
+var section_walls: Array = []
+
+
+## x 가 속한 구역 [왼쪽 끝, 오른쪽 끝] — 닫힌 문과 방 벽으로 잘린 구간
+func section_of(x: float) -> Vector2:
+	var lo := MONSTER_MARGIN
+	var hi := maxf(MONSTER_MARGIN, width - MONSTER_MARGIN)
+	for w in section_walls:
+		var wx := float(w)
+		if wx <= x:
+			lo = maxf(lo, wx)
+		else:
+			hi = minf(hi, wx)
+	return Vector2(lo, maxf(lo, hi))
+
+
+## 문이 열리거나 닫혀 구역이 바뀌었을 때 — 살아 있는 몬스터의 활동 범위를 다시 잡는다.
+## **자리를 옮기지는 않는다.** 각자 지금 서 있는 구역을 그대로 받는다.
+func refresh_sections() -> void:
+	for m in monsters:
+		if not is_instance_valid(m):
+			continue
+		var sp := section_of(m.position.x)
+		if m.get("art_scale") != null and float(m.get("art_scale")) > 1.5:
+			sp = _clip_to_giant(sp, m.position.x)
+		m.min_x = sp.x
+		m.max_x = sp.y
+
+
+## 거대종은 설 수 있는 구간(천장 높이)이 따로 있다 — 구역과 겹치는 부분만 준다
+func _clip_to_giant(span: Vector2, x: float) -> Vector2:
+	var best := span
+	for g in _giant_spans():
+		if x >= g.x and x <= g.y:
+			best = Vector2(maxf(span.x, g.x), minf(span.y, g.y))
+			break
+	return Vector2(best.x, maxf(best.x, best.y))
+
+
+func _monster_bounds(giant: bool, x: float) -> Vector2:
+	if not giant:
+		var full := section_of(x)
+		return full
+	var spans := _giant_spans()
+	if spans.is_empty():
+		var mid := clampf(x, 0.0, float(width))
+		return Vector2(mid, mid)
+	spans = spans.map(func(g): return Vector2(maxf(g.x, section_of(x).x), minf(g.y, section_of(x).y)))
+	spans = spans.filter(func(g): return g.y > g.x)
+	if spans.is_empty():
+		var mid2 := clampf(x, 0.0, float(width))
+		return Vector2(mid2, mid2)
+	var best: Vector2 = spans[0]
+	for sp in spans:
+		if x >= sp.x and x <= sp.y:
+			return sp
+		if absf(x - clampf(x, sp.x, sp.y)) < absf(x - clampf(x, best.x, best.y)):
+			best = sp
+	return best
+
+
+func _add_crawler(x: float, facing: int, giant := false) -> Crawler:
 	var c := Crawler.new()
-	c.name = "Crawler"
-	c.setup(self, x, floor_y + 2.0, MONSTER_MARGIN, width - MONSTER_MARGIN, facing)
+	c.name = "GiantCrawler" if giant else "Crawler"
+	if giant:
+		c.make_giant()                       # setup() 보다 먼저 — 체력·타이머가 거대종 값으로 잡힌다
+	var b := _monster_bounds(giant, x)
+	c.setup(self, x, floor_y + 2.0, b.x, b.y, facing)
 	c.spat.connect(_on_monster_spat)
 	c.roared.connect(monster_roared.emit)
+	c.slammed.connect(monster_slammed.emit)
 	_monster_layer.add_child(c)
 	monsters.append(c)
 	return c
@@ -531,19 +654,109 @@ func alive_monsters() -> int:
 	return n
 
 
+## **플레이어와 같은 구역**에 살아 있는 몬스터 수. 스폰 상한은 이 값으로 잰다 —
+## 닫힌 문 뒤에 있어 만날 수도 죽일 수도 없는 개체가 상한을 먹으면, 정작 눈앞은 텅 빈 채로 굳는다.
+func alive_in_section(x: float) -> int:
+	var sec := section_of(x)
+	var n := 0
+	for m in monsters:
+		if is_instance_valid(m) and not m.is_dead() and m.position.x >= sec.x and m.position.x <= sec.y:
+			n += 1
+	return n
+
+
 ## 지속 스폰: 살아 있는 수가 max 미만이면 interval 마다 한 마리. 플레이어에서 먼 자리를 고른다(8회 시도, 없으면 먼 쪽 끝)
 func _tick_spawner(delta: float) -> void:
-	var cap := int(_spawn_cfg.get("max", 0))
+	var cap := spawn_cap()
 	if cap <= 0 or player == null:
+		return
+	# 웨이브 스폰 ("spawn": {"wave": {...}}) — 한 마리씩 흘리지 않고 한 번에 몰아서 내보낸다
+	if _spawn_cfg.has("wave"):
+		_tick_wave(delta, cap)
 		return
 	_spawn_t -= delta
 	if _spawn_t > 0.0:
 		return
 	_spawn_t = _next_spawn_delay()
-	if alive_monsters() >= cap:
+	if alive_in_section(player.position.x) >= cap:
 		return
-	var lo := MONSTER_MARGIN
-	var hi := width - MONSTER_MARGIN
+	_spawn_one()
+
+
+## 이 방이 동시에 살려 둘 수 있는 몬스터 수. 방 데이터의 max 를 쓰되 **엔진 상한을 넘지 않는다.**
+## 상한이 없으면 아주 긴 방에서 데이터 한 줄 실수로 프레임이 무너진다 — 몬스터 하나가
+## 스프라이트·그림자·독액·체액 자국을 전부 끌고 다닌다.
+func spawn_cap() -> int:
+	return mini(int(_spawn_cfg.get("max", 0)), MONSTER_HARD_CAP)
+
+
+## 다음 웨이브까지 남은 초 (HUD 용). 웨이브 방이 아니거나 지금 쏟아지는 중이면 -1.
+func wave_countdown() -> float:
+	if not _spawn_cfg.has("wave") or _wave_left > 0:
+		return -1.0
+	return maxf(_wave_t, 0.0)
+
+
+func wave_pending() -> int:
+	return _wave_left
+
+
+## 웨이브: interval 초마다 size 마리를 gap 초 간격으로 내보낸다. 자리가 없으면 남은 마리는 버리고
+## 다음 웨이브를 기다린다 — 밀린 마리가 계속 새어 나와 결국 "쉬지 않고 나오는" 상태가 되지 않게.
+func _tick_wave(delta: float, cap: int) -> void:
+	var cfg: Dictionary = _spawn_cfg["wave"]
+	if _wave_left > 0:
+		_wave_gap -= delta
+		if _wave_gap > 0.0:
+			return
+		_wave_gap = float(cfg.get("gap", 0.35))
+		if alive_in_section(player.position.x) >= cap:
+			_wave_left = 0
+			return
+		_spawn_one()
+		_wave_left -= 1
+		return
+	_wave_t -= delta
+	if _wave_t > 0.0:
+		return
+	_wave_t = float(cfg.get("interval", 30.0))
+	var size: Array = cfg.get("size", [3, 5])
+	_wave_left = maxi(0, mini(randi_range(int(size[0]), int(size[1])), cap - alive_in_section(player.position.x)))
+	_wave_gap = 0.0
+	if _wave_left > 0:
+		wave_index += 1
+		wave_started.emit(wave_index, _wave_left)
+
+
+## 한 마리를 규칙(거대종 확률 · 스폰 밴드 · 플레이어와의 최소 거리)대로 내보낸다
+func _spawn_one() -> void:
+	# 지속 스폰에 거대종이 섞이는 확률 (방 데이터의 "spawn": {"giant": 0.0~1.0}).
+	# 이 방이 그 덩치를 받아 주지 못하면 조용히 일반종으로 되돌린다 — 제자리에 못 박힌 거대종보다 낫다.
+	var giant := randf() < float(_spawn_cfg.get("giant", 0.0))
+	var bounds := Vector2(MONSTER_MARGIN, maxf(MONSTER_MARGIN, width - MONSTER_MARGIN))
+	if giant:
+		var spans := _giant_spans()
+		if spans.is_empty():
+			giant = false
+		else:
+			bounds = spans[randi() % spans.size()]
+	# 닫힌 문 너머에는 나오지 않는다 — 플레이어가 있는 구역 안으로 자른다
+	var sec := section_of(player.position.x)
+	bounds.x = maxf(bounds.x, sec.x)
+	bounds.y = minf(bounds.y, sec.y)
+	if bounds.y <= bounds.x:
+		return
+	var lo := bounds.x
+	var hi := bounds.y
+	# spawn.band: 플레이어에서 이 거리 안에서만 나온다 (없으면 방 전체).
+	# 아주 긴 방에서 max 마리를 방 끝까지 흩뿌리면 밀도가 0 에 가까워진다 — 공간 테스트 씬이 쓴다.
+	var band := float(_spawn_cfg.get("band", 0.0))
+	if band > 0.0:
+		lo = maxf(lo, player.position.x - band)
+		hi = minf(hi, player.position.x + band)
+		if hi - lo < SPAWN_MIN_PLAYER_DIST * 2.0:
+			lo = clampf(player.position.x - SPAWN_MIN_PLAYER_DIST * 1.2, bounds.x, bounds.y)
+			hi = clampf(player.position.x + SPAWN_MIN_PLAYER_DIST * 1.2, bounds.x, bounds.y)
 	var x := 0.0
 	var found := false
 	for i in range(8):
@@ -553,7 +766,7 @@ func _tick_spawner(delta: float) -> void:
 			break
 	if not found:
 		x = lo if player.position.x > width * 0.5 else hi
-	var c := _add_crawler(x, 1 if player.position.x >= x else -1)
+	var c := _add_crawler(x, 1 if player.position.x >= x else -1, giant)
 	c.spawn_in()
 
 

@@ -1,0 +1,202 @@
+{
+  "source": "C:\\Users\\vnvnc\\.codex\\generated_images\\01a0c460-b8fb-7b32-bbec-330d7a2eb96c\\exec-646ec800-2a19-4231-b087-b44732b4f47f.png",
+  "layout": {
+    "columns": 5,
+    "rows": 2,
+    "frame_count": 10
+  },
+  "frame_size": [
+    397,
+    397
+  ],
+  "duration_ms": 80,
+  "loop": true,
+  "direction": "left",
+  "anchor_mode": "ground",
+  "alpha": {
+    "mode": "binary",
+    "threshold": 128
+  },
+  "frames": [
+    {
+      "frame": 1,
+      "file": "quadruped_walk_01.png",
+      "source_bounds": [
+        0,
+        0,
+        397,
+        396
+      ],
+      "body_anchor_shift": [
+        0,
+        0
+      ],
+      "size": [
+        397,
+        397
+      ]
+    },
+    {
+      "frame": 2,
+      "file": "quadruped_walk_02.png",
+      "source_bounds": [
+        397,
+        0,
+        793,
+        396
+      ],
+      "body_anchor_shift": [
+        -6,
+        1
+      ],
+      "size": [
+        397,
+        397
+      ]
+    },
+    {
+      "frame": 3,
+      "file": "quadruped_walk_03.png",
+      "source_bounds": [
+        793,
+        0,
+        1190,
+        396
+      ],
+      "body_anchor_shift": [
+        -6,
+        8
+      ],
+      "size": [
+        397,
+        397
+      ]
+    },
+    {
+      "frame": 4,
+      "file": "quadruped_walk_04.png",
+      "source_bounds": [
+        1190,
+        0,
+        1586,
+        396
+      ],
+      "body_anchor_shift": [
+        -2,
+        5
+      ],
+      "size": [
+        397,
+        397
+      ]
+    },
+    {
+      "frame": 5,
+      "file": "quadruped_walk_05.png",
+      "source_bounds": [
+        1586,
+        0,
+        1983,
+        396
+      ],
+      "body_anchor_shift": [
+        -5,
+        3
+      ],
+      "size": [
+        397,
+        397
+      ]
+    },
+    {
+      "frame": 6,
+      "file": "quadruped_walk_06.png",
+      "source_bounds": [
+        0,
+        396,
+        397,
+        793
+      ],
+      "body_anchor_shift": [
+        1,
+        21
+      ],
+      "size": [
+        397,
+        397
+      ]
+    },
+    {
+      "frame": 7,
+      "file": "quadruped_walk_07.png",
+      "source_bounds": [
+        397,
+        396,
+        793,
+        793
+      ],
+      "body_anchor_shift": [
+        -7,
+        21
+      ],
+      "size": [
+        397,
+        397
+      ]
+    },
+    {
+      "frame": 8,
+      "file": "quadruped_walk_08.png",
+      "source_bounds": [
+        793,
+        396,
+        1190,
+        793
+      ],
+      "body_anchor_shift": [
+        7,
+        21
+      ],
+      "size": [
+        397,
+        397
+      ]
+    },
+    {
+      "frame": 9,
+      "file": "quadruped_walk_09.png",
+      "source_bounds": [
+        1190,
+        396,
+        1586,
+        793
+      ],
+      "body_anchor_shift": [
+        16,
+        21
+      ],
+      "size": [
+        397,
+        397
+      ]
+    },
+    {
+      "frame": 10,
+      "file": "quadruped_walk_10.png",
+      "source_bounds": [
+        1586,
+        396,
+        1983,
+        793
+      ],
+      "body_anchor_shift": [
+        -6,
+        25
+      ],
+      "size": [
+        397,
+        397
+      ]
+    }
+  ]
+}

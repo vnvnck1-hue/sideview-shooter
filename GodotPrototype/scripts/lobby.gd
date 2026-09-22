@@ -6,6 +6,7 @@ extends Control
 ##   [맵 뷰어]     방을 게임 없이 조립해 자유 카메라로 본다. [ ] 로 방 전환 (scenes/MapViewer.tscn)
 ##   [대화 UI 랩]  대사 표시 방식 5종을 실제 화면에서 1~5 로 바꿔 가며 비교한다 (scenes/DialogueLab.tscn)
 ##   [사족보행 랩] 인게임 기체의 보행·관절 수치를 조정한다. 원화 피벗 편집기도 여기서 연다.
+##   [공간 테스트] 기본 타일로 만든 20,000px 한 줄에서 넓이·길이·트랜지션 없는 방 연결을 본다 (scenes/SpaceLab.tscn)
 ##   [조명·면 랩]  실제 게임 그대로 플레이하면서 방 안의 광원 수치와 프랍 면 맵을 고치고 저장한다 (scenes/FaceLab.tscn)
 ##   [CRT 모니터]  전역 CRT 후처리 프리셋 드롭다운 (scripts/crt_preset.gd · autoload CrtFx). 게임 안에서는 F4 / Shift+F4
 ##   [종료]
@@ -92,6 +93,10 @@ func _ready() -> void:
 	var face := _button("◧   조명·면 랩 — 실제 플레이 위에서 조명과 면을 고친다", "본편과 똑같이 플레이(이동·조준·사격)하면서, 방 안의 광원을 우클릭으로 고르고 세기·반경·높이를 슬라이더로 맞춘다. 저장하면 lighting/tuning.json 에 쓰여 본편에 그대로 적용된다. 총구·탄착처럼 클릭할 수 없는 광원은 G 로 순환. 프랍 면 맵(기울기·디테일·번짐)도 같은 패널에서. F5 패널 · Tab 광원 · N 면↔자동 · F1 로비")
 	face.pressed.connect(func(): AppFlow.start_face_lab(get_tree()))
 	box.add_child(face)
+
+	var space := _button("◻   공간 테스트 — 이어진 대공간 %d px" % SpaceLabData.total_width(), "기본 배경 타일(workshop)로 세운 방 5개를 낮은 연결 통로로 이어 붙인 한 줄. 끝에서 끝까지 걸어도 페이드가 없다 — 문틀을 지나면 바로 옆방이다. 몬스터·센트리건·보행 기체·프랍·조명이 모두 들어 있다. [ ] 구획 건너뛰기 · F3 줌 · F1 로비")
+	space.pressed.connect(func(): AppFlow.start_space_lab(get_tree()))
+	box.add_child(space)
 
 	box.add_child(_spacer(6))
 	box.add_child(_crt_row())

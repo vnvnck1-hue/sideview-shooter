@@ -90,6 +90,13 @@ const ART_DIR := "res://assets/quadruped/"
 
 var walker: ProcWalker
 
+## 총열 열 0..1 (WalkerUnit 이 매 프레임 넣어준다). 포신이 붉게 달아오른다 — 센트리건과 같은 BarrelGlow.
+var heat := 0.0
+
+## 스프라이트가 화면에서 차지하는 배율. 림 두께를 화면 기준으로 맞추는 데만 쓴다
+## (본편은 0.5 배 그릇 안에 있고 랩은 1.0 이다 — 같은 값을 쓰면 본편에서 윤곽이 두 배로 두꺼워진다).
+var px_scale := 1.0
+
 var _plane: Node2D            # 몸통이 담기는 평면 (사영 행렬을 그대로 받는다)
 var _hull: Sprite2D
 var _turn_face: Sprite2D       # 회전 중 드러나는 두께 면; 측면과 연속적으로 교차한다
@@ -97,6 +104,8 @@ var _barrel: Sprite2D
 var _chassis: Node2D          # 상체 회전과 독립된 하체 연결부
 var _legs: Array = []         # [{index, holder, rod, sleeve, shin, hip_cap, knee_cap}] — index 는 walker.legs() 의 번호
 var _tex: Dictionary = {}
+var _mat: ShaderMaterial      # 조각이 **함께 쓰는** 라이팅 머티리얼 (노멀맵·림·열 잔광)
+var _glow: BarrelGlow         # 달아오른 포신
 
 
 var _parts: Dictionary = {}       # 실제로 쓰는 규격 (원화가 있으면 parts.json 값)
@@ -106,6 +115,9 @@ func _ready() -> void:
 	if walker == null:
 		walker = get_parent() as ProcWalker
 	_load_specs()
+	# 조상 변환에서 화면 배율을 읽는다 (본편은 0.5 그릇, 랩은 1.0). 림 두께에만 쓴다.
+	px_scale = maxf(absf(get_global_transform().get_scale().x), 0.05)
+	_mat = _surface_material()
 	for k in _parts.keys():
 		_tex[k] = _load_or_placeholder(k)
 
@@ -128,6 +140,15 @@ func _ready() -> void:
 	_barrel = _make("barrel")
 	_barrel.z_index = 6
 	add_child(_barrel)
+
+	# 달아오른 총열. 포신 스프라이트 **위에** 가산으로 덧그리는 층이라 z 를 한 칸 위로 둔다.
+	# 이 노드 자체를 포신 각도로 돌리므로, BarrelGlow 는 제 로컬에서 늘 가로로 누운 포신 하나만 안다
+	# (센트리건은 포신이 로컬에서 가로라 그대로 됐지만, 이 기체는 포신이 360° 돈다).
+	_glow = BarrelGlow.new()
+	_glow.name = "BarrelGlow"
+	_glow.z_index = 7
+	add_child(_glow)
+	_glow.setup([{"back": Vector2.ZERO, "tip": Vector2(ProcWalker.BARREL_LEN, 0.0), "w": ProcWalker.BARREL_W}])
 
 	# 다리 딕셔너리를 **들고 있지 않는다. 번호만 기억한다.**
 	# ProcWalker.reset_stance() 는 네 다리를 통째로 새 딕셔너리로 갈아 끼운다(씬 시작·초기화·착지 직후).
@@ -197,6 +218,7 @@ func _make(key: String) -> Sprite2D:
 	sp.name = key
 	sp.centered = false
 	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sp.material = _mat
 	_wear(sp, key)
 	return sp
 
@@ -210,12 +232,25 @@ func _wear(sp: Sprite2D, key: String) -> void:
 	sp.offset = -(_parts[key]["anchor"] as Vector2)      # 관절이 노드 원점에 오게
 
 
+## 조각이 함께 쓰는 라이팅 머티리얼. 이 기체는 인물이 아니라 **기계**라 센트리건과 같은
+## prop_surface 를 쓴다 (노멀맵 확산 + 스페큘러 + 배경 림). 림 두께는 텍스처 px 기준이라
+## 화면 배율로 나눠 줘야 어떤 크기로 놓든 같은 굵기로 보인다 — SentryTurret._surface_material 과 같다.
+func _surface_material() -> ShaderMaterial:
+	var m := Lighting.shader_material("prop_surface")
+	m.set_shader_parameter("rim_width_px", float(Lighting.rim_preset()["width"]) / px_scale)
+	return m
+
+
 ## 원화 조각이 있으면 그걸 쓴다. 없으면 규격 크기의 단색 판을 만들어 자리부터 맞춘다.
 ## 판에는 윗면 띠와 테두리를 넣는다 — 그게 없으면 조각이 뒤집혀 붙어도 눈치채지 못한다.
 func _load_or_placeholder(key: String) -> Texture2D:
 	var path := ART_DIR + String(_parts[key].get("file", key)) + ".png"
 	if ResourceLoader.exists(path):
-		return load(path) as Texture2D
+		# **Lighting.textured()** 로 받는다 — assets/normals/quadruped/<이름>.png 가 붙은 CanvasTexture 다.
+		# 예전엔 load() 로 원화만 받아 조각이 통째로 평평하게 칠해졌다: 램프 밑을 걸어도 위아래가
+		# 갈리지 않고 앰비언트 색만 곱해져, 같은 방의 인물·프랍만 입체로 보이고 이 기체만 종이였다.
+		# (노멀맵은 Tools/build_normal_maps.py 의 "quadruped" 그룹이 굽는다)
+		return Lighting.textured(path)
 	var size: Vector2 = _parts[key]["size"]
 	var w := int(size.x)
 	var h := int(size.y)
@@ -288,6 +323,12 @@ func _sync_body() -> void:
 	var fore: float = clampf(d.length() / ProcWalker.BARREL_LEN, ProcWalker.SQUASH_MIN, 1.0)
 	# 왼쪽으로 조준해도 포신의 윗면을 위로 유지한다. 하체 방향과는 무관하다.
 	_barrel.scale = Vector2(fore, 1.0 if walker.aim_dir().x >= 0.0 else -1.0)
+
+	# 달아오른 총열은 포신과 **같은 자리·같은 각도**에 얹는다 (좌우 반전은 따르지 않는다 —
+	# 위아래 대칭으로 그리므로 뒤집을 필요가 없고, 뒤집으면 발광 라이트가 반대편으로 간다).
+	_glow.position = pivot
+	_glow.rotation = _barrel.rotation
+	_glow.heat = heat
 
 
 ## ProcWalker 가 내놓는 좌표(발·고관절)는 **워커의 부모 공간**이다 — 월드가 아니다.

@@ -49,9 +49,64 @@ const ACCEL := 5200.0               # 출발 가속 (px/s^2) - 약 0.16초에 �
 const DECEL := 3600.0               # 정지 감속 - 약 0.23초에 멈춤, 살짝 미끄러짐
 const TURN_DECEL := 7000.0          # 반대 방향으로 꺾을 때는 더 빨리 감속
 
-# 숨쉬기 (Idle) - 발을 고정한 채 스케일 트위닝
-const BREATH_PERIOD := 2.6
-const BREATH_SCALE := Vector2(0.012, 0.028)   # x는 살짝 줄고 y는 늘어남
+# 아이들 모션 (Idle / Crouch) — 발을 바닥에 붙인 채 상체만 절차적으로 흔든다.
+# idle 클립은 **한 장짜리 정지 프레임**이라 움직임은 전부 여기서 만들어진다. 레트로 게임의 과장된
+# 대기 자세처럼 "가만히 서 있어도 계속 살아 있는" 실루엣이 목표. 채널은 넷:
+#   squash : 세로로 늘고 가로로 줄어드는 스쿼시&스트레치 (scale, 발 고정이라 위치로 보정)
+#   lean   : 상체에 좌우로 실리는 무게중심 (skew + 위치 보정, 발은 그대로)
+#   head   : 목 위 머리가 head_lag 만큼 **늦게** 따라 흔들림 (px 상하 · rad 기울기)
+#   arm    : 어깨(=팔 앵커)가 같이 들썩임 (px 상하)
+# hz     : 주 파형 주파수. 옛 숨쉬기는 0.38Hz(2.6초) 였다 — 아래 프리셋은 전부 그보다 3~8배 빠르다
+# pop    : 파형 샤프니스. 1 = 사인, <1 이면 사각파에 가까워져 톡톡 튀어 오르는 느낌
+# steps  : 파형 **값**을 이 단계로 계단화 (0 = 끄기). 중간 자세가 사라져 포즈가 몇 개로 줄어든다
+# frame_fps : 파형이 참조하는 **시간**을 이 fps 로 계단화 (0 = 끄기). 8 이면 1/8초마다 한 번만 자세가
+#          바뀌고 그동안은 그대로 멈춰 있다 — 프레임 몇 장으로 돌리던 옛 픽셀 애니의 뚝뚝 끊기는 맛.
+#          steps 가 자세의 **가짓수**를 줄인다면 이쪽은 자세가 **바뀌는 순간**을 띄엄띄엄 만든다
+# snap_px: 머리·어깨·좌우 이동을 이 픽셀 격자에 맞춰 반올림 (0 = 끄기). 1 = 아트 1픽셀 단위로만 움직여
+#          부드러운 미끄러짐이 사라진다. frame_fps 와 짝으로 써야 "클램프된 스프라이트" 처럼 보인다
+# accent : accent_period 마다 한 번 터지는 강조 동작 (2차 스프링 임펄스 한 방, 부호는 매번 랜덤).
+#          acc_* 값이 그 한 방을 각 채널에 얼마씩 나눠 준다. period 0 이면 강조 없음
+const IDLE_PRESETS := [
+	{"id": "bounce", "name": "통통 (Bounce)",
+		"desc": "1.9Hz 스쿼시&스트레치. 머리·어깨가 한 박 늦게 따라온다 — 아케이드 대기 자세",
+		"hz": 1.9, "squash": Vector2(0.060, 0.090), "pop": 0.62, "steps": 0,
+		"lean_px": 3.0, "lean_hz": 0.95, "head_px": 8.0, "head_rad": 0.018, "head_lag": 0.14,
+		"arm_px": 6.0, "crouch": 0.45, "accent_period": 0.0},
+	{"id": "swagger", "name": "건들건들 (Swagger)",
+		"desc": "1.2Hz 상하 + 0.6Hz 좌우 무게중심 이동. 머리는 반대로 기울고, 가끔 어깨를 한 번 턴다",
+		"hz": 1.2, "squash": Vector2(0.030, 0.048), "pop": 1.0, "steps": 0,
+		"lean_px": 16.0, "lean_hz": 0.6, "head_px": 5.0, "head_rad": 0.085, "head_lag": 0.20,
+		"arm_px": 4.0, "crouch": 0.5,
+		"accent_period": 3.6, "accent_jitter": 0.8, "accent_imp": 60.0, "accent": Vector3(520.0, 34.0, 0.0),
+		"acc_squash": 0.020, "acc_lean_px": 7.0, "acc_head_rad": 0.05, "acc_head_px": 3.0, "acc_arm_px": 4.0},
+	{"id": "twitch", "name": "안절부절 (Twitch)",
+		"desc": "3.2Hz 계단형 잔떨림 + 0.9초마다 어깨·머리가 한 번 튀는 강조. 총 든 손이 근질거린다",
+		"hz": 3.2, "squash": Vector2(0.048, 0.070), "pop": 0.30, "steps": 3,
+		"lean_px": 7.0, "lean_hz": 1.6, "head_px": 8.0, "head_rad": 0.045, "head_lag": 0.25,
+		"arm_px": 7.0, "crouch": 0.5,
+		"accent_period": 0.9, "accent_jitter": 0.3, "accent_imp": 120.0, "accent": Vector3(1900.0, 62.0, 0.0),
+		"acc_squash": 0.060, "acc_lean_px": 14.0, "acc_head_rad": 0.14, "acc_head_px": 10.0, "acc_arm_px": 12.0},
+	{"id": "heavy", "name": "묵직 (Heavy)",
+		"desc": "0.7Hz 느린 템포. 대신 한 번에 세로 8%씩 확실히 눌렀다 편다 — 차분하지만 분명한 상하",
+		"hz": 0.7, "squash": Vector2(0.052, 0.080), "pop": 1.45, "steps": 0,
+		"lean_px": 0.0, "lean_hz": 0.35, "head_px": 11.0, "head_rad": 0.012, "head_lag": 0.18,
+		"arm_px": 7.0, "crouch": 0.55, "accent_period": 0.0},
+	{"id": "stepped", "name": "뚝뚝 (Stepped)",
+		"desc": "8fps 로 시간을 계단화하고 자세를 4단계로 클램프 · 픽셀 격자 스냅. 옛 스프라이트 애니처럼 딱딱 끊긴다",
+		"hz": 1.0, "squash": Vector2(0.055, 0.085), "pop": 0.8, "steps": 2,
+		"frame_fps": 8.0, "snap_px": 1.0,
+		"lean_px": 9.0, "lean_hz": 0.5, "head_px": 10.0, "head_rad": 0.05, "head_lag": 0.25,
+		"arm_px": 8.0, "crouch": 0.5,
+		"accent_period": 2.4, "accent_jitter": 0.6, "accent_imp": 100.0, "accent": Vector3(1100.0, 56.0, 0.0),
+		"acc_squash": 0.045, "acc_lean_px": 10.0, "acc_head_rad": 0.09, "acc_head_px": 8.0, "acc_arm_px": 8.0},
+	{"id": "legacy", "name": "기존 숨쉬기 (비교용)",
+		"desc": "0.38Hz · 세로 2.8%만 늘었다 줄었다. 앞 프리셋들과 A/B 하려고 남겨 둔 예전 값",
+		"hz": 0.385, "squash": Vector2(0.006, 0.014), "pop": 1.0, "steps": 0,
+		"lean_px": 0.0, "lean_hz": 0.0, "head_px": 0.0, "head_rad": 0.0, "head_lag": 0.0,
+		"arm_px": 0.0, "crouch": 1.0, "accent_period": 0.0},
+]
+const IDLE_BLEND_IN := 7.0          # 멈춰 설 때 아이들 모션이 올라오는 속도
+const IDLE_BLEND_OUT := 11.0        # 걷기 시작하면 이 속도로 빠르게 꺼진다
 
 # 사격 — 카타나 제로식 즉발·고속 연사
 const FIRE_COOLDOWN := 0.09         # 초. 누르고 있으면 이 간격으로 연사 (≈11발/초)
@@ -123,8 +178,16 @@ var _head_rc := Vector2.ZERO
 var _body_rc := Vector2.ZERO
 var _pending: Array = []
 var _arm_angle := 0.0
-var _breath_t := 0.0
-var _breath := Vector2.ONE
+var _idle_t := 0.0
+var _idle_w := 0.0                  # 아이들 모션 가중치 0..1 (이동 중엔 0으로 빠진다)
+var _idle_acc := Vector2.ZERO       # 강조 동작 스프링 (값, 속도)
+var _idle_acc_t := 0.0              # 다음 강조까지 남은 시간
+var _idle_frame := -1               # frame_fps 계단화용 현재 프레임 번호
+var _idle_acc_q := 0.0              # 그 프레임에서 붙잡아 둔 강조 값
+var _idle_head_off := Vector2.ZERO  # 머리에 얹는 추가 오프셋 (px)
+var _idle_head_rot := 0.0
+var _idle_arm_off := Vector2.ZERO
+var _breath := Vector2.ONE          # 상체 스케일 (아이들 스쿼시 결과) — 어깨·목 앵커가 이걸 따라간다
 var _meta := {}
 var _shoulders := {}                # "walk_02" → 어깨 오프셋(바닥 중심 기준, 오른쪽 방향)
 var _necks := {}                    # "walk_02" → 목 오프셋(바닥 중심 기준, 오른쪽 방향)
@@ -330,6 +393,45 @@ static func recoil_preset() -> Dictionary:
 	return RECOIL
 
 
+## 지금 쓰는 아이들 프리셋. 본편에서 F5 로 순환하며 비교한다 (Shift+F5 = 이전).
+static var idle_index := 0
+
+static func idle_preset() -> Dictionary:
+	return IDLE_PRESETS[wrapi(idle_index, 0, IDLE_PRESETS.size())]
+
+
+## 인스턴스 경유 창구 — 촬영 도구처럼 **Player 를 이름으로 못 부르는** 곳(autoload 가 아직 없는
+## --script 실행 시점)에서 프리셋을 갈아 끼우기 위한 것.
+func idle_presets() -> Array:
+	return IDLE_PRESETS
+
+
+## 프리셋을 바꾸고 아이들 모션을 위상 0 에서 다시 시작한다 (프리셋 비교용 · 같은 지점에서 출발).
+func use_idle_preset(i: int) -> void:
+	idle_index = wrapi(i, 0, IDLE_PRESETS.size())
+	_idle_t = 0.0
+	_idle_w = 0.0
+	_idle_acc = Vector2.ZERO
+	_idle_acc_t = 0.0
+	_idle_frame = -1
+	_idle_acc_q = 0.0
+
+
+## 픽셀 격자 스냅 (grid<=0 이면 그대로). 아트 1픽셀 = 월드 1단위라 grid 1.0 이 곧 한 픽셀이다.
+static func _snap(v: float, grid: float) -> float:
+	return v if grid <= 0.0 else roundf(v / grid) * grid
+
+
+## 아이들 파형: 위상 p(사이클 단위) → -1..1.
+## pop<1 이면 사각파 쪽으로 붙어 정점에 오래 머물고(톡 튀는 느낌), steps>0 이면 그 단계로 계단화한다.
+static func _wave(p: float, pop: float, steps: int) -> float:
+	var s := sin(TAU * p)
+	var v: float = signf(s) * pow(absf(s), pop)
+	if steps > 0:
+		v = roundf(v * float(steps)) / float(steps)
+	return v
+
+
 ## 2차 스프링 한 스텝: s = (값, 속도), p = (k, 감쇠, _)
 static func _spring(s: Vector2, p: Vector3, delta: float) -> Vector2:
 	s.y += -s.x * p.x * delta
@@ -464,7 +566,7 @@ func _process(delta: float) -> void:
 		else:
 			body.speed_scale = 1.0
 
-	_update_breath(delta)
+	_update_idle(delta)
 
 	# 사격 - 누르고 있는 동안 쿨다운마다 한 발 (첫 발 즉발). 탄창이 비면 자동 재장전.
 	# 질주 속도가 남아 있는 동안은 발사되지 않는다 — 위에서 이미 걷기로 감속을 시작했으므로
@@ -513,25 +615,70 @@ func _update_head(delta: float, snap := false) -> void:
 	# 반동: 머리가 뒤로 젖혀지며(위) 조금 밀린다 — 몸통과 다른 스프링이라 따로 흔들린다
 	var rp := recoil_preset()
 	var head_k := _head_rc.x
-	head_pivot.rotation = _head_angle + float(rp["head_rad"]) * head_k * (-1.0 if facing > 0 else 1.0)
+	head_pivot.rotation = _head_angle + float(rp["head_rad"]) * head_k * (-1.0 if facing > 0 else 1.0) 		+ _idle_head_rot * (1.0 if facing > 0 else -1.0)   # HeadPivot 은 좌향일 때 y 반전이라 부호를 되돌린다
 	head_pivot.position.x += -facing * float(rp["head_px"]) * head_k
+	head_pivot.position += _idle_head_off                 # 아이들: 머리가 몸보다 한 박 늦게 오르내린다
 	head_pivot.skew = -body_pivot.skew         # 몸통 전단이 머리 스프라이트를 찌그러뜨리지 않게 상쇄
 
 
-## Idle 숨쉬기: 발 위치를 고정한 채 BodyPivot 스케일을 잔잔하게 트위닝
-func _update_breath(delta: float) -> void:
-	var want := Vector2.ONE
-	if state == State.IDLE or state == State.CROUCH:
-		_breath_t += delta
-		var w := 0.5 - 0.5 * cos(TAU * _breath_t / BREATH_PERIOD)   # 0..1 부드러운 왕복
-		want = Vector2(1.0 - BREATH_SCALE.x * w, 1.0 + BREATH_SCALE.y * w)
+## 아이들 모션: 발 위치를 고정한 채 상체를 스쿼시&스트레치 + 좌우 무게중심으로 흔든다.
+## 결과는 네 곳으로 나간다 — BodyPivot(스케일·전단), 머리(_idle_head_*), 어깨(_idle_arm_off),
+## 그리고 _breath 를 통해 어깨·목 앵커. 이동 중에는 _idle_w 가 빠지며 자연스럽게 꺼진다.
+func _update_idle(delta: float) -> void:
+	var p := idle_preset()
+	var active := state == State.IDLE or state == State.CROUCH
+	_idle_w = move_toward(_idle_w, 1.0 if active else 0.0,
+		delta * (IDLE_BLEND_IN if active else IDLE_BLEND_OUT))
+	if active:
+		_idle_t += delta
+	elif _idle_w <= 0.0:
+		_idle_t = 0.0
+
+	# 강조 동작: 주기마다 스프링에 임펄스 한 방. 부호를 매번 뒤집어 같은 동작이 반복돼 보이지 않게 한다.
+	var period := float(p.get("accent_period", 0.0))
+	if active and period > 0.0:
+		_idle_acc_t -= delta
+		if _idle_acc_t <= 0.0:
+			_idle_acc_t = period + randf_range(-1.0, 1.0) * float(p.get("accent_jitter", 0.0))
+			_idle_acc.y += float(p.get("accent_imp", 0.0)) * (1.0 if randf() < 0.5 else -1.0)
 	else:
-		_breath_t = 0.0
-	_breath = _breath.lerp(want, minf(1.0, 6.0 * delta))
+		_idle_acc_t = 0.0
+	_idle_acc = _spring(_idle_acc, p.get("accent", Vector3(900.0, 44.0, 0.0)), delta)
+
+	var w := _idle_w * (float(p.get("crouch", 0.5)) if state == State.CROUCH else 1.0)
+	var pop := float(p["pop"])
+	var steps := int(p.get("steps", 0))
+	# 시간을 frame_fps 로 계단화한다. 자세를 만드는 모든 값이 **같은 순간**을 보게 해야
+	# 머리·어깨·좌우가 따로 놀지 않고 한 장의 그림처럼 통째로 바뀐다 (강조 스프링까지 포함).
+	var fps := float(p.get("frame_fps", 0.0))
+	var qt: float = floor(_idle_t * fps) / fps if fps > 0.0 else _idle_t
+	var phase := qt * float(p["hz"])
+	var main := _wave(phase, pop, steps)
+	var lag := _wave(phase - float(p.get("head_lag", 0.0)), pop, steps)   # 머리·어깨는 한 박 늦게
+	var sway := sin(TAU * qt * float(p.get("lean_hz", 0.0)))
+	if fps > 0.0:
+		var frame := int(floor(_idle_t * fps))
+		if frame != _idle_frame:
+			_idle_frame = frame
+			_idle_acc_q = _idle_acc.x        # 강조도 프레임이 바뀔 때만 새로 읽는다
+	else:
+		_idle_frame = -1
+		_idle_acc_q = _idle_acc.x
+	var acc := _idle_acc_q
+	var acc_sq := float(p.get("acc_squash", 0.0)) * acc
+	var sq: Vector2 = p["squash"]
+	# 세로로 늘면 가로는 줄어든다 (부피 보존 흉내). 발은 아래 위치 보정으로 고정된다.
+	_breath = Vector2(1.0 - (sq.x * main + acc_sq * 0.7) * w, 1.0 + (sq.y * main + acc_sq) * w)
+	var snap := float(p.get("snap_px", 0.0))
+	_idle_head_off = Vector2(0, _snap(-(float(p.get("head_px", 0.0)) * lag + float(p.get("acc_head_px", 0.0)) * acc) * w, snap))
+	_idle_head_rot = (float(p.get("head_rad", 0.0)) * sway + float(p.get("acc_head_rad", 0.0)) * acc) * w * float(facing)
+	_idle_arm_off = Vector2(0, _snap(-(float(p.get("arm_px", 0.0)) * lag + float(p.get("acc_arm_px", 0.0)) * acc) * w, snap))
+	var idle_lean := _snap((float(p.get("lean_px", 0.0)) * sway + float(p.get("acc_lean_px", 0.0)) * acc) * w * float(facing), snap)
+
 	# 반동: 발은 고정(마찰)하고 상체만 뒤로 밀린다 — 전단(skew) + 발 위치 보정, 여기에 눌림(scale.y)
 	var rp := recoil_preset()
 	var body_k := _body_rc.x
-	var lean := -facing * float(rp["body_px"]) * body_k            # 머리 높이에서의 X 이동량
+	var lean := -facing * float(rp["body_px"]) * body_k + idle_lean   # 머리 높이에서의 X 이동량
 	var sy := _breath.y * (1.0 - float(rp.get("body_squat", 0.0)) * absf(body_k))
 	body_pivot.scale = Vector2(_breath.x, sy)
 	# skew: 로컬 y 에 비례해 x 가 -sin(skew)·y 만큼 밀린다. 머리(y=-C) 는 +sin·C, 발(y=+C) 은 -sin·C 로 반대 →
@@ -587,7 +734,7 @@ func _update_arm(delta: float, snap := false) -> void:
 	var key := "%s_%02d" % [body.animation, body.frame + 1]
 	var shoulder: Vector2 = _shoulders.get(key, DEFAULT_SHOULDER)
 	shoulder.x *= facing
-	arm_pivot.position = shoulder * _breath      # 숨쉬기 스케일에 맞춰 어깨도 따라감
+	arm_pivot.position = shoulder * _breath + _idle_arm_off   # 아이들 스케일에 맞춰 어깨도 따라가고, 들썩임이 더해진다
 
 	var to_target := aim_target - arm_pivot.global_position
 	var target_angle := to_target.angle()
@@ -629,6 +776,12 @@ func _start_roll(dir: int) -> void:
 	body.pause()
 	# 회전축을 웅크린 실루엣의 중심으로 옮긴다 (발 밑 원점은 유지)
 	_breath = Vector2.ONE
+	_idle_w = 0.0
+	_idle_t = 0.0
+	_idle_acc = Vector2.ZERO
+	_idle_head_off = Vector2.ZERO
+	_idle_head_rot = 0.0
+	_idle_arm_off = Vector2.ZERO
 	body_pivot.scale = Vector2.ONE
 	body_pivot.skew = 0.0
 	head_pivot.skew = 0.0
