@@ -32,7 +32,8 @@ var fires: Array = []         # FireSource
 var water: WaterPool          # 고인 물 (fx "water", 방마다 최대 하나)
 var foreground: ForegroundLayer   # 근경 실루엣 층 (z7)
 var monsters: Array = []      # Crawler
-var sentries: Array = []      # SentryTurret (바닥 격납형 센트리건 — Main 이 조종을 잡는다)
+var sentries: Array = []
+var walkers: Array = []          # 사족보행 기체(WalkerUnit). 센트리건과 같은 규칙으로 산다      # SentryTurret (바닥 격납형 센트리건 — Main 이 조종을 잡는다)
 var terminals: Array = []     # AccessTerminal (플레이어가 W/↑ 로 접속하는 대형 단말기)
 var npcs: Array = []          # Npc (플레이어가 W/↑ 로 말을 거는 생존자)
 var player: Node2D            # Main 이 넣어준다 (전선 밀치기)
@@ -47,7 +48,7 @@ var _monster_layer: Node2D
 var _npc_layer: Node2D
 var _props_layer: Node2D
 var _stains: Array = []       # BloodStain (오래된 것부터 정리)
-const MAX_STAINS := 48
+const MAX_STAINS := 120
 var _spawn_cfg: Dictionary = SPAWN_DEFAULT
 var _spawn_t := 0.0
 var _lights: Node2D
@@ -59,6 +60,9 @@ const SPAWN_DEFAULT := {"max": 6, "interval": [1.8, 3.5]}
 const SPAWN_MIN_PLAYER_DIST := 900.0    # 플레이어에서 이만큼 떨어진 곳(가능하면 화면 밖)에 나온다
 const FRONT_DOOR_INTERACT_RANGE := 110.0
 const NPC_WALL_MARGIN := 150.0          # 어슬렁거리는 생존자가 벽에 붙지 않게 두는 여유 (플레이어보다 조금 넓다)
+## 사족보행 기체가 걸어다닐 수 있는 방 안쪽 여유. 생존자보다 넓다 — 몸통이 넓고 포신이 앞으로 길어서,
+## 벽에 바짝 붙으면 총구가 벽 안에 박힌 채로 쏘게 된다 (그 자리에서 탄이 바로 벽에 박힌다).
+const WALKER_MARGIN := 260.0
 const FRONT_DOOR_LIFT := 306.0          # 정면문 스프라이트 상단 = 바닥선 − 306 (문 하단 여백 포함)
 const PENDANT_TEX := RoomData.LIGHTS_DIR + "pendant_lamp.png"
 const PENDANT_META := RoomData.LIGHTS_DIR + "pendant_lamp.json"
@@ -93,7 +97,7 @@ func build(id: String) -> void:
 	# 어둡게 깔고 램프 라이트가 비추게 한다
 	var dim := CanvasModulate.new()
 	dim.name = "Ambient"
-	dim.color = Lighting.AMBIENT
+	dim.color = Lighting.ambient_color()
 	add_child(dim)
 	_ambient = dim
 	var lights := Node2D.new()
@@ -303,6 +307,10 @@ func _add_pendant_lamp(parent: Node2D, x: float) -> void:
 	parent.add_child(lamp)
 	lamp.attach_cover(parent, Rect2(origin + bulb_local.position, bulb_local.size))
 	lamp.attach_sprite(parent, tex, origin, Rect2(Vector2.ZERO, size), bulb_local)
+	# 천장 마운트에 줄로 매단다. 층고가 낮은 방에서는 프랍에 닿지 않게 늘어뜨림을 줄인다.
+	var head := floor_y - (ceiling_at(x) + RoomTiles.CEILING_BAND)
+	var drop := clampf(LampLight.CORD_DROP, 34.0, maxf(head * 0.32, 34.0))
+	lamp.attach_cord(parent, origin + Vector2(size.x * 0.5, 2.0), drop, floor_y)
 	lamps.append(lamp)
 
 
@@ -331,10 +339,10 @@ func _build_fixtures(parent: Node2D, data: Dictionary) -> void:
 		parent.add_child(fixture)
 		var point := PointLight2D.new()
 		point.texture = Lighting.radial_texture()
-		point.texture_scale = Lighting.scale_for_radius(float(fd.get("radius", 200.0)))
 		point.color = fd.get("color", FIXTURE_COLOR)
-		point.energy = 1.0
-		point.height = Lighting.LAMP_HEIGHT
+		point.set_meta("base_radius", float(fd.get("radius", 200.0)))
+		LightTuning.apply_plain(point, "fixture", float(fd.get("radius", 200.0)))
+		LightTuning.register(point, "fixture")
 		point.position = pos
 		parent.add_child(point)
 		Lighting.split_by_depth(point)
@@ -400,7 +408,8 @@ static func _ground_margin(path: String) -> int:
 	return margin
 
 
-## 특수 프랍: cabinet(파츠 파괴 PowerRelayProp) · capacitor · cart · breaker(벽걸이) · sentry(바닥 격납 센트리건) · terminal(접속 단말기) · npc(생존자)
+## 특수 프랍: cabinet(파츠 파괴 PowerRelayProp) · capacitor · cart · breaker(벽걸이) · sentry(바닥 격납 센트리건) ·
+## walker(사족보행 기체) · terminal(접속 단말기) · npc(생존자)
 func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 	var x := float(prop["x"])
 	match prop.get("type", ""):
@@ -430,6 +439,16 @@ func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 			turret.setup(x, floor_y, self)
 			parent.add_child(turret)
 			sentries.append(turret)
+		"walker":
+			# 사족보행 기체. 평소엔 꺼진 채 웅크리고 있다가 W/↑ 로 기동·조종한다 (WalkerUnit).
+			# 센트리건과 달리 **걸어다니므로** 방 좌우 끝을 알려 준다 — 벽을 뚫고 나가지 않게.
+			var unit := WalkerUnit.new()
+			unit.z_index = 1
+			unit.walker_id = str(prop.get("id", ""))
+			unit.setup(x, floor_y, self)
+			unit.set_span(WALKER_MARGIN, float(width) - WALKER_MARGIN)
+			parent.add_child(unit)
+			walkers.append(unit)
 		"terminal":
 			# 역할(link·security·rewire·save·survey)은 id 로 TerminalData 에서 끌어온다.
 			# rewire 처럼 벽걸이인 역할은 바닥이 아니라 cy/fy 높이에 붙는다.
@@ -557,16 +576,33 @@ func _on_monster_spat(glob: Node2D) -> void:
 	_monster_layer.add_child(glob)
 
 
-## 벽면 체액 자국 (프랍 층 — 타일·문 앞, 캐릭터 뒤). 너무 많이 쌓이면 오래된 것부터 지운다
+## 뒷벽·바닥에 남는 체액 자국이 붙는 층 (프랍 층 — 타일·문 앞, 캐릭터 뒤).
+## 프랍에 튄 자국은 이 층이 아니라 그 프랍의 자식으로 붙는다 (BloodStain._attach).
+func stain_layer() -> Node2D:
+	return _props_layer
+
+
+## 체액이 앉을 수 있는 **앞쪽 면**들 — 바닥 프랍(HitProp) + 단말기. 뒷벽보다 앞에 서 있는 것들이다.
+## 여기 없는 것에 뿌려진 덩어리는 전부 뒷벽으로 가고, 그 물체 뒤에 가려진다.
+func stain_props() -> Array:
+	var out: Array = props_hit.duplicate()
+	for t in terminals:
+		if is_instance_valid(t):
+			out.append(t)
+	return out
+
+
+## 체액 자국. 덩어리마다 착지면(프랍·바닥·벽·뒷벽)을 따로 판정하므로 자국 노드가 여러 개 나온다.
+## 너무 많이 쌓이면 오래된 것부터 지운다.
 func add_stain(pos: Vector2, dir: Vector2, amount: int, spread: float) -> void:
 	_trim_stains()
-	_stains.append(BloodStain.splat(_props_layer, pos, dir, amount, spread))
+	_stains.append_array(BloodStain.splat(self, pos, dir, amount, spread))
 
 
-## 벽면 분사 자국 (덩어리가 순차적으로 찍히고 흘러내린다)
+## 분사 자국 (덩어리가 순차적으로 찍히고 흘러내린다). 착지면별로 나뉘고, 가끔 근경 층에도 방울이 남는다.
 func add_spray(pos: Vector2, dir: Vector2, amount: int, length: float, fan: float) -> void:
 	_trim_stains()
-	_stains.append(BloodStain.spray(_props_layer, pos, dir, amount, length, fan))
+	_stains.append_array(BloodStain.spray(self, pos, dir, amount, length, fan))
 
 
 func _trim_stains() -> void:
@@ -628,6 +664,8 @@ func heat_wall(entry: Dictionary, point: Vector2) -> void:
 func notify_shot(from: Vector2, to: Vector2) -> void:
 	for w in wires:
 		w.apply_shot(from, to)
+	for lamp in lamps:                      # 스치기만 해도 매달린 램프가 흔들린다
+		lamp.apply_shot(from, to)
 
 
 func _add_side_door(parent: Node2D, center_x: float, is_open: bool, flip: bool) -> void:
@@ -659,6 +697,26 @@ func sentry_by_id(id: String) -> SentryTurret:
 	for t in sentries:
 		if is_instance_valid(t) and t.turret_id == id:
 			return t
+	return null
+
+
+## 다가가 탈 수 있는 사족보행 기체 (없으면 null). sentry_near 와 같은 규칙 —
+## 이미 조종 중인 것이 있으면 그게 먼저다 (내릴 수 있어야 하므로)
+func walker_near(px: float) -> WalkerUnit:
+	for w in walkers:
+		if is_instance_valid(w) and w.controlled:
+			return w
+	for w in walkers:
+		if is_instance_valid(w) and w.can_interact(px):
+			return w
+	return null
+
+
+## 맵 전체에서 유일한 기체 id 로 찾는다 (보안 단말기의 원격 접속이 쓴다)
+func walker_by_id(id: String) -> WalkerUnit:
+	for w in walkers:
+		if is_instance_valid(w) and w.walker_id == id:
+			return w
 	return null
 
 

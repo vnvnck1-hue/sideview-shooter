@@ -1,0 +1,12 @@
+{
+	"tilt": 45.0,
+	"detail": 0.35,
+	"soft": 0.0,
+	"assets": {
+		"props/workshop_armchair_game_scale.png": {
+			"tilt": 34.0,
+			"detail": 0.45,
+			"soft": 22.0
+		}
+	}
+}

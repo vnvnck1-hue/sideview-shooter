@@ -6,6 +6,9 @@
 GodotPrototype/export/
 GodotPrototype/*.tmp
 
+# 절차적 보행 렌더 미리보기·검증 로그 (tools/capture_walker_expression.gd로 재생성)
+GodotPrototype/tools/artifacts/
+
 # OS / 편집기
 Thumbs.db
 desktop.ini

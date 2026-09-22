@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-09-22",
+  "batch": "shallow-sideview-v1",
+  "method": "built-in image_gen",
+  "promptSet": "PROMPTS.md",
+  "userApproval": "pending",
+  "pixelProduction": "not_started",
+  "runtimeImport": "not_performed",
+  "narrativeSource": "Docs/OPENING_FLOW.md beats 1-5",
+  "spatialSource": "Docs/BACKGROUND_ART_DIRECTION.md",
+  "assets": [
+    {
+      "file": "01_airlock_reboot.png",
+      "width": 1975,
+      "height": 796,
+      "bytes": 2132118,
+      "sha256": "43022BDF70E1CC3D3C312AB9A8649262862AF0BFBF6E199676716EF0B1732FD3",
+      "selectedForSubmission": true,
+      "sourceGeneratedPath": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-bfe2bf52-0a43-437b-be7d-5b0f70547b39.png",
+      "inputImagePaths": [
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/hall-redesign-v1.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/power-relay-concept-v1.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/Generated/NPCConcepts/airlock_caretaker_concept_v5.png"
+      ],
+      "prompt": "PROMPTS.md: shared prompt + scene 1"
+    },
+    {
+      "file": "02_airlock_first_contact.png",
+      "width": 1977,
+      "height": 795,
+      "bytes": 2048477,
+      "sha256": "C55C93CC4CF5C7207E6ECA8B8E5F9D187EE1F4502601145E9E9B74C9535E37E2",
+      "selectedForSubmission": true,
+      "sourceGeneratedPath": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-4bd6b1e9-42ef-4633-9dce-575ff8238461.png",
+      "inputImagePaths": [
+        "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-bfe2bf52-0a43-437b-be7d-5b0f70547b39.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/Generated/NPCConcepts/airlock_caretaker_concept_v5.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/hall-redesign-v1.png"
+      ],
+      "prompt": "PROMPTS.md: shared prompt + scene 2"
+    },
+    {
+      "file": "03_west_corridor_first_combat.png",
+      "width": 1977,
+      "height": 795,
+      "bytes": 2000716,
+      "sha256": "ADC7E49474C9695624EA1CD55683C8D41A9A322ED902F94D5E5BEA53CD2485F0",
+      "selectedForSubmission": true,
+      "sourceGeneratedPath": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-1b456f71-5980-45a8-93bb-5e09bd73a4c1.png",
+      "inputImagePaths": [
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/hall-redesign-v1.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/power-relay-concept-v1.png"
+      ],
+      "prompt": "PROMPTS.md: shared prompt + scene 3"
+    },
+    {
+      "file": "04_workshop_remote_link_r2.png",
+      "width": 1977,
+      "height": 795,
+      "bytes": 1927270,
+      "sha256": "659B023081E2AC2ABC34D46E199A1DC007FFB6A9DE3D2AED2CE2647D1F048302",
+      "selectedForSubmission": true,
+      "sourceGeneratedPath": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-e0d495be-7353-4414-9882-452fddc6c240.png",
+      "inputImagePaths": [
+        "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-80ba7fb4-bcc2-4f5f-8180-2d8e3e3e6569.png"
+      ],
+      "prompt": "PROMPT_04_R2.md"
+    },
+    {
+      "file": "04_workshop_remote_link.png",
+      "width": 1977,
+      "height": 795,
+      "bytes": 2055670,
+      "sha256": "5F1862EF68F18F3F046113951BE2E89538A10EC130A652B466C6344DE3875DAD",
+      "selectedForSubmission": false,
+      "sourceGeneratedPath": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-80ba7fb4-bcc2-4f5f-8180-2d8e3e3e6569.png",
+      "inputImagePaths": [
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/hall-redesign-v1.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/power-relay-concept-v1.png"
+      ],
+      "prompt": "PROMPTS.md: shared prompt + scene 4"
+    },
+    {
+      "file": "05_maintenance_hall_first_crisis.png",
+      "width": 1978,
+      "height": 795,
+      "bytes": 1977793,
+      "sha256": "C02B782B9D9559DC69F9F4E4F26CF56CA9D1B8FF3363D8FFF644DC6E0AAC22DC",
+      "selectedForSubmission": true,
+      "sourceGeneratedPath": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-abf74be8-3669-43a0-9c16-7a3387e6e0d9.png",
+      "inputImagePaths": [
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/hall-redesign-v1.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/power-relay-concept-v1.png"
+      ],
+      "prompt": "PROMPTS.md: shared prompt + scene 5"
+    }
+  ]
+}
+

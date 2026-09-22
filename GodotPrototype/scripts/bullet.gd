@@ -464,10 +464,11 @@ func _impact() -> void:
 	# 탄착 라이트
 	_light = PointLight2D.new()
 	_light.texture = Lighting.radial_texture()
-	_light.texture_scale = Lighting.scale_for_radius(260.0 * (0.5 + 0.5 * power))
+	var imp_e := LightTuning.value("impact", "energy", 2.2)
+	_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("impact", "radius", 260.0) * (0.5 + 0.5 * power))
 	_light.color = Lighting.IMPACT_LIGHT if impact_kind != Impact.WATER else Lighting.WATER
-	_light.energy = (2.2 if impact_kind != Impact.WATER else 1.4) * (0.7 + 0.3 * power)
-	_light.height = Lighting.FLASH_HEIGHT          # 주변 노멀맵이 섬광에 반응
+	_light.energy = (imp_e if impact_kind != Impact.WATER else imp_e * 0.636) * (0.7 + 0.3 * power)
+	_light.height = LightTuning.value("impact", "height", Lighting.FLASH_HEIGHT)   # 주변 노멀맵이 섬광에 반응
 	_light.position = target
 	add_child(_light)
 	# "ambient" 인 이유: 탄착 섬광은 천천히 꺼져(0.68→0.02, 십여 프레임) 총구 화염의 짧은 펄스를 뭉갠다.

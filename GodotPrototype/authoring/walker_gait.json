@@ -1,0 +1,24 @@
+{
+	"format": "walker-gait",
+	"values": {
+		"aim_lean": 0.8,
+		"bob": 14.0,
+		"coxa_pitch_bias": 1.0,
+		"coxa_yaw_bias": -8.0,
+		"hold": 0.015,
+		"knee_swivel": -13.0,
+		"lead": 0.35,
+		"legs_up": 1.0,
+		"lift": 65.0,
+		"pitch_limit": 35.0,
+		"ride": 162.56,
+		"run_step_time": 0.1,
+		"speed": 450.0,
+		"step_time": 0.13,
+		"stride": 1.02,
+		"tilt": 1.0,
+		"trigger": 0.0,
+		"yaw_limit": 85.0
+	},
+	"version": 1
+}

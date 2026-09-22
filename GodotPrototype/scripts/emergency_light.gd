@@ -31,10 +31,10 @@ func setup(air_layer: Node2D, room_rect: Rect2, floor_line: float) -> void:
 	_beam = PointLight2D.new()
 	_beam.name = "Beam"
 	_beam.texture = Lighting.beam_texture()
-	_beam.texture_scale = BEAM_RADIUS * 2.0 / 256.0 * Lighting.light_range_mul()   # 림 범위 배율 (셰이더가 디퓨즈는 되돌린다)
+	_beam.texture_scale = LightTuning.value("beacon_beam", "radius", BEAM_RADIUS) * 2.0 / 256.0 * Lighting.light_range_mul()
 	_beam.color = Lighting.EMERGENCY_RED
-	_beam.energy = 1.7
-	_beam.height = 110.0
+	_beam.energy = _beam_energy()
+	_beam.height = LightTuning.value("beacon_beam", "height", 110.0)
 	_beam.shadow_enabled = false
 	add_child(_beam)
 	Lighting.split_by_depth(_beam)                 # 벽을 훑는 광선은 배경 정면, 인물은 55%
@@ -44,10 +44,11 @@ func setup(air_layer: Node2D, room_rect: Rect2, floor_line: float) -> void:
 	_glow = PointLight2D.new()
 	_glow.name = "Glow"
 	_glow.texture = Lighting.radial_texture()
-	_glow.texture_scale = Lighting.scale_for_radius(GLOW_RADIUS)
+	_glow.texture_scale = Lighting.scale_for_radius(LightTuning.value("beacon_glow", "radius", GLOW_RADIUS))
 	_glow.color = Lighting.EMERGENCY_RED
-	_glow.energy = 0.55
-	_glow.height = 60.0
+	_glow.energy = _glow_energy()
+	_glow.height = LightTuning.value("beacon_glow", "height", 60.0)
+	LightTuning.register(self, "beacon_beam")
 	add_child(_glow)
 	Lighting.split_by_depth(_glow)
 
@@ -107,8 +108,8 @@ func _process(delta: float) -> void:
 		var k := clampf(_break_t / 0.3, 0.0, 1.0)
 		var n := 0.5 + 0.5 * sin(_break_t * 110.0 + _phase)
 		var e := (1.0 - k) * lerpf(0.1, 1.5, n)
-		_beam.energy = 1.7 * e
-		_glow.energy = 0.55 * e
+		_beam.energy = _beam_energy() * e
+		_glow.energy = _glow_energy() * e
 		_sweep_mat.set_shader_parameter("intensity", 0.9 * e)
 		_dome.modulate = Lighting.RED_EMISSIVE * e + Color(0.25, 0.1, 0.1, 1.0) * (1.0 - e)
 		if k >= 1.0:
@@ -125,11 +126,30 @@ func _process(delta: float) -> void:
 	_sweep.rotation = _angle
 	# 광선이 정면(화면 앞)을 스칠 때 돔이 가장 밝다 → 회전 리듬이 읽힌다
 	var facing := 0.5 + 0.5 * cos(_angle * 2.0)
-	_beam.energy = 1.45 + 0.45 * facing
-	_glow.energy = 0.42 + 0.30 * facing
+	_beam.energy = _beam_energy() * (0.853 + 0.265 * facing)     # 원래 1.45 + 0.45*facing (기준 1.7)
+	_glow.energy = _glow_energy() * (0.764 + 0.545 * facing)     # 원래 0.42 + 0.30*facing (기준 0.55)
 	_dome.modulate = Lighting.RED_EMISSIVE * (0.7 + 0.5 * facing)
 	_sweep_mat.set_shader_parameter("intensity", 0.75 + 0.35 * facing)
 	queue_redraw()
+
+
+## 조명 랩이 고친 기준 세기. 깜빡임·회전 계수는 이 값에 곱해진다.
+func _beam_energy() -> float:
+	return LightTuning.value("beacon_beam", "energy", 1.7)
+
+
+func _glow_energy() -> float:
+	return LightTuning.value("beacon_glow", "energy", 0.55)
+
+
+## 조명 랩이 수치를 바꿨을 때. 세기는 매 프레임 _beam_energy() 에서 다시 읽으므로 여기서는 반경·높이만.
+func apply_tuning() -> void:
+	if _beam:
+		_beam.texture_scale = LightTuning.value("beacon_beam", "radius", BEAM_RADIUS) * 2.0 / 256.0 * Lighting.light_range_mul()
+		_beam.height = LightTuning.value("beacon_beam", "height", 110.0)
+	if _glow:
+		_glow.texture_scale = Lighting.scale_for_radius(LightTuning.value("beacon_glow", "radius", GLOW_RADIUS))
+		_glow.height = LightTuning.value("beacon_glow", "height", 60.0)
 
 
 func _draw() -> void:

@@ -1,66 +1,108 @@
 {
   "source": "quadruped_side_transparent_v1.png",
   "scale": 0.34,
+  "mirrored": true,
   "body_origin_art_px": [
-    717.0,
+    487.0,
     482.0
   ],
-  "note": "크기·anchor 는 월드 px (1px = 게임 1px). walker_rig.gd 가 이 파일을 읽는다.",
+  "note": "크기·anchor 는 월드 px (1px = 게임 1px). 원화를 좌우 반전해 자른다 (원화는 왼쪽을 보는데 리그는 +x 가 앞이다). walker_rig.gd 가 이 파일을 읽는다.",
   "parts": {
     "hull": {
       "size": [
         318,
-        208
+        220
       ],
       "anchor": [
-        158.8,
+        159.1,
         159.8
       ],
-      "axis": "none"
+      "axis": "none",
+      "lean": 0.0
     },
     "barrel": {
       "size": [
-        240,
-        187
+        181,
+        112
       ],
       "anchor": [
-        163.2,
-        88.4
+        19.0,
+        53.0
       ],
-      "axis": "right"
+      "axis": "right",
+      "lean": 0.0
     },
     "sleeve": {
       "size": [
-        74,
-        130
+        84,
+        137
       ],
       "anchor": [
-        37.1,
-        2.7
+        40.1,
+        2.0
       ],
-      "axis": "down"
+      "axis": "down",
+      "lean": 0.0
     },
     "shin": {
       "size": [
-        72,
-        54
+        82,
+        52
       ],
       "anchor": [
-        36.0,
-        2.0
+        41.5,
+        1.4
       ],
-      "axis": "down"
+      "axis": "down",
+      "lean": 0.0
     },
     "cap": {
       "size": [
-        50,
-        60
+        44,
+        44
       ],
       "anchor": [
-        24.8,
-        29.9
+        22.1,
+        21.8
       ],
-      "axis": "none"
+      "axis": "none",
+      "lean": 0.0
+    },
+    "sleeve_far": {
+      "size": [
+        87,
+        134
+      ],
+      "anchor": [
+        20.4,
+        4.8
+      ],
+      "axis": "down",
+      "lean": 0.3106
+    },
+    "shin_far": {
+      "size": [
+        63,
+        58
+      ],
+      "anchor": [
+        29.9,
+        3.4
+      ],
+      "axis": "down",
+      "lean": -0.0939
+    },
+    "cap_far": {
+      "size": [
+        21,
+        21
+      ],
+      "anchor": [
+        10.5,
+        10.5
+      ],
+      "axis": "none",
+      "lean": 0.0
     },
     "rod": {
       "size": [
@@ -72,6 +114,7 @@
         0.0
       ],
       "axis": "down",
+      "lean": 0.0,
       "synthesized": "원화에 노출된 로드가 없어 팔레트에서 새로 그렸다"
     }
   }

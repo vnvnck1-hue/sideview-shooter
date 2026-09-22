@@ -1,0 +1,315 @@
+{
+	"clips": {
+		"fire": {
+			"duration": 0.3,
+			"keys": [
+				{
+					"ease": "smooth",
+					"pose": {
+						"angles": {
+							"FF.foot": 0.0,
+							"FF.lower": 0.0,
+							"FF.mount": 0.0,
+							"FF.upper": 0.0,
+							"FR.foot": 0.0,
+							"FR.lower": 0.0,
+							"FR.mount": 0.0,
+							"FR.upper": 0.0,
+							"NF.foot": 0.0,
+							"NF.lower": 0.0,
+							"NF.mount": 0.0,
+							"NF.upper": 0.0,
+							"NR.foot": 0.0,
+							"NR.lower": 0.0,
+							"NR.mount": 0.0,
+							"NR.upper": 0.0,
+							"barrel": 0.0,
+							"chassis": 0.0,
+							"gun": 0.0,
+							"torso": 0.0
+						},
+						"offset": [
+							0.0,
+							0.0
+						]
+					},
+					"time": 0.0
+				}
+			],
+			"loop": false,
+			"name": "사격"
+		},
+		"idle": {
+			"duration": 1.5,
+			"keys": [
+				{
+					"ease": "smooth",
+					"pose": {
+						"angles": {
+							"FF.foot": 0.0,
+							"FF.lower": 0.0,
+							"FF.mount": 0.0,
+							"FF.upper": 0.0,
+							"FR.foot": 0.0,
+							"FR.lower": 0.0,
+							"FR.mount": 0.0,
+							"FR.upper": 0.0,
+							"NF.foot": 0.0,
+							"NF.lower": 0.0,
+							"NF.mount": 0.0,
+							"NF.upper": 0.0,
+							"NR.foot": 0.0,
+							"NR.lower": 0.0,
+							"NR.mount": 0.0,
+							"NR.upper": 0.0,
+							"barrel": 0.0,
+							"chassis": 0.0,
+							"gun": 0.0,
+							"torso": 0.0
+						},
+						"offset": [
+							0.0,
+							0.0
+						]
+					},
+					"time": 0.0
+				}
+			],
+			"loop": true,
+			"name": "대기"
+		},
+		"jump": {
+			"duration": 1.0,
+			"keys": [
+				{
+					"ease": "smooth",
+					"pose": {
+						"angles": {
+							"FF.foot": 0.0,
+							"FF.lower": 0.0,
+							"FF.mount": 0.0,
+							"FF.upper": 0.0,
+							"FR.foot": 0.0,
+							"FR.lower": 0.0,
+							"FR.mount": 0.0,
+							"FR.upper": 0.0,
+							"NF.foot": 0.0,
+							"NF.lower": 0.0,
+							"NF.mount": 0.0,
+							"NF.upper": 0.0,
+							"NR.foot": 0.0,
+							"NR.lower": 0.0,
+							"NR.mount": 0.0,
+							"NR.upper": 0.0,
+							"barrel": 0.0,
+							"chassis": 0.0,
+							"gun": 0.0,
+							"torso": 0.0
+						},
+						"offset": [
+							0.0,
+							0.0
+						]
+					},
+					"time": 0.0
+				}
+			],
+			"loop": false,
+			"name": "점프"
+		},
+		"run": {
+			"duration": 0.55,
+			"keys": [
+				{
+					"ease": "smooth",
+					"pose": {
+						"angles": {
+							"FF.foot": 0.0,
+							"FF.lower": 0.0,
+							"FF.mount": 0.0,
+							"FF.upper": 0.0,
+							"FR.foot": 0.0,
+							"FR.lower": 0.0,
+							"FR.mount": 0.0,
+							"FR.upper": 0.0,
+							"NF.foot": 0.0,
+							"NF.lower": 0.0,
+							"NF.mount": 0.0,
+							"NF.upper": 0.0,
+							"NR.foot": 0.0,
+							"NR.lower": 0.0,
+							"NR.mount": 0.0,
+							"NR.upper": 0.0,
+							"barrel": 0.0,
+							"chassis": 0.0,
+							"gun": 0.0,
+							"torso": 0.0
+						},
+						"offset": [
+							0.0,
+							0.0
+						]
+					},
+					"time": 0.0
+				}
+			],
+			"loop": true,
+			"name": "달리기"
+		},
+		"walk": {
+			"duration": 0.8,
+			"keys": [
+				{
+					"ease": "smooth",
+					"pose": {
+						"angles": {
+							"FF.foot": 0.0,
+							"FF.lower": 0.0,
+							"FF.mount": 0.0,
+							"FF.upper": 0.0,
+							"FR.foot": 0.0,
+							"FR.lower": 0.0,
+							"FR.mount": 0.0,
+							"FR.upper": 0.0,
+							"NF.foot": 0.0,
+							"NF.lower": 0.0,
+							"NF.mount": 0.0,
+							"NF.upper": 0.0,
+							"NR.foot": 0.0,
+							"NR.lower": 0.0,
+							"NR.mount": 0.0,
+							"NR.upper": 0.0,
+							"barrel": 0.0,
+							"chassis": 0.0,
+							"gun": 0.0,
+							"torso": 0.0
+						},
+						"offset": [
+							0.0,
+							0.0
+						]
+					},
+					"time": 0.0
+				}
+			],
+			"loop": true,
+			"name": "걷기"
+		}
+	},
+	"format": "walker-authoring",
+	"points": {
+		"FF.ankle": [
+			245.0,
+			848.0
+		],
+		"FF.hip": [
+			477.922668457031,
+			759.174194335938
+		],
+		"FF.knee": [
+			358.393524169922,
+			665.316101074219
+		],
+		"FF.mount": [
+			641.774169921875,
+			637.200012207031
+		],
+		"FF.toe": [
+			246.0,
+			921.0
+		],
+		"FR.ankle": [
+			930.709533691406,
+			815.457946777344
+		],
+		"FR.hip": [
+			791.567810058594,
+			770.02587890625
+		],
+		"FR.knee": [
+			866.580749511719,
+			660.167663574219
+		],
+		"FR.mount": [
+			776.696838378906,
+			671.187133789063
+		],
+		"FR.toe": [
+			946.406372070313,
+			888.580749511719
+		],
+		"NF.ankle": [
+			716.528991699219,
+			877.0
+		],
+		"NF.hip": [
+			779.5419921875,
+			752.0
+		],
+		"NF.knee": [
+			743.954895019531,
+			625.393493652344
+		],
+		"NF.mount": [
+			785.638671875,
+			612.167663574219
+		],
+		"NF.toe": [
+			718.48388671875,
+			939.303161621094
+		],
+		"NR.ankle": [
+			1294.0,
+			856.0
+		],
+		"NR.hip": [
+			1073.0,
+			774.0
+		],
+		"NR.knee": [
+			1193.0,
+			710.0
+		],
+		"NR.mount": [
+			921.78076171875,
+			705.174194335938
+		],
+		"NR.toe": [
+			1290.0,
+			921.0
+		],
+		"body.barrel": [
+			1002.56127929688,
+			383.651672363281
+		],
+		"body.chassis": [
+			815.0,
+			610.0
+		],
+		"body.gun": [
+			764.258056640625,
+			555.33544921875
+		],
+		"body.muzzle": [
+			414.0,
+			376.0
+		],
+		"body.pivot": [
+			826.0,
+			548.0
+		],
+		"body.upper": [
+			825.890319824219,
+			465.019348144531
+		]
+	},
+	"source": {
+		"path": "res://assets/reference/walker_original.png",
+		"sha256": "198caf260a0f20dd7bee454172fdbdd9be42f549548aa0657c8ac0304faebcc8",
+		"size": [
+			1536.0,
+			1024.0
+		]
+	},
+	"version": 1
+}

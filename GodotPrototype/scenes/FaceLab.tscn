@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b1sideviewfacelab"]
+
+[ext_resource type="Script" path="res://scripts/face_lab.gd" id="1_facelab"]
+
+[node name="FaceLab" type="Node2D"]
+script = ExtResource("1_facelab")

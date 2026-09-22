@@ -7,7 +7,8 @@
 새 리소스를 만들 때는 다음 순서로 읽는다.
 
 1. [`ART_GUIDE.md`](ART_GUIDE.md) **§0 승인 원화 보존**을 먼저 읽는다. 자연어 요청 → 기존 그림체로 원화 생성 → 사용자 승인 → 보존형 Aseprite 픽셀화 순서를 따른다. Native4는 현행 호환 프로파일이며 보존 손실이 크면 규격을 재검토한다.
-2. 대상이 인물·특수 몬스터·센트리면 아래의 자산별 전문 문서를 추가로 확인한다.
+2. 방 배경이면 [`BACKGROUND_ART_DIRECTION.md`](BACKGROUND_ART_DIRECTION.md)를 먼저 읽는다. 얕은 사이드뷰 공간, 고유색 보존, 고정 배경/상호작용 프랍 위계를 적용한다. 메탈슬러그 비교와 시안별 회귀·미채택 이유는 [`BACKGROUND_RESEARCH_LOG.md`](BACKGROUND_RESEARCH_LOG.md)에서 확인한다. 최신 이미지가 자동으로 기준본은 아니다.
+   대상이 인물·특수 몬스터·센트리면 아래의 자산별 전문 문서를 추가로 확인한다.
    프랍이면 [`PROP_STYLE_REVIEW.md`](PROP_STYLE_REVIEW.md)의 기존 런타임 분석·실패 반례를 읽되, 과거 재설계 시험을 승인된 전환 방식으로 쓰지 않는다.
    애니메이션을 만들거나 수정할 때는 [`PIXEL_ANIMATION_GUIDE.md`](PIXEL_ANIMATION_GUIDE.md)에서 동작별 프레임 수·표시 속도와 현재 구현 차이를 확인한다.
 3. [`ASEPRITE_PIPELINE.md`](ASEPRITE_PIPELINE.md)의 **현재 실행 경로**에서 자산별 설정과 재현 명령을 확인한다. `crisp-final-r1`의 원본색·경계 보존을 기본으로 하되, 의료실은 원본 기반 준비 단계 뒤 pixelPitch=2.0을 선택했다. 이는 전 자산의 강제값이나 게임 출력 배율이 아니다. 과거 평균 축소·대비 강화 명령을 신규 작업에 쓰지 않는다.
@@ -21,7 +22,9 @@
 |---|---|---|---|
 | 최상위 원칙·규격 | [`ART_GUIDE.md`](ART_GUIDE.md) | 승인 원화 보존, 원화 생성 그림체, 자산별 화소/팔레트 선정, 현행 엔진 프로파일, 승인 기준 | 사용자 지시 및 §0의 보존 원칙 우선 |
 | 실행 절차 | [`ASEPRITE_PIPELINE.md`](ASEPRITE_PIPELINE.md) | Aseprite 원본, Lua/수작업 픽셀 제작, CLI 내보내기, 자동 검사, Godot 반입 | 스타일 판단은 ART_GUIDE에 위임 |
-| 선택·승인 상태 | [`ART_ASSET_STATUS.md`](ART_ASSET_STATUS.md) | 보존형 변환 사례의 현재 선택본, 사용자 피드백, 승인 범위와 미완료 항목 | 검사 스냅샷의 과거 상태와 후속 승인을 구별 |
+| 선택·승인 상태 | [`ART_ASSET_STATUS.md`](ART_ASSET_STATUS.md) | 보존형 변환·배경 원화 시안의 현재 선택본, 사용자 피드백, 승인 범위와 미완료 항목 | 검사 스냅샷의 과거 상태와 후속 승인을 구별 |
+| 배경 제작 방향 | [`BACKGROUND_ART_DIRECTION.md`](BACKGROUND_ART_DIRECTION.md) | 이후 방 원화의 얕은 공간, 조형, 근경, 고유색 보존 및 상호작용 위계, 제작 브리프·검수 | ART_GUIDE §0과 호환 규격 아래에서 배경 판단을 구체화. 개별 상태는 ART_ASSET_STATUS에 위임 |
+| 배경 조사·결정 근거 | [`BACKGROUND_RESEARCH_LOG.md`](BACKGROUND_RESEARCH_LOG.md) | 메탈슬러그와 실제 게임 비교, 측정 근거, 시안·프롬프트·해시, 사용자 피드백과 실패/회귀 이력 | 초기 실험을 현재 규칙으로 사용하지 않음. 현행 방향은 BACKGROUND_ART_DIRECTION |
 | 방 원화 브리프 | [`RETRO_STATION_ROOM_CONCEPTS.md`](RETRO_STATION_ROOM_CONCEPTS.md) | 통신 관제실·의료실의 조사와 디자인 근거 | 현재 선택·승인은 ART_ASSET_STATUS에 위임 |
 | 프랍 검수·실패 사례 | [`PROP_STYLE_REVIEW.md`](PROP_STYLE_REVIEW.md) | 기존 프랍 분석, 이전 재설계·밀도·형태 시험과 한계 | 과거 절차는 최신 §0과 ASEPRITE_PIPELINE을 대체하지 않음 |
 | 조립·사용 | [`RESOURCE_USAGE_GUIDE.md`](RESOURCE_USAGE_GUIDE.md) | 타일 조립, 피벗, 레이어, 기존 자산 배치 | 신규 제작 수치는 ART_GUIDE에 위임 |
@@ -40,6 +43,7 @@
 3. 제작 방법과 명령은 `ASEPRITE_PIPELINE.md`를 따른다.
 4. 엔진 배치와 레이어는 `RESOURCE_USAGE_GUIDE.md`를 따른다.
 5. 문서에 없는 새 예외는 작업 파일에만 숨기지 말고 관련 전문 문서와 이 색인에 함께 기록한다.
+6. 2026-09-22 배경 방향에서 정비홀 v2의 깊은 지면은 미채택, 전력실 v2의 재색칠은 불만을 남긴 현상 유지다. 이전 분석의 ‘바닥을 더 깊게’나 최신 노란 배전반을 자동 표준화하지 않는다. 기존 디오라마의 85%/70% 구도는 신규 배경의 강제 비율이 아니다.
 
 ## 유지 원칙
 
@@ -51,6 +55,8 @@
 - 자산 폴더의 README와 manifest는 그 자산의 구현 기록이다. 프로젝트 전체의 아트 정책을 새로 정의하지 않는다. 현재 승인 상태를 중복 관리하지 않고 ART_ASSET_STATUS에 연결한다.
 
 ## 통합 결과
+
+- v1.14 (2026-09-22): 배경 제작 방향과 전체 연구·결정 기록을 추가하고 ART_GUIDE의 구도·역할 분리 항목을 정합화했다. 네 시안의 공간 선호, 미채택, 톤 문제, 고유색 불만을 남긴 현상 유지를 ART_ASSET_STATUS에 구별했다. 게임 반입이나 이미지 변경은 수행하지 않았다.
 
 - v1.13: 캐릭터 8~16색 목표와 배경·프랍의 보존형 팔레트를 구분했다. 의료실 2.0 선택 및 단위 정의, 현재 실행 경로, 단일 승인 상태 기록을 연결했다. 범용 실행기 구현과 게임 출력 프로파일 검증은 후속 항목으로 남겼다. 코드·원본·결과 이미지·런타임은 변경하지 않았다.
 

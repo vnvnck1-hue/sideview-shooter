@@ -42,9 +42,9 @@ func setup(size := 1.0, floor_line := 100000.0) -> void:
 	_light = PointLight2D.new()
 	_light.name = "BlastLight"
 	_light.texture = Lighting.radial_texture()
-	_light.texture_scale = Lighting.scale_for_radius(420.0 * size)
+	_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("muzzle", "radius", 420.0) * size)
 	_light.color = Lighting.GUN_LIGHT
-	_light.height = Lighting.FLASH_HEIGHT
+	_light.height = LightTuning.value("muzzle", "height", Lighting.FLASH_HEIGHT)
 	_light.position = Vector2(length * 0.4, 0)
 	_light.enabled = false
 	add_child(_light)
@@ -95,7 +95,7 @@ func fire(power := 1.0, world_dir := Vector2.ZERO) -> void:
 			"w": _w * randf_range(0.2, 0.4),
 		})
 	_light.enabled = true
-	_light.energy = 2.6 * power * energy_scale
+	_light.energy = LightTuning.value("muzzle", "energy", 2.6) * power * energy_scale
 	if _smoke_cd <= 0.0:
 		_smoke_cd = SMOKE_EVERY
 		_smoke.restart()

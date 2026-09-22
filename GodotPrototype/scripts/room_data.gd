@@ -15,6 +15,10 @@ extends RefCounted
 ##                            벽걸이는 "cy"(그 열 천장 상단에서 아래로) 또는 "fy"(바닥선에서 위로) 를 주면 그 높이에 붙는다.
 ##                            특수 {"type": "cabinet"(파츠 파괴)|"capacitor"|"cart"|"breaker"(벽걸이, cy/fy)|"sentry"(바닥 격납 센트리건)}.
 ##                            sentry 는 평소 바닥 해치로 묻혀 있다가 W/↑ 로 전개·조종한다 (SentryTurret). 받침 폭 376px · 높이 440px 자리를 비워 둘 것.
+##                            사족보행 기체 {"type": "walker", "id": 맵에서 유일, "name": 단말기 표시 이름, "x"} —
+##                            평소 꺼진 채 웅크려 있다가 W/↑ 로 기동·조종한다 (WalkerUnit). 센트리건과 달리 **걸어다닌다.**
+##                            서 있을 때 폭 약 400px(총구 포함) · 높이 약 171px 이고, 방 좌우 260px 안쪽으로만 다닌다.
+##                            놓을 때는 양옆 250px 을 비워 둘 것 — 깨어나며 일어설 자리가 필요하다.
 ##                            생존자 {"type": "npc", "id": NpcData.CAST 의 키, "x", "facing": 1|-1} — W/↑ 로 말을 건다. 내용은 NpcData.LINES.
 ##                            "roam": px 를 주면 배치점 기준 ±px 를 어슬렁거린다 (걷는 클립이 있는 인물만. 구간은 방 벽 안쪽으로 잘린다).
 ##                            그 구간에는 프랍·단말기·센트리건을 두지 않는다 — 통과해 걸어가는 것처럼 보인다.
@@ -99,6 +103,7 @@ const ROOMS := {
 		],
 		"props": [
 			{"type": "terminal", "id": "save_corr_west", "x": 400},
+			{"type": "walker", "id": "walker_corr_west", "name": "서쪽 통로 보행 기체", "x": 694},
 			{"type": "sentry", "id": "sentry_corr_west", "name": "서쪽 통로 방어포", "x": 1800},
 		],
 		"lamps": [500, 1800],
@@ -148,6 +153,7 @@ const ROOMS := {
 		"props": [
 			{"tex": "workshop_locker_game_scale", "x": 330},
 			{"tex": "workshop_workbench_game_scale", "x": 900},
+			{"type": "walker", "id": "walker_hall", "name": "중앙 홀 보행 기체", "x": 1240},
 			{"tex": "workshop_armchair_game_scale", "x": 1500},
 			{"tex": "workshop_workbench_game_scale", "x": 1900},
 			{"tex": "workshop_locker_game_scale", "x": 2800},
@@ -196,6 +202,7 @@ const ROOMS := {
 		"front_doors": [{"x": 2200, "target": "greenhouse", "target_door": 0}],
 		"props": [
 			{"tex": "workshop_locker_game_scale", "x": 300},
+			{"type": "walker", "id": "walker_hangar", "name": "격납고 보행 기체", "x": 650},
 			{"tex": "workshop_workbench_game_scale", "x": 1000},
 			{"type": "cart", "x": 1500},
 			{"tex": "workshop_armchair_game_scale", "x": 1950},
@@ -263,6 +270,7 @@ const ROOMS := {
 		"props": [
 			{"tex": POWER_RELAY_DIR + "Props/power_relay_conduit_junction.png", "x": 500, "fy": 300},
 			{"type": "breaker", "x": 1000, "fy": 330},
+			{"type": "walker", "id": "walker_cable", "name": "케이블 덕트 보행 기체", "x": 1250},
 			{"tex": POWER_RELAY_DIR + "Props/power_relay_conduit_junction.png", "x": 1500, "fy": 300},
 			{"type": "sentry", "id": "sentry_cable", "name": "케이블 덕트 방어포", "x": 800},
 			{"type": "terminal", "id": "survey_cable", "x": 1750},
@@ -548,6 +556,7 @@ const ROOMS := {
 			{"type": "sentry", "id": "sentry_pump", "name": "급수 통로 방어포", "x": 500},
 			{"type": "terminal", "id": "sec_pump", "x": 1180, "fy": 330},
 			{"tex": "hydroponics_utility_sink", "x": 1400},
+			{"type": "walker", "id": "walker_pump", "name": "급수 통로 보행 기체", "x": 1190},
 		],
 		"lamps": [896],
 		"fixtures": [

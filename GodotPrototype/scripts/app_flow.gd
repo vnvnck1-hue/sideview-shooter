@@ -9,6 +9,8 @@ const MAP_VIEWER_SCENE := "res://scenes/MapViewer.tscn"
 const DIALOGUE_LAB_SCENE := "res://scenes/DialogueLab.tscn"
 const SHADOW_LAB_SCENE := "res://scenes/ShadowLab.tscn"
 const WALKER_LAB_SCENE := "res://scenes/WalkerLab.tscn"
+const WALKER_AUTHORING_LAB_SCENE := "res://scenes/WalkerAuthoringLab.tscn"
+const FACE_LAB_SCENE := "res://scenes/FaceLab.tscn"
 
 ## 디자인 캔버스 = 창 기본 크기 = 스트레치 기준 (project.godot display/window/size 와 반드시 같은 값).
 ## HUD·CRT 오버레이·말풍선 등 창 좌표를 쓰는 모든 곳이 여기를 본다.
@@ -105,11 +107,29 @@ static func start_shadow_lab(tree: SceneTree) -> void:
 	tree.change_scene_to_file(SHADOW_LAB_SCENE)
 
 
-## 사족보행 랩: 기복 있는 그레이박스 지면 위에서 절차적 보행(ProcWalker)을 직접 끌고 다녀 본다 (scripts/walker_lab.gd)
+## 사족보행 랩: 인게임 아트·보행을 실시간 조정하고 공유 설정에 저장한다.
 static func start_walker_lab(tree: SceneTree) -> void:
 	lab_mode = false
 	amb_lab = false
 	tree.change_scene_to_file(WALKER_LAB_SCENE)
+
+
+## 원화 피벗·키프레임 편집기는 보행 튜닝 창에서 왕복한다.
+static func start_walker_authoring_lab(tree: SceneTree) -> void:
+	lab_mode = false
+	amb_lab = false
+	tree.change_scene_to_file(WALKER_AUTHORING_LAB_SCENE)
+
+
+## 조명·면 랩: **실제 게임 그대로**(main.gd 상속) 돌아가면서 방 안의 광원과 프랍 면 맵을 그 자리에서 고친다.
+## 조명 수치는 lighting/tuning.json 에 저장돼 본편이 시작할 때 읽고(scripts/light_tuning.gd),
+## 면 수치는 faces/tuning.json 에 저장된다(scripts/face_normal.gd). 자산에 굽는 것은 tools/bake_face_normals.gd.
+static func start_face_lab(tree: SceneTree, room := "") -> void:
+	lab_mode = false
+	amb_lab = false
+	start_room = room if RoomData.ROOMS.has(room) else "hall"
+	resume_x = -1.0
+	tree.change_scene_to_file(FACE_LAB_SCENE)
 
 
 ## 맵 뷰어: 방을 게임 없이 조립해 자유 카메라로 본다 ([ ] 로 방 전환)

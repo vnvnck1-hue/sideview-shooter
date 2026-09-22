@@ -1,0 +1,266 @@
+{
+	"camera_zoom": 2.7,
+	"description": "Isolated production WalkerUnit render; not a full game screenshot. Production script and part hierarchy are unchanged.",
+	"poses": [
+		{
+			"aim_degrees": -179.999950367443,
+			"airborne": false,
+			"body_angle": 0.00183390080928802,
+			"body_pos": [
+				0.0,
+				-183.695098876953
+			],
+			"body_yaw": 0.0,
+			"controlled": true,
+			"facing": 1,
+			"file": "01_ingame_isolated_left_neutral.png",
+			"gait": {
+				"aim_lean": 0.5,
+				"bob": 4.0,
+				"hold": 0.03,
+				"lead": 0.22,
+				"legs_up": 1.0,
+				"lift": 45.0,
+				"ride": 182.0,
+				"speed": 340.0,
+				"step_time": 0.06,
+				"stride": 0.9,
+				"tilt": 0.0,
+				"trigger": 30.0
+			},
+			"legs": [
+				{
+					"foot": [
+						-97.3000030517578,
+						0.0
+					],
+					"hip": [
+						-83.5622177124023,
+						-149.848281860352
+					],
+					"name": "뒤·먼",
+					"stepping": false
+				},
+				{
+					"foot": [
+						194.300003051758,
+						0.0
+					],
+					"hip": [
+						180.437347412109,
+						-149.364135742188
+					],
+					"name": "앞·먼",
+					"stepping": false
+				},
+				{
+					"foot": [
+						-183.5,
+						0.0
+					],
+					"hip": [
+						-166.602416992188,
+						-128.000534057617
+					],
+					"name": "뒤·가까",
+					"stepping": false
+				},
+				{
+					"foot": [
+						86.5,
+						0.0
+					],
+					"hip": [
+						69.3971862792969,
+						-127.567733764648
+					],
+					"name": "앞·가까",
+					"stepping": false
+				}
+			],
+			"orientation_setup": "upper-body aim only; actual initial lower-body orientation preserved",
+			"scale": 0.5,
+			"simulation_frame": 180,
+			"speed": 0.0,
+			"state": "READY",
+			"torso_yaw": 3.14159265358979
+		},
+		{
+			"aim_degrees": -0.00291233446541325,
+			"airborne": false,
+			"body_angle": 0.00340753654018044,
+			"body_pos": [
+				0.0,
+				-183.023727416992
+			],
+			"body_yaw": 0.0,
+			"controlled": true,
+			"facing": 1,
+			"file": "02_ingame_isolated_right_neutral.png",
+			"gait": {
+				"aim_lean": 0.5,
+				"bob": 4.0,
+				"hold": 0.03,
+				"lead": 0.22,
+				"legs_up": 1.0,
+				"lift": 45.0,
+				"ride": 182.0,
+				"speed": 340.0,
+				"step_time": 0.06,
+				"stride": 0.9,
+				"tilt": 0.0,
+				"trigger": 30.0
+			},
+			"legs": [
+				{
+					"foot": [
+						-97.3000030517578,
+						0.0
+					],
+					"hip": [
+						-83.6153717041016,
+						-149.308456420898
+					],
+					"name": "뒤·먼",
+					"stepping": false
+				},
+				{
+					"foot": [
+						194.300003051758,
+						0.0
+					],
+					"hip": [
+						180.383102416992,
+						-148.408874511719
+					],
+					"name": "앞·먼",
+					"stepping": false
+				},
+				{
+					"foot": [
+						-183.5,
+						0.0
+					],
+					"hip": [
+						-166.689865112305,
+						-127.591400146484
+					],
+					"name": "뒤·가까",
+					"stepping": false
+				},
+				{
+					"foot": [
+						86.5,
+						0.0
+					],
+					"hip": [
+						69.3087768554688,
+						-126.787231445313
+					],
+					"name": "앞·가까",
+					"stepping": false
+				}
+			],
+			"orientation_setup": "upper-body aim only; actual initial lower-body orientation preserved",
+			"scale": 0.5,
+			"simulation_frame": 300,
+			"speed": 0.0,
+			"state": "READY",
+			"torso_yaw": 0.0
+		},
+		{
+			"aim_degrees": 179.999991348578,
+			"airborne": false,
+			"body_angle": -0.00163645728025585,
+			"body_pos": [
+				0.0,
+				-183.192413330078
+			],
+			"body_yaw": 3.14159265358979,
+			"controlled": true,
+			"facing": -1,
+			"file": "03_ingame_aligned_left_neutral.png",
+			"gait": {
+				"aim_lean": 0.5,
+				"bob": 4.0,
+				"hold": 0.03,
+				"lead": 0.22,
+				"legs_up": 1.0,
+				"lift": 45.0,
+				"ride": 182.0,
+				"speed": 340.0,
+				"step_time": 0.06,
+				"stride": 0.9,
+				"tilt": 0.0,
+				"trigger": 30.0
+			},
+			"legs": [
+				{
+					"foot": [
+						97.3000030517578,
+						0.0
+					],
+					"hip": [
+						83.5751724243164,
+						-137.329116821289
+					],
+					"name": "뒤·먼",
+					"stepping": false
+				},
+				{
+					"foot": [
+						-194.300003051758,
+						0.0
+					],
+					"hip": [
+						-180.42448425293,
+						-136.897094726563
+					],
+					"name": "앞·먼",
+					"stepping": false
+				},
+				{
+					"foot": [
+						183.5,
+						0.0
+					],
+					"hip": [
+						166.571792602539,
+						-139.464935302734
+					],
+					"name": "뒤·가까",
+					"stepping": false
+				},
+				{
+					"foot": [
+						-86.5,
+						0.0
+					],
+					"hip": [
+						-69.4279022216797,
+						-139.078735351563
+					],
+					"name": "앞·가까",
+					"stepping": false
+				}
+			],
+			"orientation_setup": "explicit public face(-1) for aligned comparison",
+			"scale": 0.5,
+			"simulation_frame": 480,
+			"speed": 0.0,
+			"state": "READY",
+			"torso_yaw": 3.14159265358979
+		}
+	],
+	"simulation_hz": 60,
+	"source_sha256": {
+		"res://assets/quadruped/parts.json": "5a98f6fc0873ce1bff007702e6f25b375b5eb5ee271632c36513ed87a8b2c6a6",
+		"res://scripts/proc_walker.gd": "54d0d6cafcbbfb50cad38e738f66522451331964a231ee538bbf9100641094de",
+		"res://scripts/walker_rig.gd": "9c32ff727f56b3790cb6c09f55078b3b976f996218904147a7b16df1dce3c33d",
+		"res://scripts/walker_unit.gd": "db5b734383b550f9bee184a920dc161009248deb47e61fad910ee335199c2cdc"
+	},
+	"viewport": [
+		1280,
+		720
+	]
+}

@@ -4,18 +4,13 @@ extends Node2D
 ## 지나가면 튕긴다. 끝의 드러난 구리선에서 파란 전기가 빠지직 튀며(아크 번개 + 스파크 + 라이트) 아래로 흩어진다.
 
 const SEGMENTS := 12
-const GRAVITY := 1900.0
-const DAMPING := 0.986
-const ITERATIONS := 5
 const WIRE_COLOR := Color(0.10, 0.10, 0.12)
 const WIRE_HILITE := Color(0.22, 0.22, 0.26)
 const COPPER := Color(0.95, 0.55, 0.25)
 
 var length := 200.0
 var floor_y := 486.0
-var _pts := PackedVector2Array()       # 월드 좌표
-var _prev := PackedVector2Array()
-var _seg := 0.0
+var _rope := RopeChain.new()           # 줄의 물리는 공용 (scripts/rope_chain.gd — 천장 램프도 같은 것을 쓴다)
 var _line: Line2D
 var _hilite: Line2D
 var _copper: Line2D
@@ -34,14 +29,7 @@ var _energy := 0.0
 func setup(wire_length: float, floor_line: float) -> void:
 	length = wire_length
 	floor_y = floor_line
-	_seg = length / SEGMENTS
-	_pts.resize(SEGMENTS + 1)
-	_prev.resize(SEGMENTS + 1)
-	for i in range(SEGMENTS + 1):
-		# 처음엔 살짝 비스듬히 늘어진 채 시작 (완전 수직 정지 상태를 피함)
-		var p := global_position + Vector2(i * 6.0 * signf(sin(_wind_phase)), i * _seg * 0.97)
-		_pts[i] = p
-		_prev[i] = p
+	_rope.setup(global_position, length, SEGMENTS, floor_y)
 
 	_line = Line2D.new()
 	_line.width = 7.0
@@ -72,9 +60,10 @@ func setup(wire_length: float, floor_line: float) -> void:
 
 	_light = PointLight2D.new()
 	_light.texture = Lighting.radial_texture()
-	_light.texture_scale = Lighting.scale_for_radius(260.0)
+	_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("wire", "radius", 260.0))
 	_light.color = Lighting.ARC_BLUE
-	_light.height = 80.0
+	_light.height = LightTuning.value("wire", "height", 80.0)
+	LightTuning.register(self, "wire")
 	_light.energy = 0.0
 	_light.enabled = false
 	_light.top_level = true
@@ -87,7 +76,7 @@ func setup(wire_length: float, floor_line: float) -> void:
 
 
 func tip() -> Vector2:
-	return _pts[SEGMENTS]
+	return _rope.tip()
 
 
 ## 먼지 레이어용 광원 정보 (아크가 튈 때만 켜진다)
@@ -97,68 +86,22 @@ func light_info() -> Dictionary:
 
 ## 총알 궤적(from→to)이 스치면 그 방향으로 튀고, 탄착점 충격파가 가까우면 밀린다
 func apply_shot(from: Vector2, to: Vector2) -> void:
-	var dirv := (to - from).normalized()
-	for i in range(1, SEGMENTS + 1):
-		var p := _pts[i]
-		var d := _dist_to_segment(p, from, to)
-		if d < 30.0:
-			_prev[i] -= dirv * randf_range(380.0, 620.0) * (1.0 - d / 30.0) / 60.0
-		var dd := p.distance_to(to)
-		if dd < 240.0:
-			var away := (p - to).normalized()
-			_prev[i] -= away * 320.0 * (1.0 - dd / 240.0) / 60.0
+	_rope.apply_shot(from, to)
 
 
 ## 플레이어 몸이 지나가며 밀친다. pos: 발 위치, vel_x: 이동 속도
 func apply_body(pos: Vector2, vel_x: float) -> void:
-	if absf(vel_x) < 40.0:
-		return
-	for i in range(1, SEGMENTS + 1):
-		var p := _pts[i]
-		if absf(p.x - pos.x) < 40.0 and p.y > pos.y - 330.0 and p.y < pos.y + 4.0:
-			_prev[i].x -= vel_x * 0.9 / 60.0
-			_prev[i].y += 60.0 / 60.0
-
-
-static func _dist_to_segment(p: Vector2, a: Vector2, b: Vector2) -> float:
-	var ab := b - a
-	var t := clampf((p - a).dot(ab) / maxf(ab.length_squared(), 1.0), 0.0, 1.0)
-	return p.distance_to(a + ab * t)
+	_rope.apply_body(pos, vel_x)
 
 
 func _physics_process(delta: float) -> void:
 	_t += delta
-	# 버렛 적분: 중력 + 미풍(끝일수록 크게)
-	var wind := sin(_t * 0.7 + _wind_phase) * 26.0 + sin(_t * 2.3 + _wind_phase * 1.7) * 9.0
-	for i in range(1, SEGMENTS + 1):
-		var p := _pts[i]
-		var v := (p - _prev[i]) * DAMPING
-		var w := wind * float(i) / SEGMENTS
-		_prev[i] = p
-		_pts[i] = p + v + Vector2(w, GRAVITY) * delta * delta
-	# 길이 제약 (첫 점은 고정)
-	for k in range(ITERATIONS):
-		_pts[0] = global_position
-		for i in range(SEGMENTS):
-			var a := _pts[i]
-			var b := _pts[i + 1]
-			var d := b - a
-			var dist := maxf(d.length(), 0.001)
-			var diff := (dist - _seg) / dist
-			if i == 0:
-				_pts[i + 1] = b - d * diff
-			else:
-				_pts[i] = a + d * diff * 0.5
-				_pts[i + 1] = b - d * diff * 0.5
-		# 바닥 통과 금지
-		for i in range(1, SEGMENTS + 1):
-			if _pts[i].y > floor_y - 2.0:
-				_pts[i].y = floor_y - 2.0
-
-	_line.points = _pts
-	_hilite.points = _pts
-	var cop := PackedVector2Array([_pts[SEGMENTS - 1].lerp(_pts[SEGMENTS], 0.45), _pts[SEGMENTS]])
-	_copper.points = cop
+	_rope.anchor = global_position
+	_rope.step(delta)
+	var pts := _rope.points()
+	_line.points = pts
+	_hilite.points = pts
+	_copper.points = PackedVector2Array([pts[SEGMENTS - 1].lerp(pts[SEGMENTS], 0.45), pts[SEGMENTS]])
 
 	_update_crackle(delta)
 
@@ -199,7 +142,7 @@ func _update_crackle(delta: float) -> void:
 		if _arc_target.y > floor_y:
 			_arc_target.y = floor_y
 		# 방전 반동: 끝이 살짝 튄다
-		_prev[SEGMENTS] += (_arc_target - t).normalized() * randf_range(60.0, 160.0) / 60.0
+		_rope.nudge_tip(-(_arc_target - t).normalized() * randf_range(60.0, 160.0))
 		# 큰 스파크 뭉치
 		_sparks.burst(t, randi_range(5, 12), Vector2(0, 1), 1.6, Vector2(200, 640),
 			Color(0.95, 0.98, 1.0), Color(0.4, 0.55, 1.0), Vector2(0.3, 0.8), 2400.0, 2.5, false)

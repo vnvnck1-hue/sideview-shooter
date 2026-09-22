@@ -241,24 +241,35 @@ static func role_of(id: String) -> Dictionary:
 	return ROLES.get(t.get("role", "link"), ROLES["link"])
 
 
-## 맵 전체의 센트리건 목록 — RoomData.ROOMS 의 props 를 훑어 모은다 (배치는 맵 파일이 단일 출처).
-## [{"id", "room", "x", "zone", "room_title", "name"}] · 구역 → 방 순서.
-static func sentries() -> Array:
+## 보안 단말기가 원격으로 잡을 수 있는 **기계 종류**. props 의 "type" → 화면에 붙일 꼬리표.
+## 여기에 한 줄 더하면 방어 그리드에 그 기계가 저절로 올라온다 (Main 의 _switch_to_remote 도 같이 볼 것).
+const MACHINE_KINDS := {"sentry": "포탑", "walker": "보행 기체"}
+
+
+## 맵 전체의 **원격 조종 가능한 기계** 목록 — RoomData.ROOMS 의 props 를 훑어 모은다
+## (배치는 맵 파일이 단일 출처). [{"id", "kind", "room", "x", "zone", "room_title", "name"}] · 구역 → 방 순서.
+static func machines() -> Array:
 	var out: Array = []
 	for room_id in RoomData.ROOMS:
 		var data: Dictionary = RoomData.ROOMS[room_id]
 		for p in data.get("props", []):
-			if p.get("type", "") != "sentry":
+			var kind := str(p.get("type", ""))
+			if not MACHINE_KINDS.has(kind):
 				continue
 			var sid := str(p.get("id", ""))
 			if sid == "":
 				continue
 			out.append({
-				"id": sid, "room": room_id, "x": float(p["x"]),
+				"id": sid, "kind": kind, "room": room_id, "x": float(p["x"]),
 				"zone": str(data.get("zone", "")), "room_title": str(data.get("title", room_id)),
 				"name": str(p.get("name", data.get("title", room_id))),
 			})
 	return out
+
+
+## 센트리건만 (예전 이름 — 포탑만 세는 곳이 쓴다)
+static func sentries() -> Array:
+	return machines().filter(func(m): return m["kind"] == "sentry")
 
 
 ## 이 단말기의 관할 목록 (구역 이름 또는 방 id). security 는 접속 권한, survey 는 실시간 판독 범위.
@@ -267,6 +278,7 @@ static func grid_of(terminal_id: String) -> Array:
 
 
 ## 이 단말기가 실제로 잡을 수 있나 — grid 에 방 id 또는 그 방의 구역 이름이 들어 있으면 된다.
+## (포탑이든 보행 기체든 같은 관할 규칙이다 — 구역을 쥐면 그 구역의 기계를 다 쥔다)
 static func in_grid(terminal_id: String, sentry: Dictionary) -> bool:
 	var grid := grid_of(terminal_id)
 	return grid.has(sentry["room"]) or grid.has(sentry["zone"])
@@ -274,10 +286,11 @@ static func in_grid(terminal_id: String, sentry: Dictionary) -> bool:
 
 ## 방어 그리드 목록 — 관할 안이 먼저, 관할 밖은 뒤에 "권한 없음" 으로.
 ## 각 항목에 "authorized"(잡을 수 있나) 와 "local"(단말기와 같은 방인가) 을 덧붙인다.
+## 포탑과 보행 기체가 한 목록에 섞인다 — 플레이어에게는 "이 구역에서 내가 쓸 수 있는 기계" 하나의 개념이다.
 static func grid_entries(terminal_id: String, terminal_room: String) -> Array:
 	var authorized: Array = []
 	var locked: Array = []
-	for s in sentries():
+	for s in machines():
 		var e: Dictionary = s.duplicate()
 		e["authorized"] = in_grid(terminal_id, s)
 		e["local"] = s["room"] == terminal_room

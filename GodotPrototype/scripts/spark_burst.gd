@@ -39,13 +39,13 @@ func _flash_light(pos: Vector2, energy: float, col: Color) -> void:
 	if _light == null:
 		_light = PointLight2D.new()
 		_light.texture = Lighting.radial_texture()
-		_light.texture_scale = Lighting.scale_for_radius(240.0)
-		_light.height = Lighting.FLASH_HEIGHT
+		_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("spark", "radius", 240.0))
+		_light.height = LightTuning.value("spark", "height", Lighting.FLASH_HEIGHT)
 		add_child(_light)
 		Lighting.register_dynamic(_light, 0.8, "ambient")
 	_light.position = pos
 	_light.color = col
-	_light.energy = energy
+	_light.energy = energy * LightTuning.value("spark", "energy", 1.0)
 	_light.enabled = true
 	_light_t = 0.14
 

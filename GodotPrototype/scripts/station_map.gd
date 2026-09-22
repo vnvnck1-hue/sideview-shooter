@@ -250,8 +250,9 @@ func setup_survey(grid: Array, here_room: String) -> void:
 	queue_redraw()
 
 
-## 보안 관제 단말기의 방어 그리드 — 커서가 **관할 포탑** 위만 돈다.
-## 관할 밖 포탑은 어둡게 그려지되 커서가 서지 않는다 ("있는 건 보이는데 여기선 못 잡는다").
+## 보안 관제 단말기의 방어 그리드 — 커서가 **관할 기계**(포탑·보행 기체) 위만 돈다.
+## 관할 밖은 어둡게 그려지되 커서가 서지 않는다 ("있는 건 보이는데 여기선 못 잡는다").
+## 한 방에 두 대가 있으면 같은 자리에 커서가 두 번 선다 — 머리글의 이름·종류로 구분한다.
 func setup_grid(grid_entries: Array, grid: Array, here_room: String) -> void:
 	mode = "grid"
 	here = here_room
@@ -600,7 +601,9 @@ func _draw_info() -> void:
 	var note := ""
 	if mode == "grid":
 		var e: Dictionary = entries[int(t["entry"])]
-		head = "%s      %s  ·  %s" % [str(e["name"]), str(e["zone"]), str(e["room_title"])]
+		# 같은 방에 포탑과 보행 기체가 같이 있을 수 있다 — 종류를 붙여 어느 쪽인지 바로 읽히게
+		var tag := str(TerminalData.MACHINE_KINDS.get(str(e.get("kind", "sentry")), ""))
+		head = "%s [%s]      %s  ·  %s" % [str(e["name"]), tag, str(e["zone"]), str(e["room_title"])]
 		var tail := "원격 접속 가능"
 		if e.get("local", false):
 			tail = "이 방 — 몸으로도 잡을 수 있습니다"

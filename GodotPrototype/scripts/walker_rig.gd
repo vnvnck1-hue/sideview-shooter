@@ -11,7 +11,9 @@ extends Node2D
 ##   다리 ×4 — rod    유압 로드: **민무늬 원통**. 늘이지 않고 region 으로 잘라 쓴다
 ##             sleeve 유압 슬리브(원화의 초록 장갑판): 고관절에 고정, 로드를 덮는다
 ##             shin   정강이 + 발: 길이 불변 — 원화에서 잘라 그대로 돌린다 (±15°)
-##             hip_cap / knee_cap  관절 원통: 이음매 틈을 가린다
+##             hip_cap / knee_cap  관절 원판: 이음매 틈을 가린다
+##   다리 조각은 **가까운 벌 / 먼 벌 두 벌**이다. 원화가 3/4 이라 먼 다리는 작은 게 아니라
+##   누워 있다 — 리그가 원근을 만들지 않고 원화에서 받아 쓴다 (LIMB_FAR 참고).
 ##
 ## ## 늘어나는 허벅지를 스프라이트로 다루는 법
 ## 픽셀을 **늘리지 않는다.** 로드를 항상 전체 길이로 두고 `region_rect` 로 필요한 만큼만 잘라 보인다
@@ -27,7 +29,7 @@ extends Node2D
 ## (나중에 정면 전환 시트를 끼우면 그 하한 구간을 시트가 대체한다)
 
 ## 조각 규격의 **기본값**(= 플레이스홀더용). 원화 조각이 있으면 parts.json 의 값으로 덮어쓴다.
-##   size   그림 크기(px, 월드 단위와 1:1)
+##   size   그림 크기(px, 리그 로컬 단위와 1:1)
 ##   anchor 그림 안에서 **관절이 있는 자리**
 ##   axis   그림이 뻗은 방향 — "down" 은 원화에서 아래로 뻗은 마디(회전할 때 -90° 를 더한다) ·
 ##          "right" 는 오른쪽으로 뻗은 마디 · "none" 은 회전하지 않는 조각
@@ -39,10 +41,33 @@ const PARTS_DEFAULT := {
 	"shin": {"size": Vector2(178, 52), "anchor": Vector2(0, 26), "axis": "right"},
 	"hip_cap": {"size": Vector2(52, 52), "anchor": Vector2(26, 26), "axis": "none"},
 	"knee_cap": {"size": Vector2(64, 64), "anchor": Vector2(32, 32), "axis": "none"},
+	# 먼 다리용. 플레이스홀더 단계에서는 가까운 쪽과 같은 규격이면 충분하다 (원화가 오면 덮어쓴다)
+	"sleeve_far": {"size": Vector2(74, 56), "anchor": Vector2(0, 28), "axis": "right"},
+	"shin_far": {"size": Vector2(178, 52), "anchor": Vector2(0, 26), "axis": "right"},
+	"hip_cap_far": {"size": Vector2(52, 52), "anchor": Vector2(26, 26), "axis": "none"},
+	"knee_cap_far": {"size": Vector2(64, 64), "anchor": Vector2(32, 32), "axis": "none"},
 }
 
-## 원화 조각은 관절 원통을 **한 장**만 잘라 고관절·무릎에 같이 쓴다 (원화에 실린더가 하나뿐이다)
-const CAP_ALIAS := {"hip_cap": "cap", "knee_cap": "cap"}
+## 원화 조각은 고관절·무릎에 같은 관절 원판을 쓴다 (원화에 온전한 실린더가 한 쌍뿐이다).
+## "_far" 붙은 이름이 **먼 다리용 조각**이다 — 아래 LIMB_FAR 참고.
+const CAP_ALIAS := {
+	"hip_cap": "cap", "knee_cap": "cap",
+	"hip_cap_far": "cap_far", "knee_cap_far": "cap_far",
+}
+
+## ## 먼 다리는 **원화가 그려 둔 먼 다리**를 쓴다 (2026-09-22)
+## 예전엔 가까운 다리 한 벌을 0.82 배로 줄이고 어둡게 눌러 먼 다리로 썼다. 그런데 이 원화는
+## 정측면이 아니라 3/4 이고, 그 안의 먼 다리는 "작은 가까운 다리" 가 아니라 **비스듬히 누워
+## 폭이 절반으로 눌린** 다리다 (장갑판 폭 248 → 100px). 한 벌을 줄여 쓰면 리그의 사영 위에
+## 원화의 원근이 한 번 더 얹혀 이중으로 보인다 — 다리가 넷인데 넷 다 카메라를 정면으로 보는
+## 그 증상이다. 이제 원근을 **만들지 않고 원화에서 받아 온다.**
+## 어느 쪽이 먼지는 yaw 를 따라 매 프레임 바뀌므로(돌아서면 앞뒤가 뒤바뀐다) 조각도 매 프레임 고른다.
+const LIMB_FAR := {"rod": "rod", "sleeve": "sleeve_far", "shin": "shin_far",
+	"hip_cap": "hip_cap_far", "knee_cap": "knee_cap_far"}
+
+## 먼 다리를 이만큼만 어둡게 한다. 원화의 먼 다리가 **이미 어둡게 칠해져 있어**
+## 예전의 FAR_MUL(0.62)을 그대로 먹이면 두 번 눌려 검게 죽는다 — 공기 원근만 살짝 얹는다.
+const ART_FAR_MUL := 0.90
 
 ## 플레이스홀더 색 — 원화 조각이 없을 때만 쓴다. 그레이박스와 같은 색으로 둬서
 ## F4 로 번갈아 보며 자리맞춤을 확인할 수 있게 한다.
@@ -54,6 +79,10 @@ const PLACEHOLDER := {
 	"shin": Color(0.851, 0.761, 0.369),
 	"hip_cap": Color(0.518, 0.518, 0.878),
 	"knee_cap": Color(0.518, 0.518, 0.878),
+	"sleeve_far": Color(0.902, 0.549, 0.784),
+	"shin_far": Color(0.851, 0.761, 0.369),
+	"hip_cap_far": Color(0.518, 0.518, 0.878),
+	"knee_cap_far": Color(0.518, 0.518, 0.878),
 }
 
 ## 원화 조각을 찾는 곳. 파일이 있으면 쓰고, 없으면 플레이스홀더를 만든다 (A 단계)
@@ -63,10 +92,11 @@ var walker: ProcWalker
 
 var _plane: Node2D            # 몸통이 담기는 평면 (사영 행렬을 그대로 받는다)
 var _hull: Sprite2D
+var _turn_face: Sprite2D       # 회전 중 드러나는 두께 면; 측면과 연속적으로 교차한다
 var _barrel: Sprite2D
-var _legs: Array = []         # [{rod, sleeve, shin, hip_cap, knee_cap, holder}]
+var _chassis: Node2D          # 상체 회전과 독립된 하체 연결부
+var _legs: Array = []         # [{index, holder, rod, sleeve, shin, hip_cap, knee_cap}] — index 는 walker.legs() 의 번호
 var _tex: Dictionary = {}
-var _turn_sheet: Texture2D = null     # 정면 전환 시트 (아직 없다 — _sync_body 의 "정면 전환 시트 자리" 참고)
 
 
 var _parts: Dictionary = {}       # 실제로 쓰는 규격 (원화가 있으면 parts.json 값)
@@ -85,20 +115,40 @@ func _ready() -> void:
 	add_child(_plane)
 	_hull = _make("hull")
 	_plane.add_child(_hull)
+	_turn_face = _make("hull")
+	_turn_face.name = "HullTurnFace"
+	_turn_face.z_index = 4
+	add_child(_turn_face)
+	_chassis = Node2D.new()
+	_chassis.name = "SuspensionBridge"
+	_chassis.z_index = 3
+	_chassis.draw.connect(_draw_chassis)
+	add_child(_chassis)
 
 	_barrel = _make("barrel")
 	_barrel.z_index = 6
 	add_child(_barrel)
 
-	for leg in walker.legs():
+	# 다리 딕셔너리를 **들고 있지 않는다. 번호만 기억한다.**
+	# ProcWalker.reset_stance() 는 네 다리를 통째로 새 딕셔너리로 갈아 끼운다(씬 시작·초기화·착지 직후).
+	# 여기서 딕셔너리를 잡아 두면 그 순간 리그만 **버려진 옛 다리**를 계속 그린다 —
+	# 몸통은 걸어가는데 발이 처음 자리에 얼어붙는 그 증상이다. 번호로 매 프레임 다시 찾으면 그럴 일이 없다.
+	for i in walker.legs().size():
+		var leg: Dictionary = walker.legs()[i]
 		var holder := Node2D.new()
 		holder.name = "Leg_" + str(leg["name"])
 		add_child(holder)
 		var d := {
-			"leg": leg, "holder": holder,
+			"index": i, "holder": holder,
 			"rod": _make("rod"), "sleeve": _make("sleeve"), "shin": _make("shin"),
 			"hip_cap": _make("hip_cap"), "knee_cap": _make("knee_cap"),
 		}
+		if walker.spider_gait:
+			d["mount_link"] = _make("rod")
+			d["ankle_cap"] = _make("knee_cap")
+			holder.add_child(d["mount_link"])
+			holder.add_child(d["ankle_cap"])
+			(d["ankle_cap"] as Sprite2D).z_index = 3
 		# 한 다리 안에서의 순서: 로드 → 정강이 → 슬리브 → 관절 캡 (캡이 이음매를 덮는다)
 		for key in ["rod", "shin", "sleeve", "knee_cap", "hip_cap"]:
 			holder.add_child(d[key])
@@ -137,6 +187,7 @@ func _load_specs() -> void:
 			"size": Vector2(float(d["size"][0]), float(d["size"][1])),
 			"anchor": Vector2(float(d["anchor"][0]), float(d["anchor"][1])),
 			"axis": String(d["axis"]),
+			"lean": float(d.get("lean", 0.0)),
 			"file": name,
 		}
 
@@ -144,11 +195,19 @@ func _load_specs() -> void:
 func _make(key: String) -> Sprite2D:
 	var sp := Sprite2D.new()
 	sp.name = key
-	sp.texture = _tex[key]
 	sp.centered = false
-	sp.offset = -(_parts[key]["anchor"] as Vector2)      # 관절이 노드 원점에 오게
 	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_wear(sp, key)
 	return sp
+
+
+## 이 조각의 그림·앵커를 스프라이트에 입힌다. 가까운 다리/먼 다리를 오가려면 매 프레임 바뀌므로
+## 만들 때 한 번이 아니라 **필요할 때마다** 부른다 (같은 조각이면 건드리지 않는다).
+func _wear(sp: Sprite2D, key: String) -> void:
+	if sp.texture == _tex[key]:
+		return
+	sp.texture = _tex[key]
+	sp.offset = -(_parts[key]["anchor"] as Vector2)      # 관절이 노드 원점에 오게
 
 
 ## 원화 조각이 있으면 그걸 쓴다. 없으면 규격 크기의 단색 판을 만들어 자리부터 맞춘다.
@@ -182,74 +241,140 @@ func _process(_delta: float) -> void:
 	if walker == null:
 		return
 	_sync_body()
+	_chassis.queue_redraw()
 	for d in _legs:
 		_sync_leg(d)
 
 
-## 몸통 평면. 사영의 정확한 행렬을 얹는다 (walker.project 의 미분).
-##   x = a·(c - dv.x·sn/BD) + (상수)      y = a·(-dv.y·sn/BD) + u + (상수)
-## a 축 배율에만 하한을 둔다 — 정면을 지날 때 그림이 사라지지 않게.
+## 원화 몸통은 다리 소켓까지 한 장이다. 몸통만 돌릴 때 드러나는 관절을 고정 하체에 잇는다.
+func _draw_chassis() -> void:
+	var hub := walker.project(0.0, 30.0, 0.0)
+	for leg in walker.legs():
+		var hip := _to_rig(leg["pose"]["mount"] if walker.spider_gait else walker.hip_world(leg))
+		var inner := hip.lerp(hub, 0.76)
+		_chassis.draw_line(inner, hip, Color("171e25"), 28.0)
+		_chassis.draw_line(inner + Vector2(0, -2), hip + Vector2(0, -2), Color("48504d"), 18.0)
+		_chassis.draw_line(inner + Vector2(0, -9), hip + Vector2(0, -9), Color("8c8b69"), 3.0)
+	# 낮은 회전 베어링: 네 다리는 고정 하체를 받치고 상체만 그 위에서 돌아간다.
+	_chassis.draw_set_transform(hub + Vector2(0, -10), 0.0, Vector2(1.0, 0.25))
+	_chassis.draw_circle(Vector2.ZERO, 61.0, Color("171e25"))
+	_chassis.draw_arc(Vector2.ZERO, 56.0, 0.0, PI, 20, Color("b39650"), 7.0)
+	_chassis.draw_set_transform(Vector2.ZERO)
+
+
+## 상체의 연속 사영과 압축을 그대로 그린다. 포가도 같은 body_project()를 사용한다.
 func _sync_body() -> void:
-	# 몸통 평면의 행렬은 walker 의 사영(fore_x/fore_y)을 그대로 쓴다.
-	# 몸통 그림은 **두께의 가운데(s=0)** 에 둔다 — 원화가 이미 사선으로 두께를 품고 있으므로,
-	# 가까운 면에 붙이면 돌아설 때 먼 쪽 다리 두 개가 몸통 밖으로 떨어져 나간다.
-	#
-	# 다만 **그림에만** 가로 폭 하한을 둔다. fore_x 는 돌아서는 도중 0 을 지나는데(그 각도에서
-	# 측면 그림의 폭은 실제로 0 이다), 그대로 두면 그 두어 프레임 동안 몸통이 사라지고 다리와
-	# 포신만 남아 기체가 반쪽으로 보인다 (원화를 붙이고 나서야 얼마나 어색한지 드러났다).
-	# 하한을 두면 대신 그 순간 몸통 그림이 한 프레임 좌우로 뒤집힌다 — 폭이 가장 좁은
-	# 순간이라 눈에 훨씬 덜 걸린다. **관절은 하한을 쓰지 않는다** (정확한 사영 그대로) —
-	# 그림만 하한을 쓰고 관절도 같이 하한을 쓰면 포신이 몸에서 떠 버린다.
-	# 이 하한 구간이 곧 정면 전환 시트가 들어갈 자리다.
-	var fx: float = walker.fore_x()
-	if absf(fx) < ProcWalker.SQUASH_MIN:
-		fx = (1.0 if fx >= 0.0 else -1.0) * ProcWalker.SQUASH_MIN
-	_plane.transform = Transform2D(Vector2(fx, walker.fore_y()), Vector2(0.0, 1.0), Vector2.ZERO)
-	_hull.z_index = 4
+	# 원화가 두께를 품고 있으므로 몸통 중심(s=0)에 붙인다.
+	var fx: float = walker.body_fore_x()
+	var squash := walker.presentation_scale()
+	_plane.transform = Transform2D(Vector2(fx, walker.body_fore_y()) * squash, Vector2(0.0, squash.y), Vector2.ZERO)
+	_hull.z_index = 5
+	# 측면 투영이 얇아질 때 두께 축의 면을 보여 준다. 좌우 폭을 강제로 뒤집지 않으므로
+	# 상체 그림과 실제 포가가 같은 연속 좌표를 사용한다. 원화 텍스처와 금속 명암을 유지한다.
+	var side_weight := smoothstep(0.02, 0.50, absf(fx))
+	# 알파를 섞으면 금속이 잠시 반투명해 보인다. 두께 면을 실제로 펼쳐 항상 불투명한 부피를 유지한다.
+	_hull.modulate.a = 1.0
+	_turn_face.visible = side_weight < 0.999
+	_turn_face.transform = Transform2D(walker.body_extrude_vec() / ProcWalker.BODY_LEN * squash * (1.0 - side_weight),
+		Vector2(0.0, squash.y), Vector2.ZERO)
+	_turn_face.modulate = Color(0.88, 0.90, 0.86)
 
-	# ── 정면 전환 시트 자리 ──
-	# fore_x 의 절댓값이 문턱보다 작으면 측면 그림이 종이처럼 얇아지는 구간이다.
-	# 그 몇 프레임을 **정면에서 본 짧은 시트**로 덮으면 전환이 훨씬 또렷해진다 (다음 단계).
-	# 지금은 시트가 없으므로 그냥 얇아지게 둔다 — 다리·포신이 따로 그려져 실루엣이 끊기지는 않는다.
-	_hull.visible = true
-	if _turn_sheet != null and absf(walker.fore_x()) < ProcWalker.SQUASH_MIN:
-		pass      # TODO: 시트 프레임으로 교체 (yaw 진행 방향에 따라 프레임 선택)
-
-	# 포신 — 요동축과 끝점을 각각 사영해 그 두 점으로 회전·길이를 만든다.
-	# 몸이 돌면 두 점이 가까워져 포신이 저절로 짧아진다 (region 이 아니라 배율로 줄인다 —
-	# 포신은 끝에 총구 블록이 있어 자르면 그게 사라진다)
-	var pivot: Vector2 = walker.turret_local(0.0)
-	var tip: Vector2 = walker.turret_local(ProcWalker.BARREL_LEN)
+	# 포신 전체를 반동 거리만큼 뒤로 옮긴다. 총열 길이는 상체 선회와 무관하게 유지한다.
+	var pivot: Vector2 = walker.turret_local(-walker.recoil_distance())
+	var tip: Vector2 = walker.turret_local(ProcWalker.BARREL_LEN - walker.recoil_distance())
 	var d := tip - pivot
 	_barrel.position = pivot
 	_barrel.rotation = d.angle() if d.length() > 0.001 else 0.0
 	var fore: float = clampf(d.length() / ProcWalker.BARREL_LEN, ProcWalker.SQUASH_MIN, 1.0)
-	_barrel.scale = Vector2(fore, 1.0)
+	# 왼쪽으로 조준해도 포신의 윗면을 위로 유지한다. 하체 방향과는 무관하다.
+	_barrel.scale = Vector2(fore, 1.0 if walker.aim_dir().x >= 0.0 else -1.0)
+
+
+## ProcWalker 가 내놓는 좌표(발·고관절)는 **워커의 부모 공간**이다 — 월드가 아니다.
+## 그걸 리그 로컬로 옮긴다. 리그는 워커의 직계 자식이고 제 변환이 없으므로 워커 변환의 역이 곧 답이다.
+##
+## 예전엔 to_local() 을 썼다. 그건 **글로벌** 기준 변환이라, 랩처럼 위쪽 노드가 전부 단위 변환일
+## 때만 우연히 맞는다. 본편은 기체를 0.5 배 그릇에 담으므로(walker_unit.gd) 전부 어긋나
+## **다리가 통째로 화면 밖에 그려졌다** — 몸통과 포신만 공중에 떠 있는 그림이 그 증상이었다.
+## 조상 변환에 기대지 않는 이 방식이면 어떤 배율·어떤 부모 아래서도 같다.
+func _to_rig(p: Vector2) -> Vector2:
+	return walker.transform.affine_inverse() * p
 
 
 func _sync_leg(d: Dictionary) -> void:
-	var leg: Dictionary = d["leg"]
+	var leg: Dictionary = walker.legs()[int(d["index"])]     # 번호로 매번 찾는다 (위 _ready 주석 참고)
+	if walker.spider_gait:
+		_sync_spider_leg(d, leg)
+		return
 	var z: float = walker.leg_depth(leg)
-	var hip: Vector2 = to_local(walker.hip_world(leg))
-	var foot: Vector2 = to_local(leg["foot"]) + walker.depth_vec() * z
+	var hip: Vector2 = _to_rig(walker.hip_world(leg))
+	var foot: Vector2 = _to_rig(leg["foot"]) + walker.depth_vec() * z
 	var knee: Vector2 = ProcWalker.solve_knee_v(hip, foot, walker.phi0(leg))
 
 	var holder: Node2D = d["holder"]
-	# 깊이: 먼 쪽은 몸통 뒤(z_index 낮게) · 어둡게 · 조금 작게
+	# 깊이: 먼 쪽은 몸통 뒤(z_index 낮게) · **원화의 먼 다리 조각**으로 갈아입고 · 살짝 어둡게.
+	# 가늘게 줄이지 않는다 — 그 원근은 이미 조각에 그려져 있다 (LIMB_FAR 주석 참고)
 	var far: float = clampf(z * 2.0, 0.0, 1.0)
 	holder.z_index = 1 if z > 0.0 else 8
-	holder.modulate = Color(1, 1, 1).lerp(Color(ProcWalker.FAR_MUL, ProcWalker.FAR_MUL, ProcWalker.FAR_MUL), far)
-	var shrink := 1.0 - 0.18 * far
+	var mul: float = lerpf(1.0, ART_FAR_MUL, far)
+	holder.modulate = Color(mul, mul, mul)
+	var set_far := z > 0.0
 
 	var strut := hip.distance_to(knee)
 	var ang := (knee - hip).angle()
-	_fit("rod", d["rod"], hip, ang, strut, shrink)                                  # 로드: 필요한 만큼만
-	_fit("sleeve", d["sleeve"], hip, ang, minf(ProcWalker.SLEEVE_LEN, strut), shrink)  # 무릎을 넘지 않게
-	_fit("shin", d["shin"], knee, (foot - knee).angle(), -1.0, shrink)              # 정강이: 길이 불변
-	(d["hip_cap"] as Sprite2D).position = hip
-	(d["hip_cap"] as Sprite2D).scale = Vector2(shrink, shrink)
-	(d["knee_cap"] as Sprite2D).position = knee
-	(d["knee_cap"] as Sprite2D).scale = Vector2(shrink, shrink)
+	_fit(_pick("rod", set_far), d["rod"], hip, ang, strut)                                   # 로드: 필요한 만큼만
+	_fit(_pick("sleeve", set_far), d["sleeve"], hip, ang, minf(ProcWalker.SLEEVE_LEN, strut))  # 무릎을 넘지 않게
+	_fit(_pick("shin", set_far), d["shin"], knee, (foot - knee).angle(), -1.0)               # 정강이: 길이 불변
+	_cap(d["hip_cap"], _pick("hip_cap", set_far), hip)
+	_cap(d["knee_cap"], _pick("knee_cap", set_far), knee)
+
+
+func _sync_spider_leg(d: Dictionary, leg: Dictionary) -> void:
+	var pose: Dictionary = leg["pose"]
+	var far: bool = leg["far"]
+	var holder: Node2D = d["holder"]
+	holder.z_index = 1 if far else 8
+	var light := ART_FAR_MUL if far else 1.0
+	holder.modulate = Color(light, light, light)
+	# The shared solver already projected depth. No legacy depth_vec offset or second IK.
+	var mount := _to_rig(pose["mount"])
+	var hip := _to_rig(pose["hip"])
+	var knee := _to_rig(pose["knee"])
+	var ankle := _to_rig(pose["ankle"])
+	var toe := _to_rig(pose["toe"])
+	_fit_spatial_segment("rod", d["mount_link"], mount, hip, .65)
+	_fit_spatial_segment("rod", d["rod"], hip, knee, .78)
+	_fit_spatial_segment(_pick("sleeve", far), d["sleeve"], knee, ankle)
+	_fit_spatial_segment(_pick("shin", far), d["shin"], ankle, toe)
+	_cap(d["hip_cap"], _pick("hip_cap", far), hip)
+	_cap(d["knee_cap"], _pick("knee_cap", far), knee)
+	_cap(d["ankle_cap"], _pick("knee_cap", far), ankle)
+
+
+func _fit_spatial_segment(key: String, sprite: Sprite2D, start: Vector2, finish: Vector2, width := 1.0) -> void:
+	# Physical lengths remain fixed in 3D. Only the projected sprite length changes.
+	_fit(key, sprite, start, (finish - start).angle(), -1.0)
+	var down: bool = _parts[key]["axis"] == "down"
+	var anchor: Vector2 = _parts[key]["anchor"]
+	var full: Vector2 = sprite.texture.get_size()
+	var lean: float = _parts[key].get("lean", 0.0)
+	var source_axis := (Vector2.DOWN if down else Vector2.RIGHT).rotated(-lean)
+	var source_cross := Vector2(-source_axis.y, source_axis.x)
+	var source_length := (full.y - anchor.y) / maxf(source_axis.y, .1) if down else (full.x - anchor.x) / maxf(source_axis.x, .1)
+	var length_scale := start.distance_to(finish) / maxf(source_length, 1.0)
+	var direction := (finish - start).normalized()
+	var perpendicular := Vector2(-direction.y, direction.x)
+	sprite.transform = Transform2D(direction * length_scale * source_axis.x + perpendicular * width * source_cross.x,
+		direction * length_scale * source_axis.y + perpendicular * width * source_cross.y, start)
+
+
+func _pick(key: String, far: bool) -> String:
+	return String(LIMB_FAR[key]) if far else key
+
+
+func _cap(sp: Sprite2D, key: String, at: Vector2) -> void:
+	_wear(sp, key)
+	sp.position = at
 
 
 ## 조각을 관절에 붙인다.
@@ -260,17 +385,29 @@ func _sync_leg(d: Dictionary) -> void:
 ## 원화에서 아래로 뻗게 그려진 조각(axis="down")은 -90° 를 더해 돌린다. 미리 90° 돌려 저장하면
 ## 위에서 내려오는 빛이 옆으로 눕어 금속의 방향감이 무너진다 — 그래서 그림은 세워 두고 회전으로 맞춘다.
 ## 자르는 방향도 그 축을 따른다 (down 이면 높이를, right 이면 너비를 자른다).
-func _fit(key: String, sp: Sprite2D, at: Vector2, ang: float, len: float, shrink: float) -> void:
+##
+## **조각을 줄이지 않는다.** 길이는 관절 두 점이 이미 정해 놓았고(len 이 그 실측 거리다),
+## 굵기의 원근은 먼 다리 조각에 그려져 있다. 예전엔 먼 다리를 통째로 0.82 배로 줄였는데,
+## 무릎·발 캡은 줄이지 않은 자리에 놓이니 먼 쪽 두 다리가 **늘 관절에서 0.18×길이
+## (스트럿 172 에서 약 30px) 만큼 끊겨** 보였다.
+##
+## lean 은 그 조각이 **원화 안에서** 이미 기울어 있는 각이다 (먼 다리 장갑판은 18° 누워 있다).
+## 회전에서 그만큼 되돌려야 관절이 맞는다. 자르는 길이도 그 기울기만큼 늘려 잡는다 —
+## 비스듬한 마디는 같은 길이를 덮는 데 세로로 더 많은 픽셀이 든다.
+func _fit(key: String, sp: Sprite2D, at: Vector2, ang: float, len: float) -> void:
+	_wear(sp, key)
 	var axis: String = _parts[key]["axis"]
+	var lean: float = _parts[key].get("lean", 0.0)
 	sp.position = at
-	sp.rotation = ang - (PI * 0.5 if axis == "down" else 0.0)
-	sp.scale = Vector2(shrink, shrink)
+	sp.rotation = ang - (PI * 0.5 if axis == "down" else 0.0) + lean
+	sp.scale = Vector2.ONE
 	var full: Vector2 = sp.texture.get_size()
 	if len < 0.0:
 		sp.region_enabled = false
 		return
+	var span := len / maxf(cos(lean), 0.2)
 	sp.region_enabled = true
 	if axis == "down":
-		sp.region_rect = Rect2(0.0, 0.0, full.x, clampf(len, 1.0, full.y))
+		sp.region_rect = Rect2(0.0, 0.0, full.x, clampf(span, 1.0, full.y))
 	else:
-		sp.region_rect = Rect2(0.0, 0.0, clampf(len, 1.0, full.x), full.y)
+		sp.region_rect = Rect2(0.0, 0.0, clampf(span, 1.0, full.x), full.y)

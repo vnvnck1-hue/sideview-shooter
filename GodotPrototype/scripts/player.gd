@@ -208,10 +208,10 @@ func _ready() -> void:
 	muzzle_light = PointLight2D.new()
 	muzzle_light.name = "MuzzleLight"
 	muzzle_light.texture = Lighting.radial_texture()
-	muzzle_light.texture_scale = 2.2
+	muzzle_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("muzzle_hold", "radius", 563.0))
 	muzzle_light.color = Lighting.GUN_LIGHT
-	muzzle_light.energy = 1.8
-	muzzle_light.height = Lighting.FLASH_HEIGHT
+	muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 1.8)
+	muzzle_light.height = LightTuning.value("muzzle_hold", "height", Lighting.FLASH_HEIGHT)
 	muzzle_light.position = muzzle.position
 	muzzle_light.enabled = false
 	arm_pivot.add_child(muzzle_light)

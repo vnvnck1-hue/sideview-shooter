@@ -1,0 +1,322 @@
+{
+  "capture_conditions": "2240x900, Forward+, zoom 0.75, camera lead temporarily disabled in a separate diagnostic process; no game settings changed",
+  "rooms": [
+    {
+      "room": "airlock",
+      "room_silhouette_area_percent": 16.0,
+      "outside_silhouette_percent": 84.0,
+      "feet_y_percent": 72.67,
+      "room_bbox_screen_size": [
+        672.0,
+        480.0
+      ],
+      "luma_room_p10_p50_p90": [
+        3.5,
+        26.17,
+        83.46
+      ]
+    },
+    {
+      "room": "workshop",
+      "room_silhouette_area_percent": 39.31,
+      "outside_silhouette_percent": 60.69,
+      "feet_y_percent": 83.33,
+      "room_bbox_screen_size": [
+        1344.0,
+        672.0
+      ],
+      "luma_room_p10_p50_p90": [
+        6.43,
+        28.38,
+        88.88
+      ]
+    },
+    {
+      "room": "hall",
+      "room_silhouette_area_percent": 69.32,
+      "outside_silhouette_percent": 30.68,
+      "feet_y_percent": 88.67,
+      "room_bbox_screen_size": [
+        2304.0,
+        768.0
+      ],
+      "luma_room_p10_p50_p90": [
+        6.43,
+        29.88,
+        89.71
+      ]
+    },
+    {
+      "room": "tank_room",
+      "room_silhouette_area_percent": 32.91,
+      "outside_silhouette_percent": 67.09,
+      "feet_y_percent": 78.0,
+      "room_bbox_screen_size": [
+        1152.0,
+        576.0
+      ],
+      "luma_room_p10_p50_p90": [
+        4.86,
+        31.83,
+        100.3
+      ]
+    },
+    {
+      "room": "analysis_lab",
+      "room_silhouette_area_percent": 66.58,
+      "outside_silhouette_percent": 33.42,
+      "feet_y_percent": 88.67,
+      "room_bbox_screen_size": [
+        2112.0,
+        768.0
+      ],
+      "luma_room_p10_p50_p90": [
+        12.15,
+        109.27,
+        239.08
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "file": "character/Frames/idle/idle_01.png",
+      "canvas": [
+        320,
+        320
+      ],
+      "opaque_bbox": [
+        76,
+        53,
+        236,
+        320
+      ],
+      "bbox_size": [
+        160,
+        267
+      ],
+      "bbox_art4": [
+        40.0,
+        66.75
+      ],
+      "opaque_rgb_colors": 1656,
+      "nonuniform_4x4_blocks_percent": 0.0,
+      "grid_offset": [
+        0,
+        1
+      ]
+    },
+    {
+      "file": "character/Split/body/idle/idle_01.png",
+      "canvas": [
+        320,
+        320
+      ],
+      "opaque_bbox": [
+        58,
+        143,
+        214,
+        319
+      ],
+      "bbox_size": [
+        156,
+        176
+      ],
+      "bbox_art4": [
+        39.0,
+        44.0
+      ],
+      "opaque_rgb_colors": 969,
+      "nonuniform_4x4_blocks_percent": 0.0,
+      "grid_offset": [
+        2,
+        3
+      ]
+    },
+    {
+      "file": "character/Split/head/idle/idle_01.png",
+      "canvas": [
+        320,
+        320
+      ],
+      "opaque_bbox": [
+        70,
+        56,
+        226,
+        200
+      ],
+      "bbox_size": [
+        156,
+        144
+      ],
+      "bbox_art4": [
+        39.0,
+        36.0
+      ],
+      "opaque_rgb_colors": 771,
+      "nonuniform_4x4_blocks_percent": 0.0,
+      "grid_offset": [
+        2,
+        0
+      ]
+    },
+    {
+      "file": "props/workshop_locker_game_scale.png",
+      "canvas": [
+        370,
+        315
+      ],
+      "opaque_bbox": [
+        48,
+        33,
+        332,
+        293
+      ],
+      "bbox_size": [
+        284,
+        260
+      ],
+      "bbox_art4": [
+        71.0,
+        65.0
+      ],
+      "opaque_rgb_colors": 1540,
+      "nonuniform_4x4_blocks_percent": 0.0,
+      "grid_offset": [
+        0,
+        1
+      ]
+    },
+    {
+      "file": "props/workshop_workbench_game_scale.png",
+      "canvas": [
+        443,
+        235
+      ],
+      "opaque_bbox": [
+        0,
+        0,
+        443,
+        235
+      ],
+      "bbox_size": [
+        443,
+        235
+      ],
+      "bbox_art4": [
+        110.75,
+        58.75
+      ],
+      "opaque_rgb_colors": 3168,
+      "nonuniform_4x4_blocks_percent": 0.0,
+      "grid_offset": [
+        2,
+        2
+      ]
+    },
+    {
+      "file": "props/workshop_armchair_game_scale.png",
+      "canvas": [
+        286,
+        240
+      ],
+      "opaque_bbox": [
+        12,
+        27,
+        276,
+        227
+      ],
+      "bbox_size": [
+        264,
+        200
+      ],
+      "bbox_art4": [
+        66.0,
+        50.0
+      ],
+      "opaque_rgb_colors": 1333,
+      "nonuniform_4x4_blocks_percent": 0.0,
+      "grid_offset": [
+        0,
+        3
+      ]
+    },
+    {
+      "file": "tiles/workshop_modular/workshop_modular_background_sheet_3x2.png",
+      "canvas": [
+        384,
+        256
+      ],
+      "opaque_bbox": [
+        0,
+        0,
+        384,
+        256
+      ],
+      "bbox_size": [
+        384,
+        256
+      ],
+      "bbox_art4": [
+        96.0,
+        64.0
+      ],
+      "opaque_rgb_colors": 2326,
+      "nonuniform_4x4_blocks_percent": 100.0,
+      "grid_offset": null
+    },
+    {
+      "file": "tiles/research_analysis_modular/research_analysis_modular_background_sheet_3x2.png",
+      "canvas": [
+        384,
+        256
+      ],
+      "opaque_bbox": [
+        0,
+        0,
+        384,
+        256
+      ],
+      "bbox_size": [
+        384,
+        256
+      ],
+      "bbox_art4": [
+        96.0,
+        64.0
+      ],
+      "opaque_rgb_colors": 5,
+      "nonuniform_4x4_blocks_percent": 0.0,
+      "grid_offset": [
+        0,
+        0
+      ]
+    },
+    {
+      "file": "props/research_analysis/research_analysis_analysis_bench.png",
+      "canvas": [
+        384,
+        212
+      ],
+      "opaque_bbox": [
+        8,
+        20,
+        376,
+        208
+      ],
+      "bbox_size": [
+        368,
+        188
+      ],
+      "bbox_art4": [
+        92.0,
+        47.0
+      ],
+      "opaque_rgb_colors": 9,
+      "nonuniform_4x4_blocks_percent": 0.0,
+      "grid_offset": [
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 class_name ProcWalker
 extends Node2D
+const GaitSettings = preload("res://scripts/walker_gait_settings.gd")
 ## 절차적 사족보행 로봇 (2026-09-21). **몸체만 움직이면 네 다리가 스스로 자리를 잡는다.**
 ##
 ## 구조(그레이박스): 몸체(청회색 상자) · 관절(보라 원) · 허벅지(핑크 막대) · 정강이(노랑 막대).
@@ -29,7 +30,9 @@ extends Node2D
 ## 이 수치를 고치면 그림이 관절에서 어긋난다 — 도구의 SCALE·상자와 **함께** 고쳐야 한다.
 const BODY_HALF_W := 159.0        # 몸체 좌우 반폭 (원화 몸통 935px)
 const BODY_TOP := -160.0          # 몸체 윗면 (원화 맨 위 후드까지, 원점 = 고관절 줄 한가운데)
-const BODY_BOT := 49.0            # 몸체 아랫면
+const BODY_BOT := 60.0            # 몸체 아랫면. 원화의 **배·골반 프레임 아래**까지다 (반전 후 y=660) —
+                                  # 49 로 뒀을 땐 그 선이 고관절 하우징 한가운데를 잘라, 원화 몸통을
+                                  # 붙였을 때 다리가 허공에 매달렸다. 그리기에만 쓰는 값이라 걸음 예산과 무관하다.
 const BODY_SKIRT := 8.0           # 아랫면의 어두운 띠 시작 높이
 
 ## 다리는 2본 IK 가 아니다. **정강이(노랑)를 거의 수직으로 유지한다** — 관절마다 자이로가 달린 것처럼.
@@ -60,7 +63,8 @@ const THIGH_MIN := 34.0           # 스트럿이 줄어들 수 있는 최소 길
 ## 이 값을 바꿀 때는 로드 그림 길이(도구의 ROD_LEN)도 같이 바꿔야 한다.
 const THIGH_MAX := 300.0
 const LEASH_SCAN := 320.0         # 닿는 발자리를 찾아 훑는 좌우 범위 (px)
-const SLEEVE_LEN := 128.0         # 유압 슬리브 = 원화의 초록 장갑판 (375px). 이 밖이 로드다
+const SLEEVE_LEN := 137.0         # 유압 슬리브 = 원화의 초록 장갑판 (402px). 이 밖이 로드다.
+                                  # 판 전체 길이와 같게 둔다 — 짧게 잡으면 판의 아래 테두리가 잘린다
 const THIGH_W := 74.0             # 원화 장갑판 폭
 const SHIN_W := 72.0              # 원화 발판 폭
 const HIP_R := 25.0               # 고관절 원 (원화 실린더 50px)
@@ -93,6 +97,21 @@ const MAX_REACH := THIGH_MAX + SHIN_LEN
 ## 확정값: 먼 쌍 sqrt(135² + 132²) = 189 / 280 ≈ 0.68 — 아래 권장 범위보다 접힌 자세다.
 ## 랩에서 눈으로 고른 값이고 그쪽이 이 로봇답게 보여서 그대로 둔다 (허벅지가 옆으로 눕는 실루엣).
 
+## ## 본편 기체의 걸음새 — **거미** (2026-09-22)
+## 랩의 6번 프리셋과 **같은 값**이다. 예전엔 랩에만 있었는데, 본편 기체(walker_unit.gd)가 이걸 쓰면서
+## 두 벌이 되면 "랩에서 맞춘 걸음과 게임 안의 걸음이 다른" 상황이 생긴다. 그래서 값은 여기 한 벌만 두고
+## walker_lab.gd 의 PRESETS 가 이걸 가져다 이름만 붙인다.
+##
+## 한 발씩만 띄운다 — 늘 세 발이 땅에 붙어 있다. 아주 짧고 잦게 딛는다(스텝 0.06초).
+## 한 발씩이면 한 주기가 두 배(4번 나눠 딛는다)라 같은 속도에서 발이 두 배 밀린다 —
+## 그래서 속도를 430 → 340 으로 낮췄다 (달리기 ×1.7 까지 예산 안에 들도록).
+## 몸은 낮게 깔고 거의 흔들지 않으며(진동 4) 발도 낮게 끈다 — 트롯처럼 통통 뛰지 않고 사각사각 기어간다.
+const GAIT_SPIDER := {
+	"speed": 340.0, "ride": 182.0, "stride": 0.90, "trigger": 30.0, "lift": 45.0,
+	"step_time": 0.06, "hold": 0.03, "lead": 0.22, "tilt": 0.0, "bob": 4.0,
+	"aim_lean": 0.5, "legs_up": 1.0,
+}
+
 const C_BODY := Color(0.573, 0.737, 0.765)
 const C_BODY_DARK := Color(0.408, 0.549, 0.588)
 const C_JOINT := Color(0.518, 0.518, 0.878)
@@ -122,12 +141,21 @@ const FAR_RAISE := 16.0           # 먼 쌍의 발을 이만큼 위로 **그린�
 ## 그 사이로 앞범퍼가 보인다. 즉 먼 쪽이 바라보는 쪽으로 밀려야 앞면이 드러난다.
 const VIEW_DEFAULTS := {
 	"oblique": 1.0,    # 0 = 예전 순수 측면 · 1 = 사선
-	"dx": 92.0,        # 먼 쪽이 화면에서 밀리는 양 (바라보는 쪽 기준, 양수 = 앞으로 = 앞모습 사선)
-	"dy": -28.0,       # 먼 쪽이 올라가는 양 (음수 = 위로). **카메라 높이**다 —
-	                   # 0 에 가까울수록 눈높이(사이드뷰에 가깝고 윗면이 얇아진다),
-	                   # 크면 위에서 내려다본다. dx 가 있으니 0 에 가까워도 앞면은 그대로 보인다
-	"shrink": 0.18,    # 먼 쪽을 이만큼 가늘게 그린다 (원근)
-	"thick": 0.34,     # 팔다리 자체의 두께 — 깊이 벡터의 이 비율만큼 밀어 상자로 만든다
+	# dx·dy 는 **컨셉 원화에서 재고, 랩에서 눈으로 마무리한 값**이다 (2026-09-22).
+	# 반전한 원화에서 가까운 앞다리와 먼 앞다리의 같은 지점을 재면
+	#     고관절  (706,596) → (985,600)   = (279, 4) 원화px = (95, 1.4) 월드
+	#     발      (720,1122) → (1065,1100) = (345,-22) 원화px = (117,-7.5) 월드
+	# 여기서 다리 자체의 a 차이(앞·먼 132 − 앞·가까 118 = 14)를 빼면 두 표본 모두 dx ≈ 102~103.
+	# 그 자리에서 랩으로 미세 조정해 97 / -12 로 굳혔다 (걷는 걸 보면서 맞춘 값이라 이쪽을 따른다).
+	"dx": 97.0,        # 먼 쪽이 화면에서 밀리는 양 (바라보는 쪽 기준, 양수 = 앞으로 = 앞모습 사선)
+	"dy": -12.0,       # 먼 쪽이 올라가는 양 (음수 = 위로). **카메라 높이**다 —
+	                   # 원화는 거의 눈높이에서 본 그림이라 -28 이 아니라 -12 다. 두 쌍을 갈라 놓는
+	                   # 일은 dx 가 하고, dy 는 지면이 멀어지며 올라가는 몫만 맡는다.
+	                   # (-28 로 두면 먼 발이 땅보다 20px 떠서 다리 넷이 서로 다른 바닥을 딛는다)
+	# 아래 둘은 **그레이박스 전용**이다. 원화 리그는 먼 다리를 줄여 그리지 않고
+	# 원화가 그려 둔 먼 다리 조각(sleeve_far 등)을 쓰므로 이 값을 보지 않는다 (walker_rig.gd LIMB_FAR).
+	"shrink": 0.54,    # 먼 쪽을 이만큼 가늘게 그린다 (원근)
+	"thick": 1.0,      # 팔다리 자체의 두께 — 깊이 벡터의 이 비율만큼 밀어 상자로 만든다
 }
 const SIDE_MUL := 0.80            # 옆면(밀려 나온 면) 밝기
 const TOP_MUL := 1.14             # 윗면 밝기 — 위에서 빛을 받는 면이라 살짝 밝게
@@ -177,24 +205,37 @@ const LEGS := [
 ## ── 기관총 (몸통 위 포탑) ────────────────────────────────────────────────────
 ## 센트리건(sentry_turret.gd)과 같은 규칙: 포인터를 **기계식 선회 속도로 늦게** 따라간다.
 ## 즉시 조준하면 기계 느낌이 죽고, 마우스를 휘두를 때 포신이 순간이동한다.
-## 포탑은 바라보는 쪽 기준 ±TURRET_ARC 안에서만 돈다 — 그 밖을 겨누면 **몸이 돌아선다**(facing 전환).
+## 상체는 조준 방향으로 돌고, 포신은 월드 절대각으로 360° 조준한다. 하체의 접지는 유지한다.
 ## 요동축. **원화의 포가(금색 링) 중심**이다 — 포신이 몸통 위가 아니라 몸통 **안**에 박혀 있다.
-const TURRET_PIVOT := Vector2(-81.0, -55.0)
+## x 는 **양수**다: 포가는 몸통 앞쪽에 있고 포신이 거기서 더 앞으로 뻗는다.
+## 원화를 좌우 반전해 자르기 시작하면서(cut_quadruped_rig_parts.py) a 축 실측값의 부호가 전부
+## 뒤집혔는데 여기만 -81 로 남아 있었다 — 포신이 몸 안에서 시작해 몸통 앞쪽 절반이
+## 포신 함몰부(검은 소켓)로 뚫린 채 남았다. a 축에서 잰 값은 반전과 **함께** 뒤집어야 한다.
+const TURRET_PIVOT := Vector2(81.0, -55.0)
 const BARREL_LEN := 163.0         # 요동축 → 총구 (원화 480px)
 const BARREL_W := 46.0
 const MOUNT_R := 42.0
-const TURRET_ARC := 2.60                      # rad ≈ 149°. 바라보는 쪽 기준 위아래 한계.
-                                              # 넓게 잡을수록 몸을 덜 돌려도 되고, 몸을 덜 돌릴수록 다리가 덜 꼬인다
 const TURRET_RATE := 8.5                      # rad/s — 선회 속도 (작을수록 굼뜬 기계)
 ## 연사 간격. 센트리건(0.055초 ≈ 18발/초)과 **같은 연출에 연사력만 낮춘** 값이다 —
-## 이 로봇은 포신이 하나이고 구경이 굵다. 0.16초 ≈ 6발/초.
-const FIRE_COOLDOWN := 0.16
-const TURN_BEHIND := 160.0                    # 조준점이 몸보다 이만큼 뒤에 있어야 돌아선다 (경계에서 떨지 않게)
-const TURN_COOLDOWN := 0.5                    # 한 번 돌아서면 이만큼은 다시 돌지 않는다.
-                                              # 없으면 조준이 몸을 가로지를 때마다 뒤집히며 다리가 꼬여 주저앉는다
+## 버그봇은 포신이 하나이고 구경이 굵다. 0.08초 ≈ 12발/초.
+## WalkerUnit.HEAT_PER_SHOT 이 이 값에 비례해 한 발당 열을 나누므로 초당 과열 속도는 그대로다.
+const FIRE_COOLDOWN := 0.08
 const RECOIL_BACK := 30.0                     # 포신이 뒤로 물러나는 최대 거리
-const RECOIL_DECAY := 12.0
-const RECOIL_PUSH := 7.0                      # 사격 반동으로 몸이 밀리는 거리 (다리가 받아낸다)
+## 한 발마다 몸통 전체를 뒤로 때리는 반동. 포신 후퇴(RECOIL_BACK)와 별개로 **기체가** 밀린다.
+## 속도 임펄스라 한 발은 짧고 세게 때리고, 낮은 감쇠가 그 뒤로 앞뒤 흔들림을 남긴다.
+## 반동은 두 겹이다.
+##   _kick : 한 발의 짧고 센 충격. 진동수는 연사 간격(0.08초)보다 빨라야 한다 — 느리면 발이
+##           겹쳐 몸이 뒤로 눌린 채 멈추고 한 발 한 발의 타격감이 사라진다 (3.4Hz 에서 그랬다).
+##   _push : 쏠수록 쌓이는 뒤쪽 밀림. 앞다리가 펴지고 뒷다리가 접히는 자세를 만든다.
+## 둘 다 **몸통만** 옮긴다. 발 목표는 recoil_shift() 를 빼고 잡으므로 발은 제자리를 지킨다.
+const RECOIL_KICK := 1500.0                   # px/s — 한 발이 몸통에 싣는 뒤쪽 속도
+const RECOIL_KICK_MAX := 52.0                 # px — 몸통이 밀릴 수 있는 최대 거리 (다리가 따라올 범위)
+const RECOIL_KICK_FREQ := 7.5                 # Hz — 제자리로 되튀는 빠르기
+const RECOIL_KICK_DAMP := 0.22                # 낮을수록 앞뒤로 여러 번 출렁인다
+const RECOIL_PUSH := 6.0                      # px — 한 발이 더 밀어내는 거리 (쌓인다)
+const RECOIL_PUSH_MAX := 34.0                 # px — 버티다 못해 자리를 내주는 한계
+const RECOIL_PUSH_RECOVER := 26.0             # px/s — 사격을 멈추면 이 속도로 제자리를 되찾는다
+const RECOIL_PUSH_LEAN := 0.0026              # rad/px — 밀린 만큼 몸통이 뒤로 젖혀진다
 const FLASH_TIME := 0.05
 const C_GUN := Color(0.30, 0.42, 0.46)
 const C_GUN_LIT := Color(0.46, 0.60, 0.63)
@@ -262,6 +303,12 @@ var running := false
 var drag_to = null                # Vector2 를 넣으면 몸체를 그 자리로 끌고 간다 (마우스로 직접 잡기)
 var aim_target = null             # Vector2(월드) 를 넣으면 그 점을 겨눈다. null 이면 정면을 본다
 var firing := false               # true 인 동안 FIRE_COOLDOWN 간격으로 발사한다
+## 본편의 거미형 관절. 기존 실험 프리셋은 이 스위치를 켜지 않고 그대로 사용한다.
+var spider_gait := false
+var anatomy_path := "res://authoring/walker_motion.json"
+var tuning_path := GaitSettings.DEFAULT_PATH
+var tuning_error := ""
+var _spider: RefCounted
 
 ## 그레이박스 그림을 그릴 것인가. 원화 파츠 리그(walker_rig.gd)가 붙으면 끈다.
 var draw_greybox := true
@@ -277,6 +324,14 @@ var airborne := false
 
 var _legs: Array = []
 var _angle := 0.0
+var _body_velocity := 0.0         # 접지 높이에 매달린 서스펜션. 발은 그대로 두고 질량만 늦게 따라온다.
+var _angle_velocity := 0.0
+var _motion := 0.0               # 정지할 때 걸음 진동이 남지 않도록 속도를 부드럽게 섞는다.
+var _acceleration := 0.0
+var _idle_time := 0.0
+var _jump_windup := 0.0
+var _landing_compression := 0.0
+const JUMP_WINDUP := 0.105
 var _air_v := 0.0
 var _walked := 0.0                # 누적 이동 거리 — 몸 상하 진동(bob)의 위상
 var _all_down := 0.0              # 네 발이 모두 붙어 있은 시간 (초). tune.hold 가 이걸 본다
@@ -285,8 +340,19 @@ var _recoil := 0.0
 var _fire_cd := 0.0
 var _flash := 0.0
 var _aim_pitch := 0.0             # -1(아래) ~ +1(위) — 몸이 조준을 따라 젖히는 정도
-var _turret_elev := 0.0           # 포신의 **몸 기준** 부앙각 (rad, + = 위). 그림·총구가 이걸 쓴다
-var _turn_cd := 0.0               # 방향 전환 제동 (초)
+## 하체 방향과 독립된 상체 선회. 조준으로 접지 발을 뒤집지 않는다.
+var torso_yaw := 0.0
+var _torso_want := 0.0
+var _torso_from := 0.0
+var _torso_time := 1.0
+var _aim_velocity := 0.0
+var _recoil_velocity := 0.0
+var _kick := 0.0                  # 한 발의 짧은 충격으로 몸통이 밀려 있는 거리 (px, 월드 x)
+var _kick_velocity := 0.0
+var _push := 0.0                  # 연사가 쌓아 놓은 뒤쪽 밀림 (px, 월드 x). 부호는 뒤쪽이 양수다.
+var _push_dir := 0.0              # 그 밀림의 방향 (마지막으로 쏜 방향의 반대)
+var _shift := 0.0                 # 사격 반동 오프셋 (px). 프레임당 한 번 갱신한다.
+var _shift_on := false            # 지금 body_pos 가 그 오프셋을 품고 있는가 (걸음 계산 중에는 false)
 
 ## 진단용 집계 — 걸음이 무엇 때문에 났는가. urgent 가 대부분이면 다리 길이/보폭 비례가 잘못된 것이다
 ## (정상 판정(trigger)보다 도달 한계가 먼저 와서, 접지 유지 같은 제동이 전부 무시된다)
@@ -298,72 +364,163 @@ func _ready() -> void:
 	reset_stance()
 
 
+## 시작 시 한 번 읽는다. 파일이 없으면 기본값을 사용하며 저장 파일을 만들지 않는다.
+## 피벗 문서는 별도의 anatomy_path에서 읽어 원본 좌표와 보행 수치를 분리한다.
+func initialize_spider_tuning(path: String = GaitSettings.DEFAULT_PATH) -> Error:
+	tuning_path = path
+	var settings := GaitSettings.new()
+	var error: Error = OK
+	if FileAccess.file_exists(path):
+		error = settings.load_file(path)
+	spider_gait = true
+	apply_spider_tuning(settings.values)
+	tuning_error = settings.last_error
+	if _spider == null:
+		spider_ride_height()
+	return error
+
+
+## 모든 값을 먼저 검증한 다음 교체한다. 접점·스텝 진행률·바인드 길이는 유지된다.
+func apply_spider_tuning(values: Dictionary) -> bool:
+	if not GaitSettings.validate_values(values):
+		tuning_error = "보행 설정의 항목 또는 값이 올바르지 않습니다."
+		return false
+	var next := tune.duplicate(true)
+	next.merge(values, true)
+	tune = next
+	if spider_gait and _spider != null and not _legs.is_empty():
+		_spider.solve(self)
+		queue_redraw()
+	tuning_error = ""
+	return true
+
+
+func spider_ride_height() -> float:
+	if _spider == null:
+		_spider = preload("res://scripts/walker_spider_adapter.gd").new()
+		_spider.configure(anatomy_path)
+	return float(_spider.standing_height)
+
+
 ## 현재 몸체 위치를 기준으로 네 발을 제자리에 내려놓는다 (씬 시작 · Z 초기화 · 착지 직후)
 func reset_stance() -> void:
 	_legs.clear()
+	_body_velocity = 0.0
+	_angle_velocity = 0.0
+	_release_recoil()
+	_shift = 0.0
+	_kick = 0.0
+	_kick_velocity = 0.0
+	_push = 0.0
+	_acceleration = 0.0
+	_motion = 0.0
+	_jump_windup = 0.0
+	_landing_compression = 0.0
+	if spider_gait:
+		if _spider == null:
+			spider_ride_height()
+		_spider.reset(self)
+		position = body_pos
+		rotation = _angle
+		queue_redraw()
+		return
 	for d in LEGS:
 		var leg := {
 			"name": d["name"], "hip": d["hip"] as Vector2, "rest": d["rest"] as float,
 			"near": d["near"] as bool, "group": d["group"] as int, "side": d["side"] as float,
 			"foot": Vector2.ZERO, "from": Vector2.ZERO, "to": Vector2.ZERO,
-			"t": 0.0, "dur": 0.2, "stepping": false,
+			"t": 0.0, "dur": 0.2, "stepping": false, "lift": 0.0, "roll": 0.0,
 		}
 		leg["foot"] = _desired(leg, 0.0)
 		_legs.append(leg)
-	_sync_body_to_feet(1.0)
+	_sync_body_to_feet(0.0, true)
 	position = body_pos
 	rotation = _angle
 	queue_redraw()
 
 
 func jump() -> void:
-	if airborne:
+	if airborne or _jump_windup > 0.0:
 		return
-	airborne = true
-	_air_v = -JUMP_V
+	# 짧게 체중을 싣고 튀어 오른다. 이동 입력은 계속 반응한다.
+	_jump_windup = JUMP_WINDUP
+	_body_velocity += 90.0
 
 
 ## 한 프레임. 쓰는 쪽이 input_dir / running / drag_to 를 채운 뒤 부른다.
 func tick(delta: float) -> void:
+	if spider_gait:
+		if _spider == null:
+			reset_stance()
+		# Contact switches use the same small integration interval at 30/60/120 Hz.
+		var count := maxi(1, ceili(delta * 120.0 - 0.000001))
+		_release_recoil()
+		for iteration in count:
+			# 그림용 관절 풀이는 마지막 서브스텝에서 한 번만 — 중간 자세는 그려지지 않는다.
+			_tick_spider_step(delta / float(count), iteration == count - 1)
+		_apply_recoil(delta)
+		if not is_zero_approx(_shift):
+			_hold_recoil()
+			_spider.solve(self)             # 밀린 몸통에 맞춰 다리 각도만 다시 푼다 (발은 그대로)
+			position = body_pos
+		queue_redraw()
+		return
+	_idle_time += delta
+	_landing_compression *= exp(-delta * 9.0)
+	_release_recoil()
 	_tick_yaw(delta)                        # 먼저 몸을 돌린다 — facing 이 여기서 바뀐다
-	_tick_turret(delta)                     # 조준이 다음 방향 전환을 정한다
 	_move_body(delta)
 	_tick_legs(delta)
 	if not airborne:
-		_sync_body_to_feet(delta * 13.0)
+		_sync_body_to_feet(delta)
 	_leash_feet()                           # 몸 자세가 확정된 뒤에 — 그래야 한 박자 늦지 않는다
+	_apply_recoil(delta)
+	_hold_recoil()
 	position = body_pos
 	rotation = _angle
+	_tick_turret(delta)                     # 최종 자세에서 조준·발사해야 그려진 총구와 탄이 일치한다
 	queue_redraw()
+
+
+func _tick_spider_step(delta: float, draw := true) -> void:
+	_idle_time += delta
+	_landing_compression *= exp(-delta * 9.0)
+	var previous := body_pos
+	var previous_angle := _angle
+	_move_body(delta)
+	if not airborne:
+		_sync_body_to_feet(delta)
+	_spider.tick(self, delta, previous, previous_angle, draw)
+	# 조준·발사는 그려지는 자리에서 한다 — 그래야 총구와 탄이 그림과 같은 자리에서 나간다.
+	_hold_recoil()
+	position = body_pos
+	rotation = _angle
+	_tick_turret(delta)
+	_release_recoil()
 
 
 # ── 기관총 ───────────────────────────────────────────────────────────────────
 
 ## 요동축의 월드 좌표. 몸 기울기를 같이 받는다.
 func turret_pivot() -> Vector2:
-	return body_pos + project(TURRET_PIVOT.x, TURRET_PIVOT.y, 0.0).rotated(_angle)
+	return body_pos + body_project(TURRET_PIVOT.x, TURRET_PIVOT.y, 0.0).rotated(_angle)
 
 
-## 포신 끝(총구)의 월드 좌표. **포신도 몸과 같이 돌아간다** —
-## 포신 방향을 몸 기준 부앙각(_turret_elev)으로 들고 있다가 project 를 통과시키므로,
-## 몸이 카메라 쪽으로 돌면 포신이 짧아지며 정면을 향한다 (측면 그림에 화면 각을 그대로 쓰면
-## 돌아서는 동안 포신만 제 길이로 남아 몸에서 떨어져 나간 것처럼 보인다).
+## 반동까지 반영한 총구 위치. 상체 포가를 따라가되 총열 길이와 월드 조준 방향을 유지한다.
 func muzzle() -> Vector2:
 	return _barrel_tip(BARREL_LEN - _recoil)
 
 
-## 포신 방향(월드 화면). 탄·예광이 이걸 쓴다 — 그려진 포신과 탄도가 어긋나지 않게 **그림에서 뽑는다**.
+## 포신·탄·예광이 공유하는 월드 방향.
 func aim_dir() -> Vector2:
-	var d := _barrel_tip(BARREL_LEN) - turret_pivot()
-	return d.normalized() if d.length() > 0.001 else Vector2.RIGHT.rotated(_turret)
+	return Vector2.RIGHT.rotated(_turret)
 
 
 ## 요동축에서 포신 방향으로 len 만큼 간 점 — **몸통 원점 기준 화면 좌표**.
-## 포신은 몸 기준 부앙각으로 뻗어 있고 project 가 yaw 를 먹인다 (돌아서면 짧아진다).
+## 요동축은 상체를 따르고 포신 방향은 몸 기울기를 상쇄한다.
 func _turret_local(len: float) -> Vector2:
-	return project(
-		TURRET_PIVOT.x + cos(_turret_elev) * len,
-		TURRET_PIVOT.y - sin(_turret_elev) * len, 0.0)
+	# 조준은 월드 절대각이다. 상체가 돌아가거나 기울어도 포신/탄도가 같이 보정된다.
+	return body_project(TURRET_PIVOT.x, TURRET_PIVOT.y, 0.0) + aim_dir().rotated(-_angle) * len
 
 
 ## 같은 점의 월드 좌표
@@ -371,74 +528,122 @@ func _barrel_tip(len: float) -> Vector2:
 	return body_pos + _turret_local(len).rotated(_angle)
 
 
-## 포탑은 **몸 기준 부앙각(_turret_elev) 하나**로 관리한다. 화면 각이 아니다.
-##
-## 예전엔 화면 각을 들고 "facing 이 +면 0, -면 PI" 를 기준으로 삼았는데, 돌아서는 도중 facing 이
-## 바뀌는 순간 기준이 PI 만큼 튀어 **포신이 한 프레임에 180° 뒤집혔다** (몸은 부드럽게 도는데
-## 포신만 순간이동했다 — 필름에서 바로 보였다). 몸 기준으로 들고 있으면 그 경계가 아예 없다.
+## 각속도를 부드럽게 가감속하며 최단 각도로 조준한다. 이동 방향과 상체 회전에는 제약을 주지 않는다.
 func _tick_turret(delta: float) -> void:
-	_recoil = move_toward(_recoil, 0.0, RECOIL_DECAY * RECOIL_BACK * delta)
+	# 빠른 타격 뒤 천천히 복원되는 임계 감쇠. 프레임 속도와 무관하게 같은 반동을 낸다.
+	var decay := exp(-22.0 * delta)
+	var recoil_j := _recoil_velocity + 22.0 * _recoil
+	_recoil = (_recoil + recoil_j * delta) * decay
+	_recoil_velocity = (_recoil_velocity - 22.0 * recoil_j * delta) * decay
 	_flash = maxf(_flash - delta, 0.0)
 	_fire_cd = maxf(_fire_cd - delta, 0.0)
-	_turn_cd = maxf(_turn_cd - delta, 0.0)
-
-	var want := 0.0
+	_tick_torso(delta)
+	var want := 0.0 if cos(torso_yaw) >= 0.0 else PI
 	if aim_target != null:
-		var pivot := turret_pivot()
-		var to: Vector2 = (aim_target as Vector2) - pivot
+		var to: Vector2 = (aim_target as Vector2) - turret_pivot()
 		if to.length() > 1.0:
-			want = _elev_for(to)
-			# 포탑이 닿지 않는 뒤쪽을 겨누면 **몸이 돌아선다**. 경계에서 떨지 않게 여유와 제동을 둔다.
-			var behind: float = (aim_target as Vector2).x - body_pos.x
-			var want_face := 1 if behind > 0.0 else -1
-			if absf(behind) > TURN_BEHIND and want_face != facing and _turn_cd <= 0.0:
-				face(want_face)              # 즉시 뒤집지 않는다 — 몸이 TURN_TIME 동안 돌아간다
-				_turn_cd = TURN_COOLDOWN
-	want = clampf(want, -TURRET_ARC * 0.5, TURRET_ARC * 0.5)
-	_turret_elev = _rotate_toward(_turret_elev, want, TURRET_RATE * delta)
-	_turret = aim_dir().angle()             # 화면 각은 **그림에서 뽑아** 남겨 둔다 (쓰는 쪽 호환)
-
-	# 몸이 조준을 따라 젖힌다 — 위를 겨누면 앞이 들리고, 아래를 겨누면 앞이 숙는다.
-	# 다리가 이 변화를 받아내는 것이 절차적 보행의 값어치가 드러나는 자리다.
-	_aim_pitch = clampf(_turret_elev / (TURRET_ARC * 0.5), -1.0, 1.0)
+			want = to.angle()
+		else:
+			want = _turret # 포인터가 요동축에 겹치면 마지막 방향을 유지한다.
+	var error := wrapf(want - _turret, -PI, PI)
+	var desired_velocity := clampf(error * 20.0, -TURRET_RATE, TURRET_RATE)
+	_aim_velocity = lerpf(_aim_velocity, desired_velocity, 1.0 - exp(-28.0 * delta))
+	var advance := _aim_velocity * delta
+	if signf(advance) == signf(error) and absf(advance) >= absf(error):
+		_turret = want
+		_aim_velocity = 0.0
+	else:
+		_turret = wrapf(_turret + advance, -PI, PI)
+	# 기존 자세 입력은 하체 facing을 곱한다. 조준 방향은 화면 기준으로 보상한다.
+	_aim_pitch = -sin(_turret) * cos(_turret) * float(facing)
 
 	if firing and _fire_cd <= 0.0:
 		_fire_cd = FIRE_COOLDOWN
 		_recoil = RECOIL_BACK
+		_recoil_velocity = 0.0
 		_flash = FLASH_TIME
 		var d := aim_dir()
-		body_pos -= d * RECOIL_PUSH        # 반동으로 밀린다. 다리가 알아서 자리를 다시 잡는다
+		recoil_impulse(d)
 		fired.emit(muzzle(), d)
 
 
-## 이 화면 방향을 겨누려면 몸 기준 부앙각이 얼마여야 하는가.
-## 돌아서는 동안 앞뒤 축은 cos(yaw) 만큼 **눌려 보이므로**, 화면의 가로 성분을 그만큼 되돌려야
-## 실제 부앙을 얻는다. 0 으로 나누지 않게 하한을 두는데, 그 구간(거의 정면)에서는 포신이
-## 카메라를 향하고 있어 부앙이 포화되는 편이 자연스럽다.
-func _elev_for(to_screen: Vector2) -> float:
-	var d := (to_screen).rotated(-_angle)                    # 몸 기울기를 뺀 화면 방향
-	var c := cos(yaw)
-	var sgn := 1.0 if c >= 0.0 else -1.0
-	var a := d.x / maxf(absf(c), 0.25) * sgn                 # 앞뒤 성분 (눌린 것을 되돌린다)
-	var u := -d.y                                            # 위 성분 (화면 y 는 아래가 +)
-	return atan2(u, a)
-
-
-static func _rotate_toward(from: float, to: float, step: float) -> float:
-	var diff := wrapf(to - from, -PI, PI)
-	if absf(diff) <= step:
-		return to
-	return from + signf(diff) * step
+## 상체만 회전한다. 고관절·발의 yaw는 독립되어 뒷걸음질 중에도 제자리를 지킨다.
+func _tick_torso(delta: float) -> void:
+	var target := _yaw_want
+	if aim_target != null:
+		target = _torso_want
+		var dx: float = (aim_target as Vector2).x - body_pos.x
+		# 바로 위/아래에서 마우스가 몇 픽셀 흔들려도 상체가 좌우로 떨리지 않는다.
+		if absf(dx) > 36.0:
+			target = 0.0 if dx > 0.0 else PI
+	if not is_equal_approx(target, _torso_want):
+		_torso_from = torso_yaw
+		_torso_want = target
+		_torso_time = 0.0
+	_torso_time = minf(_torso_time + delta / 0.34, 1.0)
+	var t := _torso_time
+	var eased := t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
+	torso_yaw = lerpf(_torso_from, _torso_want, eased)
 
 
 # ── 몸체 ─────────────────────────────────────────────────────────────────────
 
+## 반동 오프셋은 이동 계산에 섞지 않는다. 걷어내고 계산한 뒤 다시 얹는다 —
+## 그래야 speed·_walked·드래그 이동이 총을 쏘는 동안에도 평소와 똑같이 나온다.
+## 걸음 계산은 반동을 걷어낸 몸통으로 한다. 반동이 speed 에 섞이면 로봇이 총을 쏘며 걸어 나간다
+## (실제로 2초 연사에 87px 이 밀려 나갔다 — 지지 판정이 반동 이동을 걸음 속도로 되돌려 놓았다).
+func _release_recoil() -> void:
+	if not _shift_on:
+		return
+	body_pos.x -= _shift
+	_shift_on = false
+
+
+## 그려지는 자리(= 총구가 있는 자리)로 몸통을 옮긴다.
+func _hold_recoil() -> void:
+	if _shift_on or is_zero_approx(_shift):
+		return
+	body_pos.x += _shift
+	_shift_on = true
+
+
+## 걸음이 다 정해진 뒤 몸통에 얹을 양을 정한다. **딛고 있는 발이 버틸 수 있는 만큼만** 얹으므로
+## 뼈가 늘어나거나 발이 끌리지 않는다. 남는 힘은 그냥 버린다 — 그게 "버틴다" 는 그림이다.
+## 프레임당 한 번만 부른다 — 서브스텝마다 부르면 지지 판정과 IK 재계산이 그만큼 배로 돈다
+## (달리며 쏠 때 틱당 5ms 까지 올라갔고, 그 지연이 다시 걸음을 망가뜨렸다).
+func _apply_recoil(delta: float) -> void:
+	var spring := _spring(_kick, _kick_velocity, 0.0, RECOIL_KICK_FREQ, RECOIL_KICK_DAMP, delta)
+	_kick = clampf(spring.x, -RECOIL_KICK_MAX, RECOIL_KICK_MAX)
+	_kick_velocity = spring.y
+	# 쌓인 밀림은 사격이 끊기면 천천히 제자리로 돌아온다. 걸으면 발이 다시 자리를 잡으므로 더 빨리 푼다.
+	var recover := RECOIL_PUSH_RECOVER * (1.0 + 2.0 * clampf(_motion, 0.0, 1.0))
+	_push = maxf(_push - recover * delta, 0.0)
+	var want := _wanted_shift()
+	if is_zero_approx(want):
+		_shift = 0.0
+		return
+	if spider_gait and _spider != null:
+		var base := body_pos
+		if not _spider.supports_at(self, base + Vector2(want, 0.0), _angle):
+			var lower := 0.0
+			var upper := 1.0
+			for iteration in 5:
+				var fraction := (lower + upper) * .5
+				if _spider.supports_at(self, base + Vector2(want * fraction, 0.0), _angle):
+					lower = fraction
+				else:
+					upper = fraction
+			want *= lower
+	_shift = want
+
+
 func _move_body(delta: float) -> void:
+	var previous_speed := speed
 	if drag_to != null:
 		# 마우스로 직접 잡아끄는 중 — 속도는 실제 이동량에서 뽑는다 (예측 발 놓기가 그대로 동작하도록)
 		var target: Vector2 = drag_to
 		var prev := body_pos
-		body_pos = body_pos.lerp(target, clampf(delta * 22.0, 0.0, 1.0))
+		body_pos = body_pos.lerp(target, 1.0 - exp(-delta * 22.0))
 		# 몸을 지면 밑으로는 끌고 갈 수 없다 (마우스를 바닥 아래로 내려도 다리가 땅을 뚫지 않게)
 		body_pos.y = minf(body_pos.y, ground_at.call(body_pos.x) - GROUND_CLEAR)
 		# 속도는 **제한한다**. 마우스를 휘두르면 한 프레임 이동량이 수천 px 이 되고,
@@ -446,7 +651,10 @@ func _move_body(delta: float) -> void:
 		speed = clampf((body_pos.x - prev.x) / maxf(delta, 0.0001), -SPEED_CAP, SPEED_CAP)
 		airborne = false
 		_air_v = 0.0
+		_jump_windup = 0.0
+		_body_velocity = 0.0
 		_walked += absf(body_pos.x - prev.x)
+		_update_motion(previous_speed, delta)
 		_update_facing()
 		return
 
@@ -457,7 +665,14 @@ func _move_body(delta: float) -> void:
 		speed = move_toward(speed, 0.0, FRICTION * delta)
 	body_pos.x += speed * delta
 	_walked += absf(speed) * delta
+	_update_motion(previous_speed, delta)
 	_update_facing()
+	if _jump_windup > 0.0:
+		_jump_windup = maxf(_jump_windup - delta, 0.0)
+		if _jump_windup <= 0.0:
+			airborne = true
+			_air_v = -JUMP_V
+			_body_velocity = 0.0
 
 	# **발판 끝을 넘어서면 떨어진다.** 몸 높이는 발에서 뽑기 때문에, 뒷발이 아직 단 위에 붙어 있으면
 	# 몸이 허공으로 걸어 나가도 그대로 떠 있었다 — 그 상태에서는 앞다리가 닿을 지면이 없어
@@ -474,10 +689,29 @@ func _move_body(delta: float) -> void:
 		# 쓰면 접힌 발 높이만큼 공중에서 멈춰 버린다.
 		var land: float = ground_at.call(body_pos.x) - tune["ride"]
 		if _air_v > 0.0 and body_pos.y >= land:
+			var impact := _air_v
 			body_pos.y = land
 			airborne = false
 			_air_v = 0.0
 			_plant_feet()
+			# 발은 그 자리에 잠그고 질량만 눌렸다 복원된다. 낙하 높이에 비례하지만 도달 예산은 지킨다.
+			_body_velocity = minf(impact * 0.19, 190.0)
+			_landing_compression = minf(impact / JUMP_V, 1.0)
+			_angle_velocity += clampf(speed / maxf(tune["speed"], 1.0), -1.0, 1.0) * 0.30
+	if airborne:
+		# 공중에서는 진행 방향으로 가볍게 접혔다가 착지 전에 자세를 편다.
+		var target_angle := clampf(speed / maxf(tune["speed"], 1.0), -1.0, 1.0) * 0.045
+		target_angle += clampf(_air_v / JUMP_V, -1.0, 1.0) * 0.028 * float(facing)
+		var air_spring := _spring(_angle, _angle_velocity, target_angle, 2.4, 0.78, delta)
+		_angle = air_spring.x
+		_angle_velocity = air_spring.y
+
+
+func _update_motion(previous_speed: float, delta: float) -> void:
+	var blend := 1.0 - exp(-delta * 10.0)
+	_motion = lerpf(_motion, clampf(absf(speed) / maxf(tune["speed"], 1.0), 0.0, 1.5), blend)
+	var force := clampf((speed - previous_speed) / maxf(delta * ACCEL, 0.001), -1.4, 1.4)
+	_acceleration = lerpf(_acceleration, force, 1.0 - exp(-delta * 14.0))
 
 
 ## 착지 순간 네 발을 **그 자리 지면에 바로 박는다.**
@@ -485,6 +719,9 @@ func _move_body(delta: float) -> void:
 ## 다리가 펴지기까지 몇 프레임이 걸린다 — 그동안 로봇이 공중에 선 것처럼 보인다.
 ## 착지는 한 순간에 쿵 하고 끝나야 하므로 여기서만 예외로 네 발을 동시에 놓는다.
 func _plant_feet() -> void:
+	if spider_gait and _spider != null:
+		_spider.plant(self)
+		return
 	for leg in _legs:
 		var want := _reachable(leg, _desired(leg, speed))
 		want.y = ground_at.call(want.x)
@@ -501,10 +738,15 @@ func _plant_feet() -> void:
 		leg["foot"] = want
 		leg["stepping"] = false
 		leg["t"] = 0.0
+		leg["roll"] = 0.0
 	_all_down = 0.0
 
 
 func _update_facing() -> void:
+	if spider_gait:
+		return # 다리의 사선 시점은 고정이다. 이동·후진은 접지를 바꾸고, 조준은 상체만 돌린다.
+	if aim_target != null:
+		return # 조준 중에는 하체 방향을 유지하고 앞/뒤로 그대로 걸어간다.
 	if speed > TURN_SPEED:
 		face(1)
 	elif speed < -TURN_SPEED:
@@ -534,20 +776,31 @@ func _support_y() -> float:
 	var n := 0
 	for leg in _legs:
 		if not leg["stepping"]:
-			sum += (leg["foot"] as Vector2).y
+			sum += (leg["foot"] as Vector2).y - float(leg.get("ground_depth", 0.0))
 			n += 1
 	if n == 0:
 		for leg in _legs:
-			sum += (leg["foot"] as Vector2).y
+			sum += (leg["foot"] as Vector2).y - float(leg.get("ground_depth", 0.0))
 			n += 1
 	return sum / float(n)
 
 
 ## 몸체 높이·기울기를 발 위치에서 뽑는다. 다리가 몸을 따라가는 게 아니라 **몸이 발을 따라간다**.
-func _sync_body_to_feet(w: float) -> void:
-	var k := clampf(w, 0.0, 1.0)
-	var bob: float = sin(_walked / maxf(tune["stride"] * 210.0, 1.0) * TAU) * tune["bob"]
-	body_pos.y = lerpf(body_pos.y, _support_y() - tune["ride"] + bob, k)
+func _sync_body_to_feet(delta: float, snap := false) -> void:
+	var phase: float = _walked / maxf(tune["stride"] * 210.0, 1.0) * TAU
+	var moving := clampf(_motion, 0.0, 1.0)
+	var bob: float = sin(phase) * tune["bob"] * 0.65 * moving
+	# 저속 호흡은 보행 진동과 독립적이다. 서면 진동은 끝나고 아주 작은 생동감만 남는다.
+	var breathe := sin(_idle_time * 1.8) * 1.7 * (1.0 - moving)
+	var anticipation := sin((1.0 - _jump_windup / JUMP_WINDUP) * PI * 0.85) * 14.0 if _jump_windup > 0.0 else 0.0
+	var height: float = _support_y() - tune["ride"] + bob + breathe + anticipation
+	if snap:
+		body_pos.y = height
+		_body_velocity = 0.0
+	else:
+		var suspension := _spring(body_pos.y, _body_velocity, height, 3.3, 0.68, delta)
+		body_pos.y = suspension.x
+		_body_velocity = suspension.y
 	# 몸 높이는 발에서 뽑지만, 발이 뒤처진 급경사에서는 그 값이 몸 밑 지면보다 낮아진다 (빠를수록 심하다).
 	# 몸체가 바닥을 뚫는 그림은 어떤 경우에도 안 되므로 여기서 잘라 둔다.
 	body_pos.y = minf(body_pos.y, ground_at.call(body_pos.x) - GROUND_CLEAR)
@@ -581,10 +834,71 @@ func _sync_body_to_feet(w: float) -> void:
 	else:
 		slope = _angle                       # 한쪽이 다 떠 있는 순간엔 각을 흔들지 않고 그대로 둔다
 	var lean: float = clampf(speed / maxf(tune["speed"], 1.0), -1.5, 1.5) * LEAN
+	# 출발 때는 관성으로 뒤로, 감속 때는 앞으로 무게가 실렸다가 한 번 따라 흔들린다.
+	lean -= _acceleration * 0.055
+	# 뒤로 밀린 만큼 몸통이 젖혀진다 — 앞다리가 펴지고 뒷다리가 접히는 자세가 그림으로도 읽힌다.
+	lean += _push * _push_dir * RECOIL_PUSH_LEAN * float(facing)
+	lean += sin(_idle_time * 1.35 + 0.7) * 0.0035 * (1.0 - moving)
 	# 조준 방향으로 몸을 젖힌다 (위를 겨누면 앞이 들린다). facing 을 곱해 좌우가 뒤집히지 않게.
 	var aim_lean: float = -_aim_pitch * tune["aim_lean"] * float(facing)
 	var want := clampf(slope * tune["tilt"] + lean + aim_lean, -TILT_MAX, TILT_MAX)
-	_angle = lerp_angle(_angle, want, k)
+	if snap:
+		_angle = want
+		_angle_velocity = 0.0
+	else:
+		var pitch := _spring(_angle, _angle_velocity, want, 2.8, 0.65, delta)
+		_angle = clampf(pitch.x, -TILT_MAX, TILT_MAX)
+		_angle_velocity = pitch.y
+
+
+## 고정 목표에 대한 감쇠 스프링의 해석해. 프레임률이 바뀌어도 같은 탄성과 복원 시간을 갖는다.
+static func _spring(value: float, velocity: float, target: float, frequency: float, damping: float, delta: float) -> Vector2:
+	var omega := TAU * frequency
+	var decay := damping * omega
+	var oscillation := omega * sqrt(maxf(1.0 - damping * damping, 0.001))
+	var distance := value - target
+	var sine := sin(oscillation * delta)
+	var cosine := cos(oscillation * delta)
+	var envelope := exp(-decay * delta)
+	var next_value := target + envelope * (distance * cosine + (velocity + decay * distance) / oscillation * sine)
+	var next_velocity := envelope * (velocity * cosine - (decay * velocity + omega * omega * distance) / oscillation * sine)
+	return Vector2(next_value, next_velocity)
+
+
+## 리그와 총구가 같은 변환을 쓰게 한다. 발은 늘 월드 접지를 유지하며 상체만 3% 이내로 눌린다.
+func presentation_scale() -> Vector2:
+	var compression := clampf(_body_velocity / 1100.0 + _landing_compression * 0.018, -0.022, 0.032)
+	if airborne:
+		compression = -0.015 * clampf(-_air_v / JUMP_V, 0.0, 1.0)
+	return Vector2(1.0 + compression * 0.42, 1.0 - compression)
+
+
+func motion_amount() -> float:
+	return _motion
+
+
+## 사격은 발·위치를 순간 이동시키지 않고 서스펜션으로 전달한다.
+## 앞뒤 반동은 걸음 속도(speed)에 섞지 않는다 — 섞으면 발 예측 위치가 총을 쏠 때마다 튄다.
+## 대신 _kick 이 몸통만 뒤로 밀고, 다리는 늘 그랬듯 제 발 위치에서 IK 로 따라온다.
+func recoil_impulse(direction: Vector2) -> void:
+	# 위아래 충격은 작게 둔다. 크면 몸이 들썩이며 접지 높이가 흔들리고 발이 종종거린다.
+	_body_velocity = clampf(_body_velocity - direction.y * 9.0, -210.0, 210.0)
+	_angle_velocity = clampf(_angle_velocity + direction.x * 0.48, -2.2, 2.2)
+	_kick_velocity = clampf(_kick_velocity - direction.x * RECOIL_KICK, -1500.0, 1500.0)
+	_push_dir = -signf(direction.x) if absf(direction.x) > 0.01 else _push_dir
+	_push = minf(_push + RECOIL_PUSH, RECOIL_PUSH_MAX)
+
+
+## 지금 몸통에 얹혀 있는 반동 오프셋. 발 목표를 잡을 때 이걸 빼면 **발은 제자리를 지키고
+## 몸통만** 움직인다 — 총을 쏘는 동안 다리가 종종거리지 않는다.
+## 걸음 계산은 반동을 걷어낸 몸통으로 도므로(_release_recoil) 그 동안 이 값은 0 이다.
+func recoil_shift() -> float:
+	return _shift if _shift_on else 0.0
+
+
+## 스프링이 원하는 반동량. 다리가 버틸 수 있는 만큼만 _apply_recoil 이 실제로 얹는다.
+func _wanted_shift() -> float:
+	return _kick + _push * _push_dir
 
 
 # ── 다리 ─────────────────────────────────────────────────────────────────────
@@ -596,7 +910,8 @@ func _sync_body_to_feet(w: float) -> void:
 ## 네 발이 동시에 긴급 스텝을 내며 주저앉았다).
 func _desired(leg: Dictionary, vel: float) -> Vector2:
 	var rest: float = (leg["rest"] as float) * tune["stride"]
-	var x: float = body_pos.x + project(rest, 0.0, leg["side"] as float).x + vel * tune["lead"]
+	# 반동으로 밀린 몸통은 발 목표를 끌고 가지 않는다 — 발은 버티고 다리 각도만 벌어진다.
+	var x: float = body_pos.x - recoil_shift() + project(rest, 0.0, leg["side"] as float).x + vel * tune["lead"]
 	return Vector2(x, ground_at.call(x))
 
 
@@ -607,11 +922,20 @@ func _tick_legs(delta: float) -> void:
 			if (leg["t"] as float) >= 1.0:
 				leg["foot"] = leg["to"]
 				leg["stepping"] = false
+				leg["roll"] = 0.0
+				# 작게 발을 고쳐 놓을 때와 전력으로 딛을 때의 충격이 같지 않다.
+				var weight: float = clampf((leg["lift"] as float) / 70.0, 0.12, 1.0)
+				_body_velocity += 11.0 * weight
+				_angle_velocity += signf((leg["foot"] as Vector2).x - body_pos.x) * 0.035 * weight
 			else:
 				var t: float = leg["t"]
-				var e := t * t * (3.0 - 2.0 * t)                 # 부드럽게 출발·착지
+				var e := _ease_foot(t)                          # 양 끝 속도·가속도가 모두 0인 최소 저크 궤적
 				var p: Vector2 = (leg["from"] as Vector2).lerp(leg["to"] as Vector2, e)
-				p.y -= sin(t * PI) * tune["lift"]                # 포물선으로 들어 올린다
+				# 먼저 빠르게 발끝을 떼고, 긴 호를 따라 내려와 접지한다. 좌우 대칭 사인파의 기계감을 없앤다.
+				var lift_phase := t / 0.38 if t < 0.38 else (1.0 - t) / 0.62
+				p.y -= _ease_foot(clampf(lift_phase, 0.0, 1.0)) * (leg["lift"] as float)
+				var travel: float = signf((leg["to"] as Vector2).x - (leg["from"] as Vector2).x)
+				leg["roll"] = -travel * sin(t * TAU) * 0.09
 				leg["foot"] = p
 
 	if airborne:
@@ -638,7 +962,10 @@ func _tick_legs(delta: float) -> void:
 	for o in order:
 		var leg: Dictionary = _legs[o["i"]]
 		var urgent := _out_of_reach(leg)                         # 닿지 않는 발은 모든 제동을 무시한다
-		if (o["err"] as float) < tune["trigger"] and not urgent:
+		# 멈추면 끝 걸음을 작게 정리한다. trigger 아래에 걸린 어색한 벌림 자세로 영원히 얼지 않는다.
+		var settling := absf(speed) < 15.0 and absf(input_dir) < 0.01 and drag_to == null
+		var threshold: float = minf(tune["trigger"], 9.0) if settling else tune["trigger"]
+		if (o["err"] as float) < threshold and not urgent:
 			continue
 		if _all_down < tune["hold"] and not urgent:
 			continue                                             # 방금 내려앉았다 — 잠깐 딛고 있는다
@@ -656,7 +983,13 @@ func _tick_legs(delta: float) -> void:
 			for other in _legs:
 				if other == leg or other["group"] != leg["group"] or other["stepping"]:
 					continue
+				if settling and _error(other) < threshold:
+					continue
 				_begin_step(other, 0.0)
+
+
+static func _ease_foot(t: float) -> float:
+	return t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
 
 
 ## 공중에 뜬 동안의 다리. **올라갈 때와 내려올 때가 다르다.**
@@ -666,7 +999,7 @@ func _tick_legs(delta: float) -> void:
 ##               (측정: 착지 직전 프레임에 발이 지면 58px 위에 있었다).
 func _air_legs(delta: float) -> void:
 	var rising := _air_v < 0.0
-	var k := clampf(delta * (7.0 if rising else 12.0), 0.0, 1.0)
+	var k := 1.0 - exp(-delta * (8.0 if rising else 15.0))
 	for leg in _legs:
 		var hip := _hip_world(leg)
 		var p0 := _phi0(leg)
@@ -695,6 +1028,7 @@ func _air_legs(delta: float) -> void:
 			f.y = gy
 		leg["foot"] = f
 		leg["stepping"] = false
+		leg["roll"] = lerpf(leg.get("roll", 0.0), (-0.10 if rising else 0.04) * float(facing), k)
 
 
 ## 마지막 안전장치. 대각 규칙 때문에 차례가 밀리거나 몸이 급히 움직여 도달 거리를 넘어선 발을 끌어당긴다.
@@ -778,7 +1112,14 @@ func _begin_step(leg: Dictionary, extra: float) -> void:
 	# 빠를수록 짧게 — 안 그러면 몸이 발을 앞질러 다리가 뒤로 질질 끌린다
 	var dist: float = (leg["to"] as Vector2).distance_to(leg["from"] as Vector2)
 	var v := maxf(absf(speed), 1.0)
-	leg["dur"] = clampf(minf(tune["step_time"], dist / v * 0.55), 0.11, 0.45) + extra
+	# 매우 짧은 거미 걸음도 설정한 시간을 존중한다. 기존 0.11 하한은 0.06 프리셋을 두 배 늘렸다.
+	var shortest: float = minf(0.11, tune["step_time"])
+	leg["dur"] = clampf(minf(tune["step_time"], dist / v * 0.55), shortest, 0.45) + extra
+	var short_step := clampf(dist / 95.0, 0.18, 1.0)
+	leg["lift"] = tune["lift"] * short_step
+	if absf(speed) < 15.0:
+		leg["dur"] = maxf(leg["dur"], 0.16)
+		leg["lift"] = minf(leg["lift"], 23.0)
 
 
 ## 고관절의 월드 좌표. 노드 트랜스폼(to_global)은 tick 끝에서야 갱신되므로 **쓰지 않는다** —
@@ -799,6 +1140,8 @@ func _reachable(leg: Dictionary, want: Vector2) -> Vector2:
 ## 고관절의 월드 좌표. **yaw 를 통과한 자리**다 — 돌아서는 동안 고관절이 몸 가운데로 모였다가
 ## 반대쪽으로 벌어지고, 발은 월드에 박혀 있으므로 다리가 그 차이를 받아낸다. 그게 회전의 그림이다.
 func _hip_world(leg: Dictionary) -> Vector2:
+	if spider_gait and not leg.get("pose", {}).is_empty():
+		return leg["pose"]["hip"]
 	var h: Vector2 = leg["hip"]
 	return body_pos + project(h.x, h.y, leg["side"] as float).rotated(_angle)
 
@@ -806,7 +1149,8 @@ func _hip_world(leg: Dictionary) -> Vector2:
 ## 이 다리의 기준 정강이 각. 바깥쪽(몸 중심 반대편)으로 SHIN_SPLAY 만큼 눕힌다.
 ## rest 의 부호 × facing 이 곧 그 다리가 뻗은 세계 방향이다.
 func _phi0(leg: Dictionary) -> float:
-	return -SHIN_SPLAY * signf((leg["rest"] as float) * float(facing))
+	# yaw 중앙에서 정강이가 한 프레임에 반전하지 않도록 기준각도 연속적으로 넘긴다.
+	return -SHIN_SPLAY * signf(leg["rest"] as float) * cos(yaw) + float(leg.get("roll", 0.0))
 
 
 ## 무릎 자리 — 발에서 SHIN_LEN 위, 수직에서 φ 만큼 기운 점.
@@ -907,6 +1251,28 @@ func project(a: float, u: float, s: float) -> Vector2:
 	return Vector2(a * fore_x(), u + a * fore_y()) + extrude_vec() * s
 
 
+## 상체와 포가의 공용 사영. 하체 project()는 접지/IK에 계속 사용한다.
+func body_project(a: float, u: float, s: float) -> Vector2:
+	return (Vector2(a * body_fore_x(), u + a * body_fore_y()) + body_extrude_vec() * s) * presentation_scale()
+
+
+func body_fore_x() -> float:
+	# 0을 연속적으로 통과해야 포가가 좌우로 순간 이동하지 않는다.
+	return cos(torso_yaw) - depth_vec().x * sin(torso_yaw) / BODY_DEPTH
+
+
+func body_fore_y() -> float:
+	return -depth_vec().y * sin(torso_yaw) / BODY_DEPTH
+
+
+func body_extrude_vec() -> Vector2:
+	return Vector2(BODY_DEPTH * sin(torso_yaw), 0.0) + depth_vec() * cos(torso_yaw)
+
+
+func recoil_distance() -> float:
+	return _recoil
+
+
 ## 앞뒤 축(a)이 화면에서 차지하는 **가로 배율**. cos 만이 아니다 —
 ## 깊이 오프셋의 가로 성분이 같이 들어간다 (몸이 카메라 쪽으로 돌면 깊이로도 옆으로 밀리므로).
 ##
@@ -944,10 +1310,21 @@ func _depth_scale(z: float) -> float:
 
 ## 이 다리의 깊이 Z (두께 단위). 양수 = 몸통보다 멀다
 func leg_depth(leg: Dictionary) -> float:
+	if spider_gait:
+		return 0.5 if bool(leg["far"]) else -0.5
 	return depth_of((leg["hip"] as Vector2).x, leg["side"] as float)
 
 
 func _draw_leg(leg: Dictionary) -> void:
+	if spider_gait:
+		var pose: Dictionary = leg["pose"]
+		var keys := ["mount", "hip", "knee", "ankle", "toe"]
+		var colors := [C_JOINT, C_THIGH, C_BODY, C_SHIN]
+		for i in 4:
+			var a: Vector2 = transform.affine_inverse() * pose[keys[i]]
+			var b: Vector2 = transform.affine_inverse() * pose[keys[i + 1]]
+			_limb(a, b, 18.0 if i < 2 else 29.0, colors[i])
+		return
 	var z := leg_depth(leg)
 	var hip := to_local(_hip_world(leg))
 	var foot := to_local(leg["foot"]) + _depth_off(z)
@@ -988,7 +1365,7 @@ func _draw_body() -> void:
 			Vector2(BODY_HALF_W, -128.0), Vector2(nose, -112.0),
 			Vector2(nose, -58.0), Vector2(BODY_HALF_W, -44.0),
 		]), "col": C_BODY},
-	], extrude_vec())
+	], body_extrude_vec() * presentation_scale())
 	# 아랫면 어두운 띠 — 다리가 몸에 파묻히는 자리를 정리한다. 가까운 면에만 얹는 무늬다
 	draw_colored_polygon(_face([
 		Vector2(-BODY_HALF_W, BODY_SKIRT), Vector2(BODY_HALF_W, BODY_SKIRT),
@@ -1000,7 +1377,7 @@ func _draw_body() -> void:
 func _face(pts: Array) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	for v in pts:
-		out.append(project((v as Vector2).x, (v as Vector2).y, -0.5))
+		out.append(body_project((v as Vector2).x, (v as Vector2).y, -0.5))
 	return out
 
 
@@ -1016,10 +1393,10 @@ func _draw_turret() -> void:
 	var tip := _turret_local(BARREL_LEN - _recoil)
 	var d := tip - pivot
 	var dir := d.normalized() if d.length() > 0.001 else Vector2.RIGHT
-	var ex := extrude_vec() * 0.72
+	var ex := body_extrude_vec() * 0.72
 
 	# 요동축을 몸통 윗면에 잇는 받침 — 포신을 들어도 공중에 뜨지 않게
-	var mount_foot := project(TURRET_PIVOT.x, TURRET_PIVOT.y + 70.0, 0.0)
+	var mount_foot := body_project(TURRET_PIVOT.x, TURRET_PIVOT.y + 70.0, 0.0)
 	_extrude([
 		{"pts": _limb_pts(mount_foot, pivot, 70.0), "col": C_BODY_DARK},
 		# 약실(요동축 뒤로 튀어나온 덩어리) → 포신 → 총구 블록

@@ -1,0 +1,41 @@
+{
+  "version": "two-layer-maintenance-v1",
+  "date": "2026-09-22",
+  "method": "built-in imagegen",
+  "theme": "ordinary station maintenance/service area",
+  "status": "two_flattened_concept_candidates_pending_user_selection",
+  "prompt_file": "PROMPTS.md",
+  "input_images_in_order": [
+    "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/hall-redesign-v1.png",
+    "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/metal-slugx-industrial.jpg"
+  ],
+  "intended_background_motion_groups": 2,
+  "actual_layers_extracted": false,
+  "game_integration_performed": false,
+  "existing_assets_overwritten": false,
+  "assets": [
+    {
+      "file": "A_service_gallery.png",
+      "width": 1978,
+      "height": 795,
+      "bytes": 2019481,
+      "sha256": "cab3221c78b9b5169d93663bcaa9ae0dde19dfb626d47cd2235cdedc5f25927e",
+      "generated_source": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-5980e009-f8c5-43e2-bf25-a0753ee9aa3b.png"
+    },
+    {
+      "file": "B_pump_service_room.png",
+      "width": 1978,
+      "height": 795,
+      "bytes": 2020446,
+      "sha256": "2518ebae35ce536d98f6befde89d6ec8d2be20176a1f4f1581a1cae0cd0d1668",
+      "generated_source": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-14b035a5-1101-4f27-afa8-cf91f729a96c.png"
+    }
+  ],
+  "review": {
+    "full_image_visual_review": true,
+    "dimensions_and_sha256_measured": true,
+    "pixel_grid_verified": false,
+    "actual_parallax_motion_tested": false,
+    "user_approved": false
+  }
+}

@@ -7,14 +7,17 @@ extends Node2D
 ##
 ## 그림은 **원화를 자른 파츠 리그**(walker_rig.gd)가 기본이고, F4 로 그레이박스와 번갈아 본다.
 ## 조각은 assets/quadruped/ 에 있고 Tools/ImageProcessing/cut_quadruped_rig_parts.py 가 만든다
-## (원화 quadruped_side_transparent_v1.png → 0.34 배). 리그 규격과 proc_walker.gd 의 몸통·다리
-## 수치는 그 배율로 **같이** 맞춰져 있다 — 한쪽만 고치면 그림이 관절에서 어긋난다.
+## (원화 quadruped_side_transparent_v1.png → 0.34 배). 본편도 **같은 조각**을 쓴다.
+## 리그 규격과 proc_walker.gd 의 몸통·다리 수치는 그 배율로 **같이** 맞춰져 있다 —
+## 한쪽만 고치면 그림이 관절에서 어긋난다.
+##
+## 랩은 기체를 **1배**로 본다. 본편(walker_unit.gd)은 같은 리그를 0.5 배로 얹으므로 랩이 두 배 크게
+## 보이는데, 그림·걸음은 완전히 같은 것이다 — 랩은 크게 보려고 일부러 그대로 둔다.
 ##
 ## 조작
-##   마우스            **조준** — 몸통 위 기관총이 포인터를 기계식 선회 속도로 따라간다.
-##                    포탑 한계(±75°) 밖을 겨누면 **몸이 돌아선다** — 좌우를 뒤집는 게 아니라
-##                    0.26초 동안 실제로 돌아간다(yaw). 조준 각을 따라 몸통도 젖혀진다.
-##   좌클릭 · J        **사격** (누르고 있으면 연사). 반동으로 몸이 밀리고 다리가 그걸 받아낸다
+##   마우스            **360° 자유 조준** — 상체만 부드럽게 선회하고 포신은 월드 방향을 유지한다.
+##                    하체 방향은 조준에 끌려가지 않는다. 어느 쪽으로 걸어도 반대편으로 사격할 수 있다.
+##   좌클릭 · J        **사격** (누르고 있으면 연사). 포신 반동을 서스펜션이 탄성 있게 받아낸다
 ##   A D · ← →        걷기      Shift 달리기      Space 점프 (뜬 동안 다리를 접었다가 착지 자리로 뻗는다)
 ##                    (본편 플레이어와 같은 액션·키다 — main.gd _add_action 표와 맞춰 두었다)
 ##   우클릭 드래그     몸체를 직접 잡아끈다 — 위로 들면 다리가 펴지고, 한계를 넘으면 발이 따라 떨어진다
@@ -53,6 +56,13 @@ const GROUND := Color(0.176, 0.169, 0.271)
 const GROUND_EDGE := Color(0.62, 0.60, 0.78, 0.55)
 const GRID := Color(1.0, 1.0, 1.0, 0.055)
 
+## 걸음새 하나에 이름표를 붙인다 (PRESETS 가 값을 ProcWalker 에서 가져다 쓰기 위한 것)
+static func _named(gait: Dictionary, label: String) -> Dictionary:
+	var d := gait.duplicate()
+	d["name"] = label
+	return d
+
+
 ## 걸음새 프리셋. 서로 **확연히 다르게** 잡았다 — 속도 70~430 · 몸 높이 112~195 ·
 ## 다리 벌림 1.02~1.55 · 발 드는 높이 40~220 · 한 발씩 ↔ 대각 두 발씩.
 ## 다섯 개 모두 "여유 예산" 을 지키도록 맞춰 두었다 (tools/validate_walker.gd -- preset=N 으로 하나씩 검증했다).
@@ -64,7 +74,7 @@ const GRID := Color(1.0, 1.0, 1.0, 0.055)
 ## 정강이가 150 → 50 으로 짧아지고 유압판이 수직으로 내려오는 구조가 되면서 선 자세가 달라졌다
 ## (ride ×1.57 · stride ×0.695). 서로의 차이(살금살금은 낮게, 순찰은 높게)는 그대로 유지했다.
 ## 옛 값을 그냥 두면 유압판이 옆으로 누워 다리가 게처럼 벌어진다 — 원화와 전혀 다른 실루엣이다.
-const PRESETS := {
+static var PRESETS := {
 	# 한 발씩 조용히 옮긴다. 몸이 거의 흔들리지 않고 발도 낮게 끈다 — 잠입·접근
 	KEY_1: {"name": "살금살금 (한 발씩 · 낮게)", "speed": 90.0, "ride": 204.0, "stride": 0.83,
 		"trigger": 20.0, "lift": 55.0, "step_time": 0.40, "hold": 0.34, "lead": 0.74,
@@ -85,13 +95,20 @@ const PRESETS := {
 	KEY_4: {"name": "돌격 (빠른 대각 트롯 · 현재 디폴트)", "speed": 430.0, "ride": 212.0, "stride": 0.82,
 		"trigger": 40.0, "lift": 80.0, "step_time": 0.15, "hold": 0.05, "lead": 0.20,
 		"tilt": 0.0, "bob": 26.0, "aim_lean": 0.12, "legs_up": 2.0},
-	# **거미.** 한 발씩만 띄운다 — 늘 세 발이 땅에 붙어 있다. 아주 짧고 잦게 딛는다(스텝 0.08초).
+	# **거미.** 한 발씩만 띄운다 — 늘 세 발이 땅에 붙어 있다. 아주 짧고 잦게 딛는다(스텝 0.06초).
 	# 한 발씩이면 한 주기가 두 배(4번 나눠 딛는다)라 같은 속도에서 발이 두 배 밀린다 —
 	# 그래서 속도를 430 → 340 으로 낮췄다 (달리기 ×1.7 까지 예산 안에 들도록).
 	# 몸은 낮게 깔고 거의 흔들지 않으며(진동 4) 발도 낮게 끈다 — 트롯처럼 통통 뛰지 않고 사각사각 기어간다.
-	KEY_6: {"name": "거미 (한 발씩 사각사각)", "speed": 340.0, "ride": 188.0, "stride": 0.90,
-		"trigger": 30.0, "lift": 45.0, "step_time": 0.08, "hold": 0.03, "lead": 0.22,
-		"tilt": 0.20, "bob": 4.0, "aim_lean": 0.05, "legs_up": 1.0},
+	#
+	# 2026-09-22: 원화 파츠를 붙인 상태로 **랩에서 눈으로 다시 맞춘 값**이다 (F9 로 뽑았다).
+	#   ride 188 → 182     몸을 조금 더 깔아 유압판이 더 수직으로 내려온다
+	#   step_time 0.08 → 0.06  발을 더 잦게 딛는다 — 사각사각이 더 또렷해진다
+	#   tilt 0.20 → 0.00   경사를 따라 눕지 않는다. 몸통이 수평이라 포신 선이 안 흔들린다
+	#   aim_lean 0.05 → 0.5  조준을 따라 몸통을 확실히 젖힌다 (거미 자세의 성격을 만드는 값)
+	#
+	# **값은 ProcWalker.GAIT_SPIDER 에 있다** — 본편 기체(walker_unit.gd)가 같은 값을 쓰기 때문이다.
+	# 여기 베껴 두면 랩에서 맞춘 걸음과 게임 안의 걸음이 조용히 갈라진다. 이름만 여기서 붙인다.
+	KEY_6: _named(ProcWalker.GAIT_SPIDER, "거미 (한 발씩 사각사각)"),
 	# 다리를 넓게 벌리고 낮게 앉아 거의 움직이지 않는다. 몸 흔들림 최소 — 사격 발판
 	KEY_5: {"name": "버티기 (사격 자세·넓게)", "speed": 70.0, "ride": 228.0, "stride": 1.08,
 		"trigger": 20.0, "lift": 40.0, "step_time": 0.30, "hold": 0.55, "lead": 0.85,
@@ -129,10 +146,10 @@ var _cam: Camera2D
 var _debug: Node2D
 var _terrain: Node2D
 var _info: Label
-var _show_debug := true
+var _show_debug := false
 var _drag_off = null
 var _mouse_firing := false
-var _msg := "2  기본 (대각보)"
+var _msg := "자유 조준 · 이동과 상체 회전 분리 · F2 디버그"
 var _msg_t := 2.5
 
 var _rig: WalkerRig
@@ -521,7 +538,7 @@ func _build_hud() -> void:
 	keys.add_theme_font_size_override("font_size", 18)
 	keys.add_theme_color_override("font_color", Color(0.68, 0.72, 0.82))
 	keys.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	keys.text = "마우스 조준 · 좌클릭/J 사격 · A D 걷기 · Shift 달리기 · Space 점프 · 우클릭 드래그로 몸체 잡아끌기   ·   F2 디버그   F3 사선 시점   F4 리그/그레이박스   ·   1~6 걸음새   ·   Q/Z 속도  E/C 다리 벌림  R/V 몸 높이  T/B 보폭  Y/N 발 드는 높이  U/M 스텝 시간  I/, 예측  O/. 접지 유지  P// 동시에 뜨는 발(1=거미·2=트롯)  [/] 기울기  ;/' 조준 젖힘   ·   시점: G/H 깊이 x  K/L 깊이 y  -/= 원근  9/0 두께   ·   F5 초기화  F9 수치 출력  ·  F1 로비"
+	keys.text = "마우스 360° 자유 조준 · 좌클릭/J 사격 · A D 전진/후진 · Shift 달리기 · Space 점프 · 우클릭 드래그   ·   F2 디버그   F3 사선 시점   F4 리그/그레이박스   ·   1~6 걸음새   ·   Q/Z 속도  E/C 다리 벌림  R/V 몸 높이  T/B 보폭  Y/N 발 드는 높이  U/M 스텝 시간  I/, 예측  O/. 접지 유지  P// 동시에 뜨는 발  [/] 기울기  ;/' 조준 젖힘   ·   시점: G/H 깊이 x  K/L 깊이 y  -/= 원근  9/0 두께   ·   F5 초기화  F9 수치 출력  ·  F1 로비"
 	layer.add_child(keys)
 
 
@@ -531,8 +548,9 @@ func _update_info() -> void:
 	var b := _walker.reach_budget()
 	var over: bool = b["worst"] > b["limit"]
 	var lines := [
-		"사족보행 랩 — 속도 %5.0f px/s   방향 %s   %s   뜬 발 %d/4" % [
-			_walker.speed, "▶" if _walker.facing > 0 else "◀", state, air,
+		"사족보행 랩 — 속도 %5.0f px/s   이동 %s   조준 %s   %s   뜬 발 %d/4" % [
+			_walker.speed, "정지" if absf(_walker.speed) < 5.0 else ("▶" if _walker.speed > 0.0 else "◀"),
+			"▶" if _walker.aim_dir().x > 0.0 else "◀", state, air,
 		],
 		_walker.tune_text(),
 		_walker.view_text(),

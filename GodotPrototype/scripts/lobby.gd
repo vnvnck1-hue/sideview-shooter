@@ -5,7 +5,8 @@ extends Control
 ##   [센트리건]    가장 큰 방(격납고)의 센트리건 옆에서 바로 시작 — 전개·조종·과열 사격 확인
 ##   [맵 뷰어]     방을 게임 없이 조립해 자유 카메라로 본다. [ ] 로 방 전환 (scenes/MapViewer.tscn)
 ##   [대화 UI 랩]  대사 표시 방식 5종을 실제 화면에서 1~5 로 바꿔 가며 비교한다 (scenes/DialogueLab.tscn)
-##   [사족보행 랩] 절차적 사족보행 로봇을 기복 있는 지면 위에서 직접 끌고 다니며 본다 (scenes/WalkerLab.tscn)
+##   [사족보행 랩] 인게임 기체의 보행·관절 수치를 조정한다. 원화 피벗 편집기도 여기서 연다.
+##   [조명·면 랩]  실제 게임 그대로 플레이하면서 방 안의 광원 수치와 프랍 면 맵을 고치고 저장한다 (scenes/FaceLab.tscn)
 ##   [CRT 모니터]  전역 CRT 후처리 프리셋 드롭다운 (scripts/crt_preset.gd · autoload CrtFx). 게임 안에서는 F4 / Shift+F4
 ##   [종료]
 ## 게임·뷰어 안에서는 F1 로 이 로비로 돌아온다.
@@ -84,9 +85,13 @@ func _ready() -> void:
 	shadow.pressed.connect(func(): AppFlow.start_shadow_lab(get_tree()))
 	box.add_child(shadow)
 
-	var walker := _button("⮟   사족보행 랩 — 다리가 스스로 자리를 잡는다", "기복 있는 그레이박스 지면 위에서 절차적 보행(ProcWalker) 을 직접 끌고 다니며 본다. 마우스 조준 · 좌클릭 사격 · ←→ 걷기 · 우클릭 드래그로 몸체 잡아끌기 · 1·2·3 걸음새 · H 디버그 · F1 로비")
+	var walker := _button("⮟   사족보행 랩 — 인게임 보행 튜닝", "인게임 기체의 관절 각도·보폭·발 높이·스텝 시간을 실시간 조정합니다. Ctrl+S 저장하면 인게임에도 적용. 상단 피벗·키프레임 버튼으로 원화 편집기를 엽니다.")
 	walker.pressed.connect(func(): AppFlow.start_walker_lab(get_tree()))
 	box.add_child(walker)
+
+	var face := _button("◧   조명·면 랩 — 실제 플레이 위에서 조명과 면을 고친다", "본편과 똑같이 플레이(이동·조준·사격)하면서, 방 안의 광원을 우클릭으로 고르고 세기·반경·높이를 슬라이더로 맞춘다. 저장하면 lighting/tuning.json 에 쓰여 본편에 그대로 적용된다. 총구·탄착처럼 클릭할 수 없는 광원은 G 로 순환. 프랍 면 맵(기울기·디테일·번짐)도 같은 패널에서. F5 패널 · Tab 광원 · N 면↔자동 · F1 로비")
+	face.pressed.connect(func(): AppFlow.start_face_lab(get_tree()))
+	box.add_child(face)
 
 	box.add_child(_spacer(6))
 	box.add_child(_crt_row())

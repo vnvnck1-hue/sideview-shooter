@@ -99,16 +99,17 @@ func setup(air_layer: Node2D, wall_layer: Node2D, fire_size := Vector2(170.0, 21
 	_light = PointLight2D.new()
 	_light.name = "FireLight"
 	_light.texture = Lighting.radial_texture()
-	_light.texture_scale = Lighting.scale_for_radius(LIGHT_RADIUS)
-	_light.height = 130.0
+	_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("fire", "radius", LIGHT_RADIUS))
+	_light.height = LightTuning.value("fire", "height", 130.0)
 	_light.position = Vector2(0, -size.y * 0.35)
 	add_child(_light)
 	# 밝은 심 라이트 (작고 강함)
 	_core_light = PointLight2D.new()
 	_core_light.texture = Lighting.radial_texture()
-	_core_light.texture_scale = Lighting.scale_for_radius(320.0)
-	_core_light.energy = 1.6
-	_core_light.height = 70.0
+	_core_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("fire_core", "radius", 320.0))
+	_core_light.energy = LightTuning.value("fire_core", "energy", 1.6)
+	_core_light.height = LightTuning.value("fire_core", "height", 70.0)
+	LightTuning.register(self, "fire")
 	_core_light.position = Vector2(0, -size.y * 0.2)
 	add_child(_core_light)
 	Lighting.register_dynamic(_light, 1.0, "ambient")           # 불꽃이 흔들리는 대로 그림자도 흔들린다

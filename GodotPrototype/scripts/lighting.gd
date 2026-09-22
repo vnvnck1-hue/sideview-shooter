@@ -20,6 +20,12 @@ static var LAMP_HEIGHT := _tune("VFX_H", 140.0)
 const FLASH_HEIGHT := 90.0
 static var LAMP_ENERGY := _tune("VFX_LAMP", 1.0)     # height 140 이면 1.0 이 예전(height 0, 1.7) 램프 밑 밝기와 같다
 
+## 방이 CanvasModulate 에 넣는 최종 앰비언트. 조명 랩에서 배율을 고칠 수 있다 (lighting/tuning.json).
+static func ambient_color() -> Color:
+	var m := LightTuning.value("ambient", "energy", 1.0)
+	return Color(minf(AMBIENT.r * m, 1.0), minf(AMBIENT.g * m, 1.0), minf(AMBIENT.b * m, 1.0))
+
+
 static func _tune(k: String, d: float) -> float:
 	var v := OS.get_environment(k)
 	return float(v) if v != "" else d
@@ -274,6 +280,24 @@ static func textured(path: String) -> Texture2D:
 		result = ct
 	_canvas_cache[path] = result
 	return result
+
+
+## Lighting.textured 가 만든 CanvasTexture 를 원본 경로로 되짚는다 (면 랩이 화면의 스프라이트에서 자산을 찾는 데 쓴다).
+static func path_of(tex: Texture2D) -> String:
+	for p in _canvas_cache:
+		if _canvas_cache[p] == tex:
+			return p
+	return ""
+
+
+## 캐시된 CanvasTexture 의 노멀맵을 갈아 끼운다. 같은 자산을 쓰는 스프라이트는 **같은 인스턴스**를 공유하므로
+## 한 번 바꾸면 방 안의 모든 사본에 한꺼번에 적용된다 (면 랩이 R·N 에서 쓴다).
+static func set_normal(path: String, normal: Texture2D) -> bool:
+	var t: Texture2D = _canvas_cache.get(path)
+	if t is CanvasTexture:
+		(t as CanvasTexture).normal_texture = normal
+		return true
+	return false
 
 
 ## shaders/<name>.gdshader 로 새 ShaderMaterial (셰이더 자체는 캐시, 머티리얼은 인스턴스마다 새로)

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b1sideviewwalkerlab"]
 
-[ext_resource type="Script" path="res://scripts/walker_lab.gd" id="1_walkerlab"]
+[ext_resource type="Script" path="res://scripts/walker_tuning_lab.gd" id="1_walkerlab"]
 
 [node name="WalkerLab" type="Node2D"]
 script = ExtResource("1_walkerlab")

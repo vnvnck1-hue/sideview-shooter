@@ -135,6 +135,15 @@ func _check_room(id: String) -> void:
 					if sid == "" or _sentry_ids.has(sid):
 						_errors.append("%s: 센트리건 id '%s' 가 비었거나 중복이다 — 보안 단말기가 지목할 수 없다" % [id, sid])
 					_sentry_ids[sid] = true
+				"walker":
+					# 서 있을 때의 자리. 폭은 **총구까지** 센다 (몸통 뒤끝 -159 ~ 총구 +244 = 403 로컬px).
+					# 벽·문 앞을 가리는지 이 폭으로 판정해야 한다 — 몸통만 재면 포신이 문을 가로막는다.
+					pw = (ProcWalker.BODY_HALF_W + ProcWalker.TURRET_PIVOT.x + ProcWalker.BARREL_LEN) * WalkerUnit.SCALE
+					ph = (float(ProcWalker.GAIT_SPIDER["ride"]) - ProcWalker.BODY_TOP) * WalkerUnit.SCALE
+					var wid := str(p.get("id", ""))
+					if wid == "" or _sentry_ids.has(wid):
+						_errors.append("%s: 보행 기체 id '%s' 가 비었거나 중복이다 — 보안 단말기가 지목할 수 없다" % [id, wid])
+					_sentry_ids[wid] = true
 				"npc":
 					var nid := str(p.get("id", ""))
 					if not NpcData.CAST.has(nid) or nid == "player":

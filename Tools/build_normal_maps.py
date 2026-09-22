@@ -1,6 +1,10 @@
 """GameReady 타일·프랍·문 PNG 에서 2D 라이팅용 노멀맵을 자동 생성한다.
 
 높이 = 밝기(블러) + 알파 실루엣 베벨(프랍·문). Sobel 기울기 → 노멀.
+
+**손으로 면을 나눈 자산은 건너뛴다.** GodotPrototype/assets/faces/<같은 상대경로>.png 가 있으면
+그 자산의 노멀은 tools/bake_face_normals.gd 가 면 맵에서 굽는다 — 여기서 덮어쓰면 그 작업이 날아간다.
+(면을 나누는 곳: 로비 → "면 라이팅 랩". 규약: GodotPrototype/scripts/face_normal.gd)
 Godot 는 OpenGL(Y+ 위) 규약이므로 화면 위쪽을 향한 면이 G>0.5 가 된다.
 
 실행: python Tools/build_normal_maps.py [그룹 ...]  (저장소 루트에서. 그룹을 주면 그 그룹만)
@@ -28,6 +32,7 @@ GROUPS = {
     "character/npc": (2.8, 4, 0.6),       # NPC 한 장짜리 idle — 플레이어 Split 과 같은 반응
 }
 EXCLUDE = {"muzzle_flash.png"}            # 발광 스프라이트는 노멀 불필요
+FACES = ROOT / "faces"                    # 손으로 나눈 면 맵 — 있으면 이 스크립트는 그 자산을 건드리지 않는다
 
 
 def height_map(img: Image.Image, bevel: int, blur: float) -> np.ndarray:
@@ -85,6 +90,9 @@ def main() -> None:
             if png.name in EXCLUDE:
                 continue
             rel = png.relative_to(src_dir)
+            if (FACES / group / rel).exists():
+                print(f"{group}/{rel} — 면 맵 있음, 건너뜀 (tools/bake_face_normals.gd 가 굽는다)")
+                continue
             img = Image.open(png)
             h, alpha = height_map(img, bevel, blur)
             n = normal_from_height(h, strength)

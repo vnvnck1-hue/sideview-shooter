@@ -19,6 +19,8 @@
 | ⌖ 센트리건 테스트 — 격납고(가장 큰 방)에서 시작 | `scenes/Main.tscn` 을 맵에서 가장 큰 방(**격납고** 32열 4096px · 몬스터 12)에서 열고, 플레이어를 센트리건 해치 옆(`RoomData.SENTRY_TEST_X` − 250)에 세운다. W/↑ 전개·조종, 좌클릭 연사 |
 | ♪ 앰비언스 랩 | `scenes/MainGame.tscn` + `scripts/ambience_lab.gd` 오버레이(`AppFlow.amb_lab`). **걸어 다니면서** 방마다 무엇이 울리는지 보고 그 자리에서 고친다 — **Tab** 대상(BED/TEX0/TEX1) · **- / =** 음량 ∓0.5dB(Shift ∓2) · **, / .** 파일 순환 · **Backspace** 슬롯 비우기 · **Ctrl+S** `ambience/tuning.json` 저장 · **Ctrl+R** 이 방 초기화 · **F5** 패널 접기. 저장값은 AudioManager 가 시작할 때 읽어 본편에도 적용된다 |
 | ✎ 대화 UI 랩 | `scenes/DialogueLab.tscn`(`scripts/dialogue_lab.gd`, `main.gd` 상속). 실제 방·인물 위에서 **대사 표시 방식 5종**을 **1~5**로, **음성 방식 10종**을 **V / Shift+V** 로 바꿔 가며 비교한다. **Tab** 다음 표시 방식 · **[ ]** 상대 바꾸기 · **R** 대화 다시 · **0** 플래그 초기화 |
+| 사족보행 랩 | `scenes/WalkerLab.tscn`. **인게임 기체의 관절 각도·보폭·스텝 시간을 슬라이더로 조정**하고 **Ctrl+S**로 인게임 공유 설정을 저장한다. 자동 걷기·달리기·점프·본 겹쳐보기. [보행 튜닝 안내](../Docs/WALKER_TUNING.md). 상단 **피벗·키프레임**은 기존 [원화 편집기](../Docs/WALKER_AUTHORING.md)(`WalkerAuthoringLab.tscn`)로 연결한다. |
+| ◧ 조명·면 랩 | `scenes/FaceLab.tscn`(`scripts/face_lab.gd`, **`main.gd` 상속**). 본편과 똑같이 플레이(이동·조준·사격)하면서 **조명 수치**와 **프랍 면 맵**을 그 자리에서 고친다. **F5** 패널 · **우클릭** 화면에서 광원/프랍 고르기 · **Tab** 광원 순환 · **G** 총 계열(클릭 불가) · **F10** 조명 저장 · **P** 마우스 광원(휠 반경 / Shift 세기 / Ctrl 높이) · **N** 면↔자동 A/B · **M** 면 맵 겹쳐 보기 · **F12** 면 맵 다시 읽기. 저장하면 `lighting/tuning.json`·`faces/tuning.json` 에 쓰여 본편에 적용된다. `Docs/LIGHT_TUNING.md` · `Docs/FACE_LIGHTING.md` |
 | ▦ 맵 뷰어 | `scenes/MapViewer.tscn`(`scripts/map_viewer.gd`). 방을 `Room.build` 로 통째로 조립해 자유 카메라로 본다. **[ ]** 이전/다음 방 · 휠 줌 · 휠클릭/WASD 이동 · F 방 전체 보기 · G 격자·문 표시 · L 전체 밝게 · R 다시 조립 |
 | ✕ 종료 | 프로그램 종료 |
 
@@ -142,8 +144,11 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 
 | 효과 | 구현 | 위치 |
 |---|---|---|
+| **조명 수치** | 반경·세기·높이를 `LightTuning` 한곳에 모았다(램프·바닥 풀·벽등·단말기·비상등·불·전선·총구·탄착·스파크·앰비언트). **조명·면 랩**에서 실제 플레이 중에 우클릭으로 광원을 고르고 슬라이더로 맞춘 뒤 저장하면 `lighting/tuning.json` 에 쓰이고 게임이 시작할 때 읽는다. 파일이 없으면 코드 기본값 그대로 | `LightTuning` · `Docs/LIGHT_TUNING.md` |
 | 노멀맵 라이팅 | 타일·문·프랍을 `CanvasTexture`(diffuse + normal) 로 그린다. 노멀맵은 `assets/normals/<종류>/<이름>.png`, `python Tools/build_normal_maps.py` 로 재생성(밝기+알파 베벨 → Sobel, OpenGL Y+) | `Lighting.textured()` |
+| 면 라이팅 *(실험)* | 상자꼴 프랍의 면을 손으로 나눈 **면 맵**(`assets/faces/<같은 상대경로>.png`, 순색 7종)에서 면마다 상수 노멀을 만든다. 밝기 추론과 달리 상판·측면이 실제로 갈라져 광원 방향에 따라 특정 면만 밝아진다. 셰이더 변경 없음. 수치는 **자산마다** 다르게 준다(`faces/tuning.json`). **각진 것**(사물함·작업대)은 면을 꽉 채우고 `soft: 0` 으로 딱 가르고, **부드러운 것**(안락의자)은 각 면의 **코어만 최소로** 칠한 뒤 `soft`(번짐, 정규화 컨볼루션)로 그 사이를 그라데이션으로 잇는다 — 없는 모서리가 생기지 않게. 나누는 곳은 **면 라이팅 랩**, 굽는 것은 `godot --headless --script res://tools/bake_face_normals.gd` (자동 베이커는 면 맵이 있는 파일을 건너뛴다). 적용: 사물함·작업대·안락의자 | `FaceNormal` · `Docs/FACE_LIGHTING.md` |
 | 글로우 | `Environment.glow` (additive, 레벨 1~4, 임계 0.85, 세기 0.8). 발광체는 `modulate` 를 `Lighting.EMISSIVE(4.5)` / `EMISSIVE_SOFT(2.6)` 로 올려 CanvasModulate 를 이기고 흰색에 닿게 한다: 총구 화염, 탄 궤적·코어·탄두, 탄착 플래시·링·스파크 | `main.gd _setup_environment` |
+| **매달린 램프** | 천장 램프는 **줄(버렛 체인, `RopeChain`)에 매달려** 미풍에 느리게 흔들린다. 총에 맞으면 한 방에 깨지지 않고 `LampLight.MAX_HP`(3)만큼 버티며, 맞을 때마다 크게 흔들리고 지직거리며 유리 파편이 튄다. 스치기만 해도(`Room.notify_shot`) 흔들린다. 램프가 움직이면 라이트·빛 기둥·바닥 풀이 따라가고 `PropShadow` 가 매 프레임 광원 위치를 다시 읽어 **프랍 그림자까지 같이 쓸린다** | `LampLight` · `RopeChain` |
 | 전구 발광 + 글리치 | 타일에서 램프 영역을 `AtlasTexture` 로 잘라 같은 자리에 올린 `LampSprite`. 전구 픽셀만 `emit` 배율로 발광(CanvasModulate 역수 보정, 목표 휘도 1.7), 깜빡일 때 약하게·깨질 때 강하게 가로 찢김+스캔라인 | `lamp_glitch.gdshader` |
 | 볼류메트릭 빛 기둥 | 전구 아래 → 바닥까지 사다리꼴 `Polygon2D`, 가산 블렌드. 노이즈가 천천히 흘러 먼지 낀 공기, 빛살 줄무늬. 램프 밝기(깜빡임·깨짐)에 연동. 사다리꼴은 UV 가 어파인 왜곡되므로 VERTEX 로 좌표를 직접 계산 | `light_cone.gdshader` |
 | 부유 먼지 | 방 전체 `DustLayer`(Polygon2D). 4 층의 셀 그리드 먼지가 떠다니고, 어둠 속엔 희미하게(ambient), 광원(램프 원뿔·비상등·불·아크) 근처에선 그 색으로 밝게 | `dust.gdshader` |

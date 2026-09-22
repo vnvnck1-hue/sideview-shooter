@@ -15,3 +15,5 @@
 단말기와 지도는 같은 화면을 공유하지만, 지도 생성·판독 규칙은 독립적으로 변경될 수 있으므로 합치지 않는다. 도입부 역시 전체 서사의 반복 요약이 아니라 시간별 플레이·구현 문서로 유지한다. 각 문서가 겹치는 곳은 핵심 원칙만 참조하고 상세 수치·상태는 해당 담당 문서에서 갱신한다.
 
 방 원화 브리프 [`RETRO_STATION_ROOM_CONCEPTS.md`](RETRO_STATION_ROOM_CONCEPTS.md)는 시각 제작 자료여서 게임 서사 기준 문서에 합치지 않았다.
+
+이후 방 배경의 미술 제작 기준은 [`BACKGROUND_ART_DIRECTION.md`](BACKGROUND_ART_DIRECTION.md), 메탈슬러그 비교·실제 게임 측정·정비홀/전력실 시안 피드백은 [`BACKGROUND_RESEARCH_LOG.md`](BACKGROUND_RESEARCH_LOG.md)를 확인한다. 얕은 측면 공간과 고유색을 보존하는 상호작용 위계가 현재 방향이며, 이미지의 강조만으로 게임 기능을 확정하지 않는다.

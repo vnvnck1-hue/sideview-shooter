@@ -58,7 +58,12 @@ var transitioning := false
 const HEAT_BAR := Vector2(300, 20)      # 센트리건 과열 게이지 크기
 var heat_bar_bg: ColorRect
 var heat_bar_fill: ColorRect
-var controlled_turret: SentryTurret     # 조종 중인 센트리건 (없으면 null) — 그동안 플레이어 입력은 꺼진다
+## 조종 중인 **기계** (없으면 null) — 그동안 플레이어 입력은 꺼진다.
+## 센트리건(SentryTurret)과 사족보행 기체(WalkerUnit) 둘 다 들어온다. 둘은 같은 창구
+## (heat / overheated / aim_target / set_controlled / control_changed)를 내므로 여기서는 구분하지 않는다 —
+## **조종 상태를 한 자리에서만 관리하기 위해서다.** 기계마다 변수를 따로 두면 하나를 놓친 순간
+## 플레이어 입력이 영영 안 돌아온다.
+var controlled_turret: Node2D
 ## 단말기 접속 (Docs/TERMINAL_SYSTEM_CONCEPT.md). 화면 안은 TerminalScreen 이, 카메라·월드 교체는 여기가 맡는다.
 const TERMINAL_PUSH := 0.45             # 카메라 밀어넣기/후퇴 시간 (초)
 var terminal_screen: TerminalScreen
@@ -320,11 +325,16 @@ func _process(_delta: float) -> void:
 		if n == near_npc:
 			n.look_at_x(player.position.x)
 
-	# 안내 문구: 센트리건이 먼저(같은 W/↑ 키를 쓴다), 그 다음 생존자·단말기, 없으면 정면문
+	# 안내 문구: 센트리건·보행 기체가 먼저(같은 W/↑ 키를 쓴다), 그 다음 생존자·단말기, 없으면 정면문
 	var turret := current_room.sentry_near(player.position.x)
 	if turret != null:
 		prompt_label.visible = true
 		prompt_label.text = turret.prompt_text()
+		return
+	var unit := current_room.walker_near(player.position.x)
+	if unit != null:
+		prompt_label.visible = true
+		prompt_label.text = unit.prompt_text()
 		return
 	if near_npc != null and DialogueRuntime.has_dialogue(near_npc.npc_id):
 		prompt_label.visible = true
@@ -370,6 +380,14 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 		t.heat_changed.connect(_on_turret_heat)
 		t.shake_requested.connect(camera.add_shake)
 		t.control_changed.connect(_on_turret_control.bind(t))
+	# 사족보행 기체도 **완전히 같은 배선**이다 — 사격까지 센트리건 경로를 그대로 탄다.
+	# (연사력만 기체 쪽에서 낮다. 위력·궤적·탄피·흔들림은 WalkerUnit 이 SentryTurret 값을 그대로 쓴다)
+	for w in current_room.walkers:
+		w.shoot_fired.connect(_on_turret_shoot)
+		w.shell_ejected.connect(_on_turret_shell)
+		w.heat_changed.connect(_on_turret_heat)
+		w.shake_requested.connect(camera.add_shake)
+		w.control_changed.connect(_on_turret_control.bind(w))
 
 	# 이동 한계: 닫힌 쪽은 벽 앞에서 멈추고, 열린 쪽은 문을 지나갈 수 있게 조금 더 허용
 	var left_limit := -DOOR_PASS_MARGIN if current_room.left_door_open else WALL_MARGIN
@@ -400,10 +418,14 @@ func _go_to_room(target: String, enter_side: String) -> void:
 func _on_front_door_requested() -> void:
 	if transitioning or current_room == null:
 		return
-	# 같은 키(W/↑)로 센트리건을 먼저 잡는다 — 옆에 서 있으면 전개·조종
+	# 같은 키(W/↑)로 센트리건·보행 기체를 먼저 잡는다 — 옆에 서 있으면 전개·기동·조종
 	var turret := current_room.sentry_near(player.position.x)
 	if turret != null:
 		turret.activate()
+		return
+	var unit := current_room.walker_near(player.position.x)
+	if unit != null:
+		unit.activate()
 		return
 	var person := current_room.npc_near(player.position.x)
 	if person != null and DialogueRuntime.has_dialogue(person.npc_id):
@@ -454,7 +476,7 @@ func _on_turret_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 	crosshair.kick()
 
 
-## 한 발이 방에 미치는 결과 — 탄 생성 · 탄착 반응 · 전선 튕김 (플레이어·센트리건 공용).
+## 한 발이 방에 미치는 결과 — 탄 생성 · 탄착 반응 · 전선 튕김 (플레이어·센트리건·보행 기체 공용).
 ## power = 탄착·피격 반응 위력 배율 (1.0 플레이어 소총 · 1.7 센트리건),
 ## tracer = 궤적·탄두 두께 배율 (센트리건 2.0 — 탄은 굵게, 파편·넉백은 위력만큼만).
 func _spawn_shot(muzzle_pos: Vector2, target_pos: Vector2, power := 1.0, tracer := 1.0) -> void:
@@ -480,9 +502,10 @@ func _spawn_shot(muzzle_pos: Vector2, target_pos: Vector2, power := 1.0, tracer 
 			b.impact_kind = Bullet.Impact.FLESH
 			camera.add_shake(1.2 * power)
 		"lamp":
-			hit["node"].break_lamp()
+			# 한 발에 깨지지 않는다 — 맞을 때마다 크게 흔들리고, 체력이 다하면 터진다
+			var lamp_broke: bool = hit["node"].hit_lamp(target_pos, signf(target_pos.x - muzzle_pos.x))
 			b.impact_kind = Bullet.Impact.GLASS
-			camera.add_shake(3.0)
+			camera.add_shake(3.0 if lamp_broke else 1.4)
 		"beacon":
 			hit["node"].break_light()
 			b.impact_kind = Bullet.Impact.GLASS
@@ -528,7 +551,8 @@ func _on_turret_heat(heat: float, overheated: bool) -> void:
 
 
 ## 조종 시작/해제 — 조종 중엔 플레이어가 움직이지도 쏘지도 않는다(같은 마우스로 포신을 돌린다)
-func _on_turret_control(active: bool, turret: SentryTurret) -> void:
+## 조종을 잡고 놓는 **유일한 자리.** 센트리건·보행 기체가 같이 쓴다.
+func _on_turret_control(active: bool, turret: Node2D) -> void:
 	if active:
 		if controlled_turret != null and controlled_turret != turret:
 			controlled_turret.set_controlled(false)
@@ -595,7 +619,7 @@ func _finish_disconnect() -> void:
 		player.input_enabled = true
 
 
-## 방어 그리드에서 포탑 선택 — 채널 전환 글리치가 가장 어지러운 순간에 월드를 갈아 끼운다
+## 방어 그리드에서 기계 선택(포탑·보행 기체) — 채널 전환 글리치가 가장 어지러운 순간에 월드를 갈아 끼운다
 func _on_terminal_link(entry: Dictionary) -> void:
 	if terminal_busy or active_terminal == null:
 		return
@@ -603,6 +627,7 @@ func _on_terminal_link(entry: Dictionary) -> void:
 	remote_link = {
 		"room": current_room.room_id, "x": player.position.x, "facing": player.facing,
 		"terminal_id": active_terminal.terminal_id, "sentry_id": str(entry["id"]),
+		"kind": str(entry.get("kind", "sentry")),
 	}
 	terminal_screen.glitch(func(): _switch_to_remote(entry))
 
@@ -613,9 +638,12 @@ func _switch_to_remote(entry: Dictionary) -> void:
 	if target_room != current_room.room_id:
 		active_terminal = null                      # 이 방과 함께 사라진다 — 돌아올 때 id 로 다시 찾는다
 		_load_room(target_room, turret_x, 1)
-	var turret := current_room.sentry_by_id(str(entry["id"]))
+	# 포탑이냐 보행 기체냐는 entry["kind"] 가 알려 준다 (TerminalData.MACHINE_KINDS).
+	# 나머지 흐름은 완전히 같다 — 둘 다 activate()/set_controlled() 을 내므로 여기서 갈리지 않는다.
+	var kind := str(entry.get("kind", "sentry"))
+	var turret: Node2D = current_room.walker_by_id(str(entry["id"])) if kind == "walker" 		else current_room.sentry_by_id(str(entry["id"]))
 	if turret == null:
-		push_warning("센트리건 '%s' 을(를) 찾지 못했습니다 — 링크를 되돌립니다" % entry["id"])
+		push_warning("기계 '%s'(%s) 을(를) 찾지 못했습니다 — 링크를 되돌립니다" % [entry["id"], kind])
 		_return_from_remote()
 		return
 	# 플레이어는 숨은 채 포탑 자리에 선다 — 몬스터가 플레이어를 쫓으므로 자연히 포탑으로 몰려온다

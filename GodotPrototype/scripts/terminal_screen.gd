@@ -286,7 +286,8 @@ func _open_menu() -> void:
 			for e in _grid:
 				if e["authorized"]:
 					n += 1
-			_rows.append(_row("방어 그리드", "구역 지도에서 선택 — 관할 %d기 / 탐지 %d기" % [n, _grid.size()], n > 0, "grid"))
+			# 포탑만이 아니라 **보행 기체**도 이 목록에 올라온다 (TerminalData.MACHINE_KINDS)
+			_rows.append(_row("방어 그리드", "포탑·보행 기체 — 구역 지도에서 선택. 관할 %d기 / 탐지 %d기" % [n, _grid.size()], n > 0, "grid"))
 			_rows.append(_row("구역 경보 상태", "경보 없음 — 수동 발령 권한 없음", false, ""))
 		"rewire":
 			_rows.append(_row("전력 재분배", "가용 %d유닛" % TerminalData.POWER_BUDGET, true, "rewire"))

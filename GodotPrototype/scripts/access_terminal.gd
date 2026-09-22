@@ -65,14 +65,37 @@ func _ready() -> void:
 	_screen_light = PointLight2D.new()
 	_screen_light.name = "ScreenLight"
 	_screen_light.texture = Lighting.radial_texture()
-	_screen_light.texture_scale = Lighting.scale_for_radius(float(role["screen_radius"]))
+	_screen_light.texture_scale = Lighting.scale_for_radius(
+		float(role["screen_radius"]) * LightTuning.value("terminal", "radius", 1.0))
 	_screen_light.color = role["screen"]
-	_screen_light.energy = _base_energy
-	_screen_light.height = Lighting.LAMP_HEIGHT
+	_screen_light.energy = _base_energy * LightTuning.value("terminal", "energy", 1.0)
+	_screen_light.height = LightTuning.value("terminal", "height", Lighting.LAMP_HEIGHT)
+	LightTuning.register(self, "terminal")
 	# 벽걸이로 덮어쓴 경우 역할의 발광 지점(바닥 기준)을 그대로 쓰면 화면에서 멀리 떨어진다 — 스프라이트 중심으로
 	_screen_light.position = Vector2.ZERO if wall and not bool(role["wall"]) else role["screen_local"]
 	add_child(_screen_light)
 	Lighting.split_by_depth(_screen_light, 0.7)
+
+
+## 체액 자국이 앉을 표면 — HitProp 과 같은 창구(rect · is_solid_at)를 낸다.
+## 단말기는 방에서 제일 큰 프랍이라 이게 없으면 분사가 전부 뒷벽으로 넘어가 단말기 뒤에 가려진다.
+func stain_rect() -> Rect2:
+	var sp := get_node_or_null("TerminalSprite") as Sprite2D
+	if sp == null or sp.texture == null:
+		return Rect2()
+	var sz := sp.texture.get_size()
+	var o := sp.position + (-sz * 0.5 if sp.centered else sp.offset)
+	return Rect2(position + o, sz)
+
+
+var rect: Rect2:
+	get:
+		return stain_rect()
+
+
+## 실루엣 대신 사각형으로 친다 — 단말기는 거의 꽉 찬 상자라 이걸로 충분하다
+func is_solid_at(point: Vector2) -> bool:
+	return stain_rect().has_point(point)
 
 
 func _process(delta: float) -> void:

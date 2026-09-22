@@ -1,0 +1,112 @@
+{
+  "version": "structural-redesign-v3",
+  "created_date_local": "2026-09-22",
+  "generation_method": "built-in imagegen; one call per scene",
+  "status": "concept_candidates_pending_user_review",
+  "scope": "Existing opening keyframes 01–04 plus existing sacrifice ending 05; not five sequential FTUE beats.",
+  "original_images_overwritten": false,
+  "game_assets_replaced": false,
+  "validation": {
+    "file_metadata_and_hashes": true,
+    "visual_review": true,
+    "native_pixel_grid": false,
+    "grayscale_game_size": false,
+    "runtime": false,
+    "user_approved": false
+  },
+  "assets": [
+    {
+      "label": "제조 프롤로그 — 소프트웨어 부팅",
+      "story_role": "opening",
+      "file": "01_manufacturing_boot.png",
+      "prompt_file": "01_manufacturing_boot_prompt.md",
+      "original_keyframe": "../ftue_01_manufacturing_prologue_v2.png",
+      "input_images_in_order": [
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/Generated/FTUEConcepts/ftue_01_manufacturing_prologue_v2.png"
+      ],
+      "generated_source": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-660a1b12-7484-4a73-9568-4f30c6a6c88d.png",
+      "format": "PNG",
+      "width": 1978,
+      "height": 795,
+      "bytes": 1609331,
+      "sha256": "21fdc984fa43e67758c0b75345883134cd8a9cf35d01df5ddf2d00d7a354998c",
+      "changes_ko": "검은 화면·녹색 CRT·기존 부팅 정보는 유지. 진단 정보, 조준점, 정책 문구의 화면 배치를 재구성."
+    },
+    {
+      "label": "현재로 전환 — 정비·생활 공간",
+      "story_role": "opening",
+      "file": "02_present_transition.png",
+      "prompt_file": "02_present_transition_prompt.md",
+      "original_keyframe": "../ftue_02_present_transition.png",
+      "input_images_in_order": [
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/Generated/FTUEConcepts/ftue_02_present_transition.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/GameReady/Characters/HoodedMechanic/Frames/idle/idle_01.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/research-images/comparison/hall-redesign-v1.png"
+      ],
+      "generated_source": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-420b6918-6016-4a2e-95d8-f55fd79fe2a4.png",
+      "format": "PNG",
+      "width": 1979,
+      "height": 795,
+      "bytes": 1995426,
+      "sha256": "62b80e5c1f12442d1b5e9d1378730f60741ef6c4ec2c1820ecfc9dbc8ad4044e",
+      "changes_ko": "작은 독립 방 형태 대신 화면을 채우는 벽체 통합형 정비 베이·케이블 설비·수면칸으로 재설계. 로봇과 정비사의 만남은 유지."
+    },
+    {
+      "label": "평화로운 순찰 — 관측창 복도",
+      "story_role": "opening",
+      "file": "03_peaceful_patrol.png",
+      "prompt_file": "03_peaceful_patrol_prompt.md",
+      "original_keyframe": "../ftue_03_peaceful_patrol_v2.png",
+      "input_images_in_order": [
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/Generated/FTUEConcepts/ftue_03_peaceful_patrol_v2.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/GameReady/Characters/HoodedMechanic/Frames/idle/idle_01.png",
+        "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-420b6918-6016-4a2e-95d8-f55fd79fe2a4.png"
+      ],
+      "generated_source": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-01c246b6-dfb5-4faa-8889-19829a903bf8.png",
+      "format": "PNG",
+      "width": 1978,
+      "height": 795,
+      "bytes": 2145510,
+      "sha256": "a8ebe8028eb150d0cffb9ed5b0585ac25d03094e7f738cd4332b7a26783557ed",
+      "changes_ko": "대형 다각형 관측창, 왼쪽 서비스 알코브, 오른쪽 벽체 통합형 대기석을 새로 설계. 기존 네 인물과 아름다운 행성·기지 전망은 유지."
+    },
+    {
+      "label": "선체 파손 — 같은 관측창 복도의 사고",
+      "story_role": "opening",
+      "file": "04_hull_breach.png",
+      "prompt_file": "04_hull_breach_prompt.md",
+      "original_keyframe": "../ftue_04_hull_breach_v2.png",
+      "input_images_in_order": [
+        "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-01c246b6-dfb5-4faa-8889-19829a903bf8.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/Generated/FTUEConcepts/ftue_04_hull_breach_v2.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/GameReady/Characters/HoodedMechanic/Frames/idle/idle_01.png"
+      ],
+      "generated_source": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-b6e122e7-1ea9-43ea-af57-71f73e5ced4b.png",
+      "format": "PNG",
+      "width": 1977,
+      "height": 795,
+      "bytes": 2234337,
+      "sha256": "828513766e87f780d1968fde7b0050d32f6175c091d27e2d1ecd3e45004157bf",
+      "changes_ko": "새 03번 공간을 직접 참조해 창틀·바닥·알코브를 연결. 기존 감압 사고와 인물 행동을 유지하고, 파손·비상등·비산물은 새 건축 구조에 맞춰 재배치."
+    },
+    {
+      "label": "희생 엔딩 — 우주 표류",
+      "story_role": "ending_not_ftue",
+      "file": "05_ending_sacrifice.png",
+      "prompt_file": "05_ending_sacrifice_prompt.md",
+      "original_keyframe": "../ftue_05_ending_sacrifice.png",
+      "input_images_in_order": [
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/Generated/FTUEConcepts/ftue_05_ending_sacrifice.png",
+        "C:/Users/Loadcomplete/Documents/ChatGPT/sideview-shooter/Assets/GameReady/Characters/HoodedMechanic/Frames/idle/idle_01.png",
+        "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-01c246b6-dfb5-4faa-8889-19829a903bf8.png"
+      ],
+      "generated_source": "C:/Users/Loadcomplete/.codex/generated_images/01a0c792-3e77-7f32-b584-08f348b2cb36/exec-04012b01-110a-4ad5-bcd2-aae562354096.png",
+      "format": "PNG",
+      "width": 1942,
+      "height": 809,
+      "bytes": 2278362,
+      "sha256": "2fcfe3294f28dbb6cd1822e1d2e786cb04c4a70fe5aa83d8bc53149dc5fe89b8",
+      "changes_ko": "파손된 기지의 큰 방사형 실루엣, 행성, 탈출선의 위치 관계를 재구성. 손상된 로봇의 표류·탈출선·상태 표시·크레딧이라는 기존 결말은 유지."
+    }
+  ]
+}
