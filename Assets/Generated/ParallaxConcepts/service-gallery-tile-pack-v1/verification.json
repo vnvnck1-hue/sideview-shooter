@@ -1,0 +1,49 @@
+{
+  "attachment_matches_source": true,
+  "source_sha256": "cab3221c78b9b5169d93663bcaa9ae0dde19dfb626d47cd2235cdedc5f25927e",
+  "source_size": [
+    1978,
+    795
+  ],
+  "architecture_tile_cell_px": 128,
+  "rear_cells": 112,
+  "front_cells": 112,
+  "props": 4,
+  "live_fixtures": 5,
+  "repeat_tiles": [
+    {
+      "file": "GodotPrototype/assets/service_gallery/wall_repeat_256.png",
+      "wrap_x": true,
+      "wrap_y": true,
+      "edge_x": 0,
+      "edge_y": 0
+    },
+    {
+      "file": "GodotPrototype/assets/service_gallery/ceiling_repeat_256x128.png",
+      "wrap_x": true,
+      "wrap_y": true,
+      "edge_x": 0,
+      "edge_y": 0
+    },
+    {
+      "file": "GodotPrototype/assets/service_gallery/floor_repeat_256x128.png",
+      "wrap_x": true,
+      "wrap_y": true,
+      "edge_x": 0,
+      "edge_y": 0
+    },
+    {
+      "file": "GodotPrototype/assets/service_gallery/pillar_repeat_128.png",
+      "wrap_x": false,
+      "wrap_y": true,
+      "edge_x": 128,
+      "edge_y": 0
+    }
+  ],
+  "reassembled_diffuse_vs_source_mae_8bit": 4.356,
+  "godot_lights_on_vs_source_mae_8bit": 7.238,
+  "godot_lights_off_vs_source_mae_8bit": 7.744,
+  "godot_on_off_mae_8bit": 3.211,
+  "render_note": "OpenGL Godot 4.7.2 capture with global CRT overlay disabled; baseline lighting in concept was estimated, not mathematically unbaked.",
+  "approval_note": "A passed technical check is not a user art approval or proof of invisible-area reconstruction quality."
+}

@@ -25,6 +25,7 @@ const BUS_WEAPON := "Weapon"
 const BUS_AMB := "Ambience"
 const BUS_UI := "UI"
 const BUS_VOICE := "Voice"     # NPC 대사 블립. 따로 두면 대화 중에만 밸런스를 잡을 수 있다
+const BUS_MUSIC := "Music"     # BGM. 앰비언스와 분리 — 앰비언스 덕킹·로우패스를 타지 않는다
 
 ## 버스 레벨(dB). 카테고리 전체 밸런스는 여기서 잡는다.
 const MIX := {
@@ -36,6 +37,7 @@ const MIX := {
 	# 글자마다 하나씩 — 한 줄에 서른 번 울린다. 크면 금방 지친다.
 	# "들리는 소리" 가 아니라 "읽는 리듬" 으로 깔리는 지점이 이 언저리다.
 	BUS_VOICE: -13.0,
+	BUS_MUSIC: -6.0,
 }
 
 ## 버스 필터 컷오프(Hz).
@@ -226,6 +228,15 @@ const SOUNDS := {
 	},
 
 	# --- UI ---
+	# 보행 기체 접속음. 접속 연출(walker_link.gd)이 시작될 때 한 번 — 1.57초라 부팅 점검 줄과
+	# 첫 지지직 위를 그대로 덮는다. **UI 버스**에 둔다: 월드에서 나는 소리가 아니라
+	# "내 단말에서 링크가 붙는" 소리라 방 잔향·거리 감쇠를 타면 안 된다.
+	# 너무 크거나 작으면 여기 db 가 첫 번째 손잡이다 (ui_tick 은 -17 — 그건 짧은 딸깍이다).
+	"walker_link": {
+		"files": ["ui/walker_link_01.ogg"],
+		"db": -10.0, "db_var": 0.0, "pitch": [1.0, 1.0], "bus": BUS_UI,
+		"gap": 0.4, "voices": 1,
+	},
 	"ui_tick": {
 		"files": ["ui/tick_01.ogg"],
 		"db": -17.0, "db_var": 0.0, "pitch": [0.98, 1.02], "bus": BUS_UI,
@@ -331,6 +342,15 @@ const TEX_TRIM := {
 }
 const BED_FADE := 1.4          # 방 전환 시 크로스페이드 (초)
 
+## BGM. 로비를 뺀 모든 씬(본편·테스트·각종 랩)에서 반복 재생한다 — _on_scene_changed.
+## 씬마다 부르지 않고 여기서 씬 전환을 보고 정하므로, 랩이 늘어도 따로 손댈 게 없다.
+## pulse.ogg 원본은 RMS -21.6 dBFS 라 MUSIC_DB 와 Music 버스(-6)를 거쳐 실효 약 -31 dBFS —
+## 앰비언스 베드(-29)와 비슷한 자리에 깔린다. 총성이 묻히면 여기부터 내린다.
+const MUSIC_FIELD := "music/field_pulse.ogg"
+const MUSIC_DB := -3.0
+const MUSIC_FADE_IN := 2.0
+const MUSIC_FADE_OUT := 0.8
+
 const DRIP_INTERVAL := Vector2(5.5, 13.0)   # 물방울 원샷 간격 범위 (초)
 const DRIP_SPREAD := 900.0                  # 플레이어 기준 좌우로 흩뿌리는 범위
 
@@ -386,7 +406,6 @@ var _murmur_voice := ""
 var _murmur_tween: Tween
 var _pool_root: Node2D
 var _last_played := {}         # 키 → 마지막 재생 시각
-var _active := {}              # 키 → 현재 울리는 보이스 수
 
 var _bed_a: AudioStreamPlayer
 var _bed_b: AudioStreamPlayer
@@ -399,6 +418,8 @@ var _tex_path: Array[String] = []           # 슬롯이 지금 물고 있는 경
 var _tex_tween: Array[Tween] = []
 var _drip_t := 0.0
 var _listener: Node2D          # 물방울을 뿌릴 기준 (플레이어)
+var _music: AudioStreamPlayer
+var _music_tween: Tween
 
 var _fire_last := -99.0        # 마지막 발사 시각 — 잔향과 첫 발 보강의 기준
 var _fire_pos := Vector2.ZERO  # 마지막 총구 위치 (잔향을 여기서 울린다)
@@ -420,6 +441,8 @@ func _ready() -> void:
 	_build_beds()
 	_drip_t = randf_range(DRIP_INTERVAL.x, DRIP_INTERVAL.y)
 	_load_tuning()
+	get_tree().scene_changed.connect(_on_scene_changed)
+	_on_scene_changed.call_deferred()      # 첫 씬은 scene_changed 를 보내지 않는다
 
 
 # ---------------------------------------------------------------- 버스
@@ -428,7 +451,7 @@ func _ready() -> void:
 func _setup_buses() -> void:
 	AudioServer.set_bus_volume_db(0, MIX[BUS_MASTER])
 	_add_master_limiter()
-	for bus_name in [BUS_SFX, BUS_WEAPON, BUS_AMB, BUS_UI, BUS_VOICE]:
+	for bus_name in [BUS_SFX, BUS_WEAPON, BUS_AMB, BUS_UI, BUS_VOICE, BUS_MUSIC]:
 		var idx := _ensure_bus(bus_name)
 		AudioServer.set_bus_volume_db(idx, MIX[bus_name])
 		# Weapon 은 SFX 를 거쳐 나간다 — SFX 페이더 하나로 효과음 전체를 잡을 수 있다
@@ -562,16 +585,7 @@ func _add_lowpass(idx: int, cutoff: float) -> void:
 # ---------------------------------------------------------------- 보이스 풀
 
 func _build_pools() -> void:
-	_pool_root = Node2D.new()
-	_pool_root.name = "VoicePool"
-	add_child(_pool_root)
-	for i in range(POOL_2D):
-		var p := AudioStreamPlayer2D.new()
-		p.max_distance = MAX_DISTANCE
-		p.attenuation = 1.0
-		p.panning_strength = PANNING
-		_pool_root.add_child(p)
-		_pool_2d.append(p)
+	_build_pool_2d()
 	for i in range(POOL_FLAT):
 		var f := AudioStreamPlayer.new()
 		add_child(f)
@@ -585,6 +599,20 @@ func _build_pools() -> void:
 	add_child(_murmur)
 
 
+func _build_pool_2d() -> void:
+	_pool_root = Node2D.new()
+	_pool_root.name = "VoicePool"
+	add_child(_pool_root)
+	_pool_2d.clear()
+	for i in range(POOL_2D):
+		var p := AudioStreamPlayer2D.new()
+		p.max_distance = MAX_DISTANCE
+		p.attenuation = 1.0
+		p.panning_strength = PANNING
+		_pool_root.add_child(p)
+		_pool_2d.append(p)
+
+
 ## 월드(카메라가 있는 뷰포트)에 보이스 풀을 붙인다. 이걸 호출해야 위치 기반 패닝이 동작한다.
 ##
 ## 월드는 SubViewport 안에 있다(main.gd:_setup_view). 여기에 함정이 하나 있다 —
@@ -592,9 +620,14 @@ func _build_pools() -> void:
 ## 루트 창은 기본으로 켜져 있지만 **SubViewport 는 audio_listener_enable_2d 가 기본 false** 다.
 ## 켜 주지 않으면 발사·발소리·탄착이 전부 무음이 된다(경고도 안 뜬다).
 ## 그래서 붙이는 쪽에서 리스너까지 같이 책임진다 — 뷰 구조가 바뀌어도 빠뜨릴 일이 없다.
+##
+## 풀은 월드의 자식이 되므로 **씬이 바뀌면 월드와 함께 해제된다.** 예전엔 여기서 그걸 몰라
+## 로비로 한 번 나갔다 오면(프리셋 재로드 포함) 총·발소리·탄착·크리처 소리가 전부 무음이 됐다
+## (위치 없는 UI·앰비언스·BGM 만 살아남아 원인이 BGM 처럼 보였다). 해제됐으면 새로 만든다.
 func attach_to_world(world: Node) -> void:
-	if world == null or _pool_root == null:
+	if world == null:
 		return
+	_ensure_pool_2d()
 	if _pool_root.get_parent() != world:
 		_pool_root.get_parent().remove_child(_pool_root)
 		world.add_child(_pool_root)
@@ -608,7 +641,16 @@ func set_listener(node: Node2D) -> void:
 	_listener = node
 
 
+## 월드를 붙이지 않는 씬(보행 랩 등)에서도 풀이 살아 있게 — 해제됐으면 Audio 밑에 다시 만든다.
+func _ensure_pool_2d() -> void:
+	if is_instance_valid(_pool_root):
+		return
+	_build_pool_2d()
+
+
 func _free_2d() -> AudioStreamPlayer2D:
+	if not _pool_root.is_inside_tree():
+		return null     # 씬 전환 한가운데 — 옛 월드와 함께 트리에서 빠졌고 아직 해제 전이다
 	for p in _pool_2d:
 		if not p.playing:
 			return p
@@ -656,9 +698,23 @@ func _allowed(key: String, cfg: Dictionary) -> bool:
 	var gap := float(cfg.get("gap", 0.0))
 	if gap > 0.0 and now - float(_last_played.get(key, -99.0)) < gap:
 		return false
-	if int(_active.get(key, 0)) >= int(cfg.get("voices", 4)):
+	if _voices_of(key) >= int(cfg.get("voices", 4)):
 		return false
 	return true
+
+
+## 이 키로 지금 울리고 있는 보이스 수. 카운터를 올리고 finished 로 내리던 방식은
+## 씬 전환으로 재생이 끊기면 finished 가 오지 않아 수가 쌓인 채 남았고, 몇 번 오가면
+## voices 상한에 걸려 총소리가 통째로 막혔다. 그래서 매번 풀을 직접 센다 (26개 — 싸다).
+func _voices_of(key: String) -> int:
+	var n := 0
+	for p in _pool_2d:
+		if is_instance_valid(p) and p.playing and p.get_meta("sfx_key", "") == key:
+			n += 1
+	for p in _pool_flat:
+		if p.playing and p.get_meta("sfx_key", "") == key:
+			n += 1
+	return n
 
 
 func _apply(player, cfg: Dictionary) -> void:
@@ -674,6 +730,7 @@ func _apply(player, cfg: Dictionary) -> void:
 func play_at(key: String, pos: Vector2, db_offset := 0.0, pitch_mul := 1.0) -> void:
 	if not enabled or not SOUNDS.has(key):
 		return
+	_ensure_pool_2d()
 	var cfg: Dictionary = SOUNDS[key]
 	if not _allowed(key, cfg):
 		return
@@ -801,10 +858,7 @@ func _murmur_fade(to_db: float, stop_after: bool) -> void:
 
 func _mark(key: String, player) -> void:
 	_last_played[key] = Time.get_ticks_msec() / 1000.0
-	_active[key] = int(_active.get(key, 0)) + 1
-	var release := func() -> void:
-		_active[key] = maxi(int(_active.get(key, 1)) - 1, 0)
-	player.finished.connect(release, CONNECT_ONE_SHOT)
+	player.set_meta("sfx_key", key)
 
 
 # ---------------------------------------------------------------- 복합 이벤트
@@ -862,6 +916,11 @@ func _build_beds() -> void:
 		_tex.append(_make_bed())
 		_tex_path.append("")
 		_tex_tween.append(null)
+	_music = AudioStreamPlayer.new()
+	_music.name = "Music"
+	_music.bus = BUS_MUSIC
+	_music.volume_db = -80.0
+	add_child(_music)
 
 
 func _make_bed() -> AudioStreamPlayer:
@@ -1083,6 +1142,45 @@ func stop_ambience() -> void:
 	for i in range(_tex.size()):
 		_tex[i].stop()
 		_tex_path[i] = ""
+
+
+# ---------------------------------------------------------------- BGM
+
+## BGM 을 반복 재생한다. 같은 곡이 이미 돌고 있으면 처음으로 되감지 않는다 —
+## 프리셋 전환처럼 씬을 다시 로드해도 곡이 이어져야 한다(나가면서 건 페이드아웃만 되돌린다).
+func play_music(rel: String, db := MUSIC_DB) -> void:
+	if not enabled:
+		return
+	var s := _looped(rel)
+	if s == null:
+		return
+	if _music_tween != null and _music_tween.is_valid():
+		_music_tween.kill()
+	if _music.stream != s or not _music.playing:
+		_music.stream = s
+		_music.volume_db = -80.0
+		_music.play()
+	_music_tween = create_tween()
+	_music_tween.tween_property(_music, "volume_db", db, MUSIC_FADE_IN)
+
+
+## 로비면 내리고, 그 밖의 씬이면 필드 BGM. 이미 돌고 있으면 play_music 이 이어 준다.
+func _on_scene_changed() -> void:
+	var scene := get_tree().current_scene
+	if scene == null or scene.scene_file_path == AppFlow.LOBBY_SCENE:
+		stop_music()
+	else:
+		play_music(MUSIC_FIELD)
+
+
+func stop_music(fade := MUSIC_FADE_OUT) -> void:
+	if _music == null or not _music.playing:
+		return
+	if _music_tween != null and _music_tween.is_valid():
+		_music_tween.kill()
+	_music_tween = create_tween()
+	_music_tween.tween_property(_music, "volume_db", -80.0, fade)
+	_music_tween.tween_callback(_music.stop)
 
 
 ## 시간에 매달린 두 가지를 돌린다.

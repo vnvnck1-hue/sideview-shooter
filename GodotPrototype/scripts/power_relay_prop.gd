@@ -77,12 +77,14 @@ func is_solid_at(point: Vector2) -> bool:
 	return false
 
 
-func hit(dir: float, hit_y: float, hit_point: Vector2 = Vector2.INF) -> void:
+## power: 위력 배율 (HitProp.hit 과 같은 시그니처 — main._spawn_shot 이 프랍 종류를 가리지 않고 넷을 넘긴다.
+## 셋만 받으면 호출이 오류로 끊겨 탄이 트리에 붙지 못하고 고아 노드로 샌다)
+func hit(dir: float, hit_y: float, hit_point: Vector2 = Vector2.INF, power := 1.0) -> void:
 	var local := to_local(hit_point) if hit_point.is_finite() else Vector2(0, -160)
 	var id := _part_for_hit(local)
 	if id.is_empty():
 		id = "inner_core"
-	_damage[id] = float(_damage[id]) + IMPACT_DAMAGE
+	_damage[id] = float(_damage[id]) + IMPACT_DAMAGE * power
 	if _assembled.visible and float(_damage[id]) < DAMAGE_TO_DETACH:
 		# 충격이 누적되는 동안 전체 캐비닛만 살짝 흔들어 분리 전에도 반응한다.
 		var kick := create_tween()

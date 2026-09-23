@@ -16,7 +16,8 @@ extends "res://scripts/main.gd"
 ##
 ## 조작은 본편과 같고, 여기만:  [ ] 열린 구획 사이 건너뛰기 · W/↑ 로 구역 문 열기
 
-const ZOOM_WIDE := 0          # 시작 줌 — 화면 배율 ×2, 가시 폭 4,480px. 넓이를 보는 씬이라 가장 넓게 시작한다.
+## 시작 줌은 본편과 같은 기본값(Main.ZOOM_DEFAULT, 표준 ×3)을 쓴다 (2026-09-23). 예전엔 넓이를 본다고
+## ×2 로 덮어써서 이 씬만 화면이 달랐다 — 넓게 보고 싶으면 F3 으로 바꾼다.
 const GATE_STOP_PAD := 40.0   # 닫힌 문 앞에서 플레이어가 멈추는 여유
 
 var space_label: Label
@@ -31,7 +32,6 @@ func _ready() -> void:
 	# 방 데이터는 super() 의 _load_room 보다 **먼저** 올라가야 한다
 	SpaceLabData.register()
 	AppFlow.start_room = SpaceLabData.ROOM_ID
-	zoom_index = ZOOM_WIDE
 	super()
 	_spans = SpaceLabData.spans()
 	_build_gates()

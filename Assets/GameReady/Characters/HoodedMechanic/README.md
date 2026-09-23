@@ -1,4 +1,18 @@
-# Hooded Mechanic Animation v1
+# Hooded Mechanic
+
+> **2026-09-23 — 고화질 원화로 전면 교체 (현행).** 게임이 쓰는 플레이어 리소스는 이제
+> `Tools/build_hooded_mechanic_hq.py` 가 원화 한 장
+> (`Assets/Generated/PlayerConcepts/hooded_mechanic_hq_source_v1.webp`, 128² 네이티브 · 키 93 art px)에서
+> 파츠 리그(머리 / 팔+총 / 몸통 / 다리 3관절 IK)로 전부 다시 만든다.
+> - 셀 512² (네이티브 128² × 4), 피벗 바닥 중심. 전신 높이 372 월드 px (구 v1 은 260).
+> - 출력: `GodotPrototype/assets/character/{Split,Action,Frames}` + 검수물 `HQ/` (네이티브 원화·파츠·검수 시트).
+> - 이후 `python Tools/build_normal_maps.py character/Split`. 인게임 검수: `tools/player_pose_shot.gd`.
+> - 아래 v1 문서와 `build_hooded_mechanic_{animation,split,head_split,run}` · `action_frames` 스크립트는 **구 리소스용**이다.
+>   다시 돌리면 새 리소스를 덮어쓰니 실행하지 않는다.
+
+---
+
+## (구) Hooded Mechanic Animation v1
 
 붉은 후드 정비공 캐릭터의 러프 최소 키프레임 리소스다.
 

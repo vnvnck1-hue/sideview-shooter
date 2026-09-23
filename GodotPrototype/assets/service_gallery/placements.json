@@ -1,0 +1,133 @@
+[
+  {
+    "id": "workbench",
+    "type": "prop",
+    "position": [
+      205,
+      473
+    ],
+    "repair_position": [
+      198,
+      467
+    ],
+    "texture": "res://assets/service_gallery/props/workbench.png",
+    "repair_texture": "res://assets/service_gallery/repair/workbench_repair.png"
+  },
+  {
+    "id": "motor_cart",
+    "type": "prop",
+    "position": [
+      1300,
+      478
+    ],
+    "repair_position": [
+      1292,
+      470
+    ],
+    "texture": "res://assets/service_gallery/props/motor_cart.png",
+    "repair_texture": "res://assets/service_gallery/repair/motor_cart_repair.png"
+  },
+  {
+    "id": "service_cabinet",
+    "type": "prop",
+    "position": [
+      1601,
+      514
+    ],
+    "repair_position": [
+      1597,
+      508
+    ],
+    "texture": "res://assets/service_gallery/props/service_cabinet.png",
+    "repair_texture": "res://assets/service_gallery/repair/service_cabinet_repair.png"
+  },
+  {
+    "id": "storage_cases",
+    "type": "prop",
+    "position": [
+      1744,
+      488
+    ],
+    "repair_position": [
+      1738,
+      481
+    ],
+    "texture": "res://assets/service_gallery/props/storage_cases.png",
+    "repair_texture": "res://assets/service_gallery/repair/storage_cases_repair.png"
+  },
+  {
+    "id": "wall_lantern",
+    "type": "light_fixture",
+    "position": [
+      129,
+      160
+    ],
+    "kind": "warm",
+    "emitter": [
+      151,
+      205
+    ],
+    "radius": 190,
+    "texture": "res://assets/service_gallery/fixtures/wall_lantern.png"
+  },
+  {
+    "id": "ceiling_strip",
+    "type": "light_fixture",
+    "position": [
+      766,
+      77
+    ],
+    "kind": "warm",
+    "emitter": [
+      844,
+      97
+    ],
+    "radius": 305,
+    "texture": "res://assets/service_gallery/fixtures/ceiling_strip.png"
+  },
+  {
+    "id": "blue_strip_left",
+    "type": "light_fixture",
+    "position": [
+      427,
+      186
+    ],
+    "kind": "cool",
+    "emitter": [
+      480,
+      199
+    ],
+    "radius": 235,
+    "texture": "res://assets/service_gallery/fixtures/blue_strip_left.png"
+  },
+  {
+    "id": "blue_strip_mid",
+    "type": "light_fixture",
+    "position": [
+      837,
+      187
+    ],
+    "kind": "cool",
+    "emitter": [
+      894,
+      200
+    ],
+    "radius": 235,
+    "texture": "res://assets/service_gallery/fixtures/blue_strip_mid.png"
+  },
+  {
+    "id": "blue_strip_right",
+    "type": "light_fixture",
+    "position": [
+      1785,
+      187
+    ],
+    "kind": "cool",
+    "emitter": [
+      1840,
+      200
+    ],
+    "radius": 235,
+    "texture": "res://assets/service_gallery/fixtures/blue_strip_right.png"
+  }
+]

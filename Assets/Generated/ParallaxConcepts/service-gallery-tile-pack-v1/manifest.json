@@ -1,0 +1,307 @@
+{
+  "source": "Assets/Generated/ParallaxConcepts/two-layer-maintenance-v1/A_service_gallery.png",
+  "source_sha256": "cab3221c78b9b5169d93663bcaa9ae0dde19dfb626d47cd2235cdedc5f25927e",
+  "size": [
+    1978,
+    795
+  ],
+  "cell": 128,
+  "atlas": "GodotPrototype/assets/service_gallery/architecture_atlas_128.png",
+  "rear_atlas": "GodotPrototype/assets/service_gallery/rear_atlas_128.png",
+  "front_atlas": "GodotPrototype/assets/service_gallery/front_atlas_128.png",
+  "atlas_grid": [
+    16,
+    7
+  ],
+  "actual_grid_coverage": [
+    16,
+    7
+  ],
+  "godot_tilesets": [
+    "GodotPrototype/assets/service_gallery/service_gallery_rear.tres",
+    "GodotPrototype/assets/service_gallery/service_gallery_front.tres",
+    "GodotPrototype/assets/service_gallery/service_gallery_repeat.tres"
+  ],
+  "godot_pack_scene": "GodotPrototype/scenes/ServiceGalleryPack.tscn",
+  "godot_preview_scene": "GodotPrototype/scenes/ServiceGalleryPreview.tscn",
+  "architecture_diffuse_sha256": "43ccd4607d759da765aac1dedd886c4b268c418e8c956c5b5de077276e9c3a1e",
+  "rear_diffuse_sha256": "7aa3272c37daf1c9ded5f4d2f27c1bd71e3f7d20412cb325b589a44ce07cee65",
+  "front_architecture_sha256": "7c09951ed14579b60048a8ce4c390d730792473d2807a13e850dd57305ab0d73",
+  "assets": [
+    {
+      "id": "workbench",
+      "type": "prop",
+      "file": "GodotPrototype/assets/service_gallery/props/workbench.png",
+      "source_rect": [
+        205,
+        473,
+        561,
+        661
+      ],
+      "position": [
+        205,
+        473
+      ],
+      "sha256": "84de2d99bbc374dc5b2237f18ee5f952c2549d78eca7fc80f4467d025b6c2f73",
+      "repair_file": "GodotPrototype/assets/service_gallery/repair/workbench_repair.png",
+      "repair_position": [
+        198,
+        467
+      ],
+      "repair_sha256": "1f0b1e698383658f98eb4c6ec600381b0221296ab55e07be9e8f8fe3053df7b0"
+    },
+    {
+      "id": "motor_cart",
+      "type": "prop",
+      "file": "GodotPrototype/assets/service_gallery/props/motor_cart.png",
+      "source_rect": [
+        1300,
+        478,
+        1603,
+        662
+      ],
+      "position": [
+        1300,
+        478
+      ],
+      "sha256": "7637d92232c70fdb281564bfa61ec5984b69155008133b3380f36cc1e0eb799d",
+      "repair_file": "GodotPrototype/assets/service_gallery/repair/motor_cart_repair.png",
+      "repair_position": [
+        1292,
+        470
+      ],
+      "repair_sha256": "3723ed144f27d68fb5ae09b0c1b1c8c781710fcfaab47a200883323f0deaf463"
+    },
+    {
+      "id": "service_cabinet",
+      "type": "prop",
+      "file": "GodotPrototype/assets/service_gallery/props/service_cabinet.png",
+      "source_rect": [
+        1601,
+        514,
+        1729,
+        659
+      ],
+      "position": [
+        1601,
+        514
+      ],
+      "sha256": "01d951016da5582e08cb82329e8f78a36fccd29ccf5d7845dc71b3a2febf9250",
+      "repair_file": "GodotPrototype/assets/service_gallery/repair/service_cabinet_repair.png",
+      "repair_position": [
+        1597,
+        508
+      ],
+      "repair_sha256": "bcc38aaa89450442593da835057e9fd1bcfbb99daeceefc7fd013807fad88a00"
+    },
+    {
+      "id": "storage_cases",
+      "type": "prop",
+      "file": "GodotPrototype/assets/service_gallery/props/storage_cases.png",
+      "source_rect": [
+        1744,
+        488,
+        1978,
+        648
+      ],
+      "position": [
+        1744,
+        488
+      ],
+      "sha256": "f5c5984d7772ff133a12ab4bc32331d64965295c9dfd60544bad65f6284b6ca5",
+      "repair_file": "GodotPrototype/assets/service_gallery/repair/storage_cases_repair.png",
+      "repair_position": [
+        1738,
+        481
+      ],
+      "repair_sha256": "45e95f215738c4d7039086df4c102e8926d58489259aeaddaa7d8c0e2806d65d"
+    },
+    {
+      "id": "wall_lantern",
+      "type": "light_fixture",
+      "file": "GodotPrototype/assets/service_gallery/fixtures/wall_lantern.png",
+      "source_rect": [
+        129,
+        160,
+        174,
+        240
+      ],
+      "position": [
+        129,
+        160
+      ],
+      "sha256": "22480ed3ceac6c51abc39d438e7609a894bec0b31441120e5954ae48daf3bfe7",
+      "kind": "warm",
+      "emitter": [
+        151,
+        205
+      ],
+      "radius": 190
+    },
+    {
+      "id": "ceiling_strip",
+      "type": "light_fixture",
+      "file": "GodotPrototype/assets/service_gallery/fixtures/ceiling_strip.png",
+      "source_rect": [
+        766,
+        77,
+        920,
+        111
+      ],
+      "position": [
+        766,
+        77
+      ],
+      "sha256": "49114d95da3255b9d56a0af8d694a5f4b52ab5dd1a1c161336299ab375373609",
+      "kind": "warm",
+      "emitter": [
+        844,
+        97
+      ],
+      "radius": 305
+    },
+    {
+      "id": "blue_strip_left",
+      "type": "light_fixture",
+      "file": "GodotPrototype/assets/service_gallery/fixtures/blue_strip_left.png",
+      "source_rect": [
+        427,
+        186,
+        533,
+        213
+      ],
+      "position": [
+        427,
+        186
+      ],
+      "sha256": "c4a7b454c343000a5215433fe705e2212d27a7618181425255b3a5a62bc1d08d",
+      "kind": "cool",
+      "emitter": [
+        480,
+        199
+      ],
+      "radius": 235
+    },
+    {
+      "id": "blue_strip_mid",
+      "type": "light_fixture",
+      "file": "GodotPrototype/assets/service_gallery/fixtures/blue_strip_mid.png",
+      "source_rect": [
+        837,
+        187,
+        950,
+        214
+      ],
+      "position": [
+        837,
+        187
+      ],
+      "sha256": "81f013c05f58989b58e8a6b19bc1f3bd97e0171e5e79d820a64d010112bc2fae",
+      "kind": "cool",
+      "emitter": [
+        894,
+        200
+      ],
+      "radius": 235
+    },
+    {
+      "id": "blue_strip_right",
+      "type": "light_fixture",
+      "file": "GodotPrototype/assets/service_gallery/fixtures/blue_strip_right.png",
+      "source_rect": [
+        1785,
+        187,
+        1896,
+        214
+      ],
+      "position": [
+        1785,
+        187
+      ],
+      "sha256": "68f76df6ee4f8cf3c85c5b42b5cd1f8d7f83e0b5a6462479f31768f35f929ca5",
+      "kind": "cool",
+      "emitter": [
+        1840,
+        200
+      ],
+      "radius": 235
+    }
+  ],
+  "repeat_tiles": [
+    {
+      "file": "GodotPrototype/assets/service_gallery/wall_repeat_256.png",
+      "source_rect": [
+        1010,
+        250,
+        1266,
+        506
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "wrap_x": true,
+      "wrap_y": true,
+      "wrap_x_max_channel_difference": 0,
+      "wrap_y_max_channel_difference": 0,
+      "sha256": "a9c3d88ad3bdfb338aaa5769af39d4f02f368a63d816983e314ab7c4a3d9eda0"
+    },
+    {
+      "file": "GodotPrototype/assets/service_gallery/ceiling_repeat_256x128.png",
+      "source_rect": [
+        924,
+        0,
+        1180,
+        128
+      ],
+      "size": [
+        256,
+        128
+      ],
+      "wrap_x": true,
+      "wrap_y": true,
+      "wrap_x_max_channel_difference": 0,
+      "wrap_y_max_channel_difference": 0,
+      "sha256": "8a4284b49212d373e7de55b65992e111551a6c0d1fe949cb125642acc2b923e6"
+    },
+    {
+      "file": "GodotPrototype/assets/service_gallery/floor_repeat_256x128.png",
+      "source_rect": [
+        768,
+        658,
+        1024,
+        786
+      ],
+      "size": [
+        256,
+        128
+      ],
+      "wrap_x": true,
+      "wrap_y": true,
+      "wrap_x_max_channel_difference": 0,
+      "wrap_y_max_channel_difference": 0,
+      "sha256": "d8c44e4d2b756fb79ac31d4783602f6f53711f5acb2f6c6c8fe7b354fb6a0eaf"
+    },
+    {
+      "file": "GodotPrototype/assets/service_gallery/pillar_repeat_128.png",
+      "source_rect": [
+        96,
+        310,
+        224,
+        438
+      ],
+      "size": [
+        128,
+        128
+      ],
+      "wrap_x": false,
+      "wrap_y": true,
+      "wrap_x_max_channel_difference": 128,
+      "wrap_y_max_channel_difference": 0,
+      "sha256": "465d5f86af18a8e8412095e222ce09e037b6f1d03afd7f86a1b80e6e14aeffac"
+    }
+  ],
+  "review_preview": "Assets/Generated/ParallaxConcepts/service-gallery-tile-pack-v1/assembled_diffuse_preview.png",
+  "props_removed_preview": "Assets/Generated/ParallaxConcepts/service-gallery-tile-pack-v1/props_removed_repaired_preview.png",
+  "note": "Original pixels are preserved in source. Diffuse is estimated from painted lighting, not pixel-identical to lit source. Prop restoration pixels hidden by the source art are estimated from nearby visible regions."
+}

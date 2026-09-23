@@ -30,6 +30,7 @@ BLOCK_BY_PREFIX = {
 }
 DEFAULT_BLOCK = 4
 SKIP_DIRS = {"normals"}
+SKIP_PREFIXES = ("character/GiantToxicTumorCrawler/",)  # 상세 원본 기반 거대종 프레임 보존
 NO_ALIGN_PREFIX = ("tiles",)          # 타일: 이음새 때문에 격자 오프셋 탐색 안 함
 ALPHA_CUT = 128
 
@@ -117,6 +118,7 @@ def main() -> None:
             files += sorted(p.rglob("*.png")) if p.is_dir() else [p]
     else:
         files = [f for f in sorted(ROOT.rglob("*.png")) if not (set(f.relative_to(ROOT).parts) & SKIP_DIRS)]
+    files = [f for f in files if not f.relative_to(ROOT).as_posix().startswith(SKIP_PREFIXES)]
     for f in files:
         rel = f.relative_to(ROOT)
         b = block_size_for(rel)

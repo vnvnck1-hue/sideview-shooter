@@ -93,7 +93,7 @@ const CAST := {
 	## head 는 Main 이 플레이어 말풍선 꼬리를 붙일 높이로 그대로 읽는다 (Main._player_head).
 	"player": {
 		"name": "UNIT-7", "short": "UNIT-7",
-		"tex": "", "head": 272.0, "body": 150.0,
+		"tex": "", "head": 372.0, "body": 212.0,
 		"accent": Color(1.0, 0.45, 0.38), "voice": "machine", "tone": 1.0,
 	},
 }

@@ -1,0 +1,38 @@
+[gd_resource type="TileSet" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/service_gallery/wall_repeat_256.png" id="1_00vgh"]
+[ext_resource type="Texture2D" path="res://assets/service_gallery/ceiling_repeat_256x128.png" id="2_2m3o2"]
+[ext_resource type="Texture2D" path="res://assets/service_gallery/floor_repeat_256x128.png" id="3_etped"]
+[ext_resource type="Texture2D" path="res://assets/service_gallery/pillar_repeat_128.png" id="4_3pcgd"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fw176"]
+texture = ExtResource("1_00vgh")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_wfedd"]
+texture = ExtResource("2_2m3o2")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+1:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_asnuw"]
+texture = ExtResource("3_etped")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+1:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fwlug"]
+texture = ExtResource("4_3pcgd")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+
+[resource]
+tile_size = Vector2i(128, 128)
+sources/0 = SubResource("TileSetAtlasSource_fw176")
+sources/1 = SubResource("TileSetAtlasSource_wfedd")
+sources/2 = SubResource("TileSetAtlasSource_asnuw")
+sources/3 = SubResource("TileSetAtlasSource_fwlug")

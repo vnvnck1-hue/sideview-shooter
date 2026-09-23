@@ -9,6 +9,7 @@ extends Node2D
 
 const LightMood := preload("res://scripts/light_mood.gd")
 const PropShadow := preload("res://scripts/prop_shadow.gd")
+const GalleryPlaytest := preload("res://scripts/service_gallery_playtest.gd")
 
 ## 몬스터의 독액이 플레이어에 맞음 (Main 이 카메라 흔들림·밀림 처리)
 signal player_hit(point: Vector2, dir: float)
@@ -281,6 +282,8 @@ func build(id: String) -> void:
 	wall_shadow.z_index = DepthLayers.Z_FOREGROUND + 1
 	add_child(wall_shadow)
 	wall_shadow.build(solid, heights)
+	if data.get("visual_pack", "") == "service_gallery":
+		GalleryPlaytest.decorate(self)
 
 
 ## 근경 랩용: 몬스터를 모두 치우고 스폰을 멈춘다
@@ -461,7 +464,9 @@ func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 			# 센트리건과 달리 **걸어다니므로** 방 좌우 끝을 알려 준다 — 벽을 뚫고 나가지 않게.
 			var unit := WalkerUnit.new()
 			unit.z_index = 1
+			unit.name = "Walker_" + str(prop.get("id", "?"))    # 디버그·필름에서 알아볼 수 있게
 			unit.walker_id = str(prop.get("id", ""))
+			unit.display_name = str(prop.get("name", "보행 기체"))
 			unit.setup(x, floor_y, self)
 			unit.set_span(WALKER_MARGIN, float(width) - WALKER_MARGIN)
 			parent.add_child(unit)
@@ -859,18 +864,6 @@ func hit_at(point: Vector2) -> Dictionary:
 	if room_tiles and room_tiles.is_wall_at(point):
 		return {"kind": "wall", "node": {}}
 	return {"kind": "none"}
-
-
-## 벽·문 표면에 열 잔광을 남긴다 (hit_at 이 돌려준 "wall" 항목). 타일맵 벽(빈 항목)은 잔광 없음.
-func heat_wall(entry: Dictionary, point: Vector2) -> void:
-	if not entry.has("heat"):
-		return
-	var r: Rect2 = entry["rect"]
-	var uv := ((point - r.position) / r.size).clamp(Vector2.ZERO, Vector2.ONE)
-	var s: Sprite2D = entry["sprite"]
-	if s.flip_h:
-		uv.x = 1.0 - uv.x
-	entry["heat"].add_hit(uv, 1.0)
 
 
 ## 사격 한 발이 방에 미치는 물리 영향 (전선 튕김 등)

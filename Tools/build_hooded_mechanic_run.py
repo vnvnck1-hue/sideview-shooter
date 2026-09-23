@@ -1,3 +1,4 @@
+# [구 리소스용 — 2026-09-23 고화질 원화 교체 뒤 사용 중지. 현행: Tools/build_hooded_mechanic_hq.py. 실행하면 새 리소스를 덮어쓴다]
 """Bake the generated four-pose run sheet into the player's Native4 split format.
 
 Input: Assets/Generated/PlayerRun/hooded_mechanic_run_sheet_v1.png

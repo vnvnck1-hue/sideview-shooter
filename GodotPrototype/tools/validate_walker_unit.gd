@@ -13,6 +13,8 @@ extends SceneTree
 ##   4) 조종 중 사격이 Main 의 공용 사격 경로로 나간다
 ##   5) **걸으면 네 발이 따라 딛고, 그려진 다리가 그 발을 따라간다** (한 번 조용히 깨졌던 자리)
 ##   6) 방 좌우 끝을 넘어 걸어 나가지 않는다
+##   7) 조종 중에는 **카메라가 기체를 따라가고**, 내리면 플레이어로 돌아온다
+##   8) 접속·해제 연출(WalkerLink)이 조작을 가두지 않는다
 
 const STEP := 1.0 / 60.0
 
@@ -78,6 +80,20 @@ func _run() -> void:
 	_check(unit.state == WalkerUnit.State.DORMANT, "처음엔 꺼져 있다")
 	_check(not unit.controlled, "처음엔 조종 중이 아니다")
 	_check(unit.prompt_text().contains("기동"), "꺼져 있을 때 안내는 '기동'")
+
+	# 접속음 — 표에 있고, 파일이 실제로 로드되고, UI 버스로 나가는가.
+	# 파일이 빠지거나 경로가 어긋나도 게임은 조용히 잘 돌기 때문에(소리만 안 난다) 검사로 박아 둔다.
+	var au := _main.get_tree().root.get_node_or_null("/root/Audio")
+	if au != null:
+		var cfg: Dictionary = au.SOUNDS.get("walker_link", {})
+		_check(not cfg.is_empty(), "접속음이 Audio.SOUNDS 에 등록되어 있다")
+		if not cfg.is_empty():
+			_check(String(cfg["bus"]) == "UI",
+				"접속음은 UI 버스로 나간다 (방 잔향·거리 감쇠를 타지 않게)")
+			var st = load(String(au.DIR) + String((cfg["files"] as Array)[0]))
+			_check(st != null, "접속음 파일이 실제로 있다")
+			if st != null:
+				_notes.append("  ---  접속음 길이 %.2f초 (연출 %.1f초)" % [st.get_length(), WalkerLink.SETTLE_SPAN])
 
 	unit.activate()
 	_check(unit.state == WalkerUnit.State.WAKING, "W/↑ 로 일어서기 시작한다")
@@ -166,18 +182,63 @@ func _run() -> void:
 	unit._process(STEP)
 	_check(unit.position.x > 0.0, "왼쪽 벽을 넘지 않는다 (x %d > 0)" % int(unit.position.x))
 
-	# ── 7) 내리기 ─────────────────────────────────────────────────────────────
+	# ── 7) 카메라 주체가 기체로 넘어왔는가 ────────────────────────────────────
+	# 기체는 걸어다니므로 카메라가 플레이어에 붙어 있으면 기체만 화면 밖으로 나간다.
+	var cam := _main.get("camera") as Camera2D
+	_check(cam.target == unit, "조종 중에는 카메라가 **기체**를 따라간다")
+	_check(not is_finite(cam.focus_x), "잡아 둔 초점은 풀려 있다 (고정점이면 걸어가는 기체를 못 따라간다)")
+	# 바로 앞 검사가 기체를 벽까지 순간이동시켰다 — 카메라가 그 자리로 쓸려 가는 중이면
+	# 걸어서 움직인 양과 섞인다. 한 번 붙여 놓고 잰다 (한 번 이걸로 -154px 가 나왔다).
+	cam.snap()
+	var cam0 := cam.position.x
+	for i in range(int(0.8 / STEP)):
+		unit._walker.input_dir = 1.0
+		unit._walker.tick(STEP)
+		unit._clamp_span()
+		unit._sync_node()
+		cam._process(STEP)
+	unit._walker.input_dir = 0.0
+	_check(cam.position.x > cam0 + 20.0, "기체가 걸어가면 카메라가 따라 움직인다 (%d px)" % int(cam.position.x - cam0))
+
+	# ── 8) 접속 중 화면·플레이어 자세 ─────────────────────────────────────────
+	# "기체의 눈으로 본다" 는 화면 세 가지로 말한다 — CRT 한 단 · 물러난 줌 · 가끔의 지지직.
+	# 셋 다 _on_turret_control 한 곳에서만 갈리므로, 어떤 경로로 풀리든 원래대로 돌아와야 한다.
+	_check(CrtPreset.get_preset(CrtPreset.DEFAULT)["id"] == "arcade", "기본 CRT 프리셋이 아케이드 모니터로 고정되어 있다")
+	_check(CrtPreset.get_preset(CrtPreset.LINKED)["id"] == "tv", "접속 중 CRT 프리셋은 가정용 TV 다")
+	_check(int(_main.ZOOM_PRESETS[_main.ZOOM_DEFAULT]["px"]) == 3, "기본 줌이 표준 ×3 으로 고정되어 있다")
+	_check(player.standby, "접속 중에는 플레이어가 대기 모드다")
+	# 자세를 **수치로** 본다. 방에 몬스터가 서 있으면 스크린샷으로는 몸이 가려 확인이 안 된다.
+	var idle_before: float = player._idle_w
+	for i in range(int(1.0 / STEP)):
+		player._update_idle(STEP)
+		player._update_head(STEP)
+	_check(player._idle_w < 0.05,
+		"아이들 모션이 멎는다 (가중치 %.2f → %.2f)" % [idle_before, player._idle_w])
+	# 고개가 아래를 향하는가 — 바라보는 각의 sin 이 양수면 화면 아래쪽이다 (좌향·우향 모두 통한다)
+	_notes.append("  ---  고개 각 sin = %.2f (양수 = 아래)" % sin(player._head_angle))
+	_check(sin(player._head_angle) > 0.3, "고개를 아래로 떨군다")
+	var base_z: float = float(_main.ZOOM_PRESETS[_main.zoom_index]["px"]) / _main.ART_CELL
+	_main._apply_link_zoom(_main.LINK_ZOOM)
+	_check(_main._base_zoom() < base_z - 0.01,
+		"접속 중에는 화면이 물러나 있다 (%.3f → %.3f)" % [base_z, _main._base_zoom()])
+	_main._apply_link_zoom(1.0)
+	_check(is_equal_approx(_main._base_zoom(), base_z), "해제하면 줌이 원래대로 돌아온다")
+
+	# ── 9) 내리기 ─────────────────────────────────────────────────────────────
 	unit.set_controlled(false)
 	_check(not unit.controlled, "S/Ctrl/↓ 로 손을 뗀다")
 	_check(player.input_enabled, "내리면 플레이어 입력이 돌아온다")
 	_check(_main.get("controlled_turret") == null, "Main 의 조종 대상이 비워진다")
+	_check((_main.get("camera") as Camera2D).target == _main.get("player"),
+		"내리면 카메라 주체가 플레이어로 돌아온다")
+	_check(not player.standby, "내리면 플레이어가 대기 모드에서 풀린다")
 
 	# 무인으로 두면 다시 웅크린다
 	for i in range(int((WalkerUnit.SLEEP_AFTER + WalkerUnit.SLEEP_TIME + 0.5) / STEP)):
 		unit._process(STEP)
 	_check(unit.state == WalkerUnit.State.DORMANT, "무인으로 %d초 두면 다시 웅크린다" % int(WalkerUnit.SLEEP_AFTER))
 
-	# ── 8) 단말기 원격 접속 ───────────────────────────────────────────────────
+	# ── 10) 단말기 원격 접속 ───────────────────────────────────────────────────
 	# 방어 그리드에서 **보행 기체**를 고르면 Main 이 kind 를 보고 walker_by_id 로 찾아야 한다
 	# (포탑만 찾던 코드에 kind 분기를 넣은 자리다). 여기서 실제로 한 번 태워 본다.
 	#

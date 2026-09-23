@@ -62,19 +62,20 @@ func _ready() -> void:
 	set_preset(_initial_index(), false)
 
 
-## 시작 프리셋: 환경 변수 > 저장 파일 > 기본값
+## 시작 프리셋: 환경 변수 > **고정 기본값**.
+##
+## 예전엔 저장 파일(user://crt.cfg)이 기본값을 이겼다. 그래서 F4 로 한 번 바꾸면 그 뒤로 모든 씬이
+## 그 화면으로 시작했고, 사람마다 보는 그림이 달라 연출을 맞출 기준이 없었다 (기체 접속 연출이
+## 프리셋을 한 단 떨어뜨리는데, 출발점이 제각각이면 그 "한 단" 이 의미를 잃는다).
+## 이제 **늘 CrtPreset.DEFAULT 로 시작한다.** F4 는 개발용 비교 전환으로 남고, 저장하지 않는다.
+## CRT_PRESET 환경 변수만 예외다 — 스크린샷 도구가 특정 화면을 강제할 때 쓴다.
 func _initial_index() -> int:
 	var env := OS.get_environment("CRT_PRESET")
 	if env != "":
 		var i := CrtPreset.find(env)
 		if i >= 0:
 			return i
-		push_warning("CRT_PRESET=%s 을(를) 모릅니다 — 저장값/기본값 사용" % env)
-	var cfg := ConfigFile.new()
-	if cfg.load(SAVE_PATH) == OK:
-		var saved := CrtPreset.find(str(cfg.get_value("crt", "preset", "")))
-		if saved >= 0:
-			return saved
+		push_warning("CRT_PRESET=%s 을(를) 모릅니다 — 기본값 사용" % env)
 	return CrtPreset.DEFAULT
 
 
@@ -156,16 +157,21 @@ func power_off(time := POWER_OFF_TIME) -> void:
 
 ## 채널 전환: 행이 찢기고 잡음이 치솟았다가 가라앉는다. 가운데(hold 시점)에서 월드를 바꾸면 이음매가 보이지 않는다.
 ## on_switch 는 가장 어지러운 순간에 한 번 불린다.
-func channel_glitch(on_switch: Callable = Callable(), time := GLITCH_TIME) -> void:
+##
+## power 는 **세기**다 (1.0 = 예전 그대로). 접속 연출처럼 여러 번 이어 칠 때 뒤로 갈수록 낮춰
+## "접촉 불량이 잦아들다 제대로 붙는" 느낌을 만든다 — walker_link.gd 의 SETTLE 참고.
+func channel_glitch(on_switch: Callable = Callable(), time := GLITCH_TIME, power := 1.0) -> void:
 	var tw := _fresh_fx_tween()
 	var base_noise := float(CrtPreset.params(index)["noise"])
-	_fx(tw, "desync", 0.0, 1.0, time * 0.2, Tween.TRANS_EXPO, Tween.EASE_OUT)
-	_fx(tw, "desync", 1.0, 0.0, time * 0.45, Tween.TRANS_SINE, Tween.EASE_IN_OUT, time * 0.55)
-	_fx(tw, "flash", 0.0, 0.35, time * 0.12, Tween.TRANS_SINE, Tween.EASE_OUT)
-	_fx(tw, "flash", 0.35, 0.0, time * 0.3, Tween.TRANS_SINE, Tween.EASE_IN, time * 0.12)
-	tw.tween_method(func(v: float): _mat.set_shader_parameter("noise", v), base_noise, 0.22, time * 0.2) \
+	var k := clampf(power, 0.0, 1.0)
+	var peak_noise: float = lerpf(base_noise, 0.22, k)
+	_fx(tw, "desync", 0.0, k, time * 0.2, Tween.TRANS_EXPO, Tween.EASE_OUT)
+	_fx(tw, "desync", k, 0.0, time * 0.45, Tween.TRANS_SINE, Tween.EASE_IN_OUT, time * 0.55)
+	_fx(tw, "flash", 0.0, 0.35 * k, time * 0.12, Tween.TRANS_SINE, Tween.EASE_OUT)
+	_fx(tw, "flash", 0.35 * k, 0.0, time * 0.3, Tween.TRANS_SINE, Tween.EASE_IN, time * 0.12)
+	tw.tween_method(func(v: float): _mat.set_shader_parameter("noise", v), base_noise, peak_noise, time * 0.2) \
 		.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-	tw.tween_method(func(v: float): _mat.set_shader_parameter("noise", v), 0.22, base_noise, time * 0.45) \
+	tw.tween_method(func(v: float): _mat.set_shader_parameter("noise", v), peak_noise, base_noise, time * 0.45) \
 		.set_delay(time * 0.55)
 	tw.chain().tween_callback(func(): set_fx(0.0, 0.0, 0.0))
 	if on_switch.is_valid():
@@ -183,10 +189,12 @@ func _process(delta: float) -> void:
 			_toast.visible = false
 
 
+## **더 이상 저장하지 않는다** (2026-09-23). 프리셋은 CrtPreset.DEFAULT 로 고정이고 F4 는
+## 개발용 비교 전환이다 — 저장하면 그 비교가 다음 실행의 기준을 바꿔 버린다 (_initial_index 주석 참고).
+## 예전에 저장해 둔 파일이 있으면 지운다 — 남겨 두면 나중에 되살릴 때 옛 값이 튀어나온다.
 func _save() -> void:
-	var cfg := ConfigFile.new()
-	cfg.set_value("crt", "preset", CrtPreset.get_preset(index)["id"])
-	cfg.save(SAVE_PATH)
+	if FileAccess.file_exists(SAVE_PATH):
+		DirAccess.remove_absolute(SAVE_PATH)
 
 
 func _add_action(action: String, key: Key) -> void:

@@ -23,7 +23,7 @@ signal ammo_changed(ammo: int, mag: int, reloading: bool)
 signal shell_ejected(pos: Vector2, dir: int)
 signal request_front_door()
 
-const FRAME_SIZE := 320
+const FRAME_SIZE := 512             # 128² 네이티브 셀 × 4 (2026-09-23 고화질 원화 교체, Tools/build_hooded_mechanic_hq.py)
 const SPLIT_DIR := "res://assets/character/Split/"
 const ACTION_DIR := "res://assets/character/Action/"
 const ACTION_FRAME_COUNT := 6
@@ -33,10 +33,10 @@ const CLIPS := {
 	"run":    {"fps": 18.0, "loop": true,  "frames": 4},
 	"crouch": {"fps": 12.0, "loop": false, "frames": 4},
 }
-const BODY_CENTER_Y := 150.0        # 발 밑 기준 몸 중심 높이
-const ROLL_CENTER := Vector2(10.0, 103.0)   # 웅크린 프레임(crouch_04) 내용물 중심 (발 밑 기준, 오른쪽 방향)
-const DEFAULT_SHOULDER := Vector2(39, -142)
-const EJECT_LOCAL := Vector2(46, -14)     # 어깨 기준 탄피 배출구 (팔 로컬)
+const BODY_CENTER_Y := 212.0        # 발 밑 기준 몸 중심 높이 (split_meta.body_center_y — 전신 372px 의 57%)
+const ROLL_CENTER := Vector2(10.0, 154.0)   # 웅크린 프레임(crouch_04) 내용물 중심 (발 밑 기준, 오른쪽 방향)
+const DEFAULT_SHOULDER := Vector2(4, -188)
+const EJECT_LOCAL := Vector2(72, -24)     # 어깨 기준 탄피 배출구 (팔 로컬)
 
 const WALK_SPEED := 380.0           # 기본 이동 = 걷기. 이 속도에서만 사격할 수 있다
 const RUN_SPEED := 620.0            # Shift 질주. 사격 불가
@@ -138,7 +138,7 @@ const AIM_SMOOTH := 80.0            # 팔 회전 보간 속도 (클수록 즉각
 # 머리 — 목을 축으로 조준 방향을 바라본다 (팔보다 느리고 각도 제한)
 const HEAD_MAX_ANGLE := 0.42        # 최대 기울기 (rad, ≈24°)
 const HEAD_SMOOTH := 26.0
-const DEFAULT_NECK := Vector2(15, -148)
+const DEFAULT_NECK := Vector2(8, -232)
 
 # 구르기 (Space) — 속도 = ROLL_PEAK × 가속(smoothstep 0~42%: 느리고 부드럽게 진입) × 감속(1 − 0.85·k^2.2). 이동 거리 ≈ 430px
 const ROLL_TIME := 0.30
@@ -157,6 +157,13 @@ var state: State = State.IDLE
 var facing := 1                     # 1 = 오른쪽, -1 = 왼쪽 (조준 방향이 결정)
 var velocity_x := 0.0
 var input_enabled := true
+## ## 대기 모드 — 기체에 접속해 **몸만 남은** 상태 (2026-09-23)
+## 보행 기체를 조종하는 동안 이 몸은 여기 서 있을 뿐이다. 그 사실이 보여야 한다:
+##   · 아이들 모션(숨·무게중심 흔들림)을 멈춘다 — 살아서 서 있는 것과 구분된다
+##   · 고개를 **아래로 떨군다** — 조준을 놓고 접속에 빠진 자세
+## input_enabled 만으로는 부족하다. 그건 "조작이 안 먹는다" 일 뿐이고, 몸은 여전히 숨 쉬며
+## 마우스를 따라 고개를 돌린다 — 그러면 누가 기체를 모는지 화면에서 읽히지 않는다.
+var standby := false
 var min_x := 0.0
 var max_x := 10000.0
 var aim_target := Vector2.ZERO      # 월드 좌표. Main 이 매 프레임 마우스 위치를 넣어준다
@@ -242,8 +249,8 @@ func _ready() -> void:
 	add_child(arm_pivot)
 
 	var meta_arm: Dictionary = _meta.get("arm_gun", {})
-	var sh: Array = meta_arm.get("shoulder_local", [0, 40])
-	var mz: Array = meta_arm.get("muzzle_local", [83, 22])
+	var sh: Array = meta_arm.get("shoulder_local", [0, 28])
+	var mz: Array = meta_arm.get("muzzle_local", [148, 24])
 
 	arm = Sprite2D.new()
 	arm.name = "Arm"
@@ -595,7 +602,7 @@ func _update_head(delta: float, snap := false) -> void:
 		return
 	head.texture = tex
 	var neck: Vector2 = _necks.get(key, DEFAULT_NECK)
-	# 머리 텍스처는 320 셀 그대로 — 목 픽셀이 원점에 오도록 오프셋
+	# 머리 텍스처는 몸통 셀 그대로 — 목 픽셀이 원점에 오도록 오프셋
 	head.offset = -(neck + Vector2(FRAME_SIZE * 0.5, FRAME_SIZE))
 	# 목 앵커: 몸 스프라이트 로컬(=BodyPivot 로컬)에서 목 픽셀 위치. flip_h 는 셀 중심 기준 반전이므로 x 부호만 뒤집는다.
 	head_pivot.position = body.offset + Vector2(FRAME_SIZE * 0.5, FRAME_SIZE) + Vector2(neck.x * facing, neck.y)
@@ -603,7 +610,12 @@ func _update_head(delta: float, snap := false) -> void:
 	var base := 0.0 if facing > 0 else PI
 	var rel := 0.0
 	if state != State.ROLL:
-		var to_target := aim_target - head_pivot.global_position
+		# 대기 모드면 조준점 대신 **발치**를 본다. 각도를 직접 넣지 않고 바라볼 점만 바꾸는 이유는,
+		# 좌우 반전(head_pivot.scale.y = -1)과 각도 한계(HEAD_MAX_ANGLE)를 이미 아래 식이 다루기 때문이다.
+		var look: Vector2 = aim_target
+		if standby:
+			look = head_pivot.global_position + Vector2(float(facing) * 40.0, 260.0)
+		var to_target := look - head_pivot.global_position
 		rel = clampf(angle_difference(base, to_target.angle()), -HEAD_MAX_ANGLE, HEAD_MAX_ANGLE)
 	var target_angle := base + rel
 	if snap or delta <= 0.0:
@@ -626,7 +638,9 @@ func _update_head(delta: float, snap := false) -> void:
 ## 그리고 _breath 를 통해 어깨·목 앵커. 이동 중에는 _idle_w 가 빠지며 자연스럽게 꺼진다.
 func _update_idle(delta: float) -> void:
 	var p := idle_preset()
-	var active := state == State.IDLE or state == State.CROUCH
+	# 대기 모드에서는 아이들을 끈다. 플래그로 즉시 0 을 넣지 않고 active 만 내려 두면
+	# _idle_w 가 IDLE_BLEND_OUT 로 부드럽게 빠진다 — 숨이 잦아들듯 멈춘다.
+	var active := (state == State.IDLE or state == State.CROUCH) and not standby
 	_idle_w = move_toward(_idle_w, 1.0 if active else 0.0,
 		delta * (IDLE_BLEND_IN if active else IDLE_BLEND_OUT))
 	if active:
@@ -845,7 +859,7 @@ func set_bounds(left: float, right: float) -> void:
 func face(dir: int) -> void:
 	facing = dir
 	body.flip_h = facing < 0
-	aim_target = position + Vector2(400 * dir, -140)
+	aim_target = position + Vector2(400 * dir, -188)
 	if arm_pivot:
 		_update_arm(0.0, true)
 	if head_pivot:

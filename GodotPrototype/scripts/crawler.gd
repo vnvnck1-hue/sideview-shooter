@@ -21,7 +21,7 @@ extends Node2D
 ##       정의는 audio_manager.SOUNDS 의 crawler_* 네 항목. 원본은 CC0(Docs/CREDITS.md).
 ## 쫀득함: 발을 축으로 한 스케일 스프링(_squash). 걷기 바운스·점프 웅크림/늘어남/착지 눌림·공격 예비동작을 모두 여기로 표현한다.
 
-## 거대종(Giant): 같은 크롤러를 5배로 키운 변종. make_giant() 를 setup() **앞에** 부르면 된다.
+## 거대종(Giant): 상세 프레임을 쓰는 3.5배 변종. make_giant() 를 setup() **앞에** 부르면 된다.
 ##       크기·체력·이동속도·사거리·점프가 모두 한 배율(size)을 타고, 공격은 전용 두 가지로 **갈아 끼운다** —
 ##       멀면 독액 부채꼴 산탄(SPRAY), 가까우면 몸을 세웠다 내리꽂는 내려찍기(SLAM). 벽·천장은 타지 않는다.
 ##       자세한 설계 의도는 아래 "거대종" 상수 블록 주석에 있다.
@@ -34,6 +34,8 @@ signal roared(pos: Vector2, power: float)
 signal slammed(pos: Vector2)
 
 const DIR := "res://assets/character/ToxicTumorCrawler/"
+const GIANT_DIR := "res://assets/character/GiantToxicTumorCrawler/"
+const GIANT_SOURCE_SCALE := 2.0         # 거대종 전용 프레임은 상세 원본을 2배 셀로 가공
 const SCALE := 0.4                    # 원본(543×756 셀)의 40% — 60% 축소. 플레이어 무릎 높이 정도
 const MAX_HP := 3                  # 6 → 절반
 const WALK_SPEED := 270.0
@@ -128,15 +130,15 @@ const CHUNK_COUNT := 9
 
 # ─── 거대종 (Giant) ──────────────────────────────────────────────────────────
 # 크기만 5배로 키우면 "큰 크롤러"일 뿐이다. 덩치가 데려오는 것들을 함께 바꿔야 다른 적이 된다.
-#   느리다   — 세계 기준 속도를 GIANT_SPEED 로 깎는다. 5배 몸이 같은 속도로 오면 미끄러지듯 순간이동한다.
+#   느리다   — 세계 기준 속도를 GIANT_SPEED 로 깎는다. 큰 몸이 같은 속도로 오면 미끄러지듯 순간이동한다.
 #   질기다   — GIANT_HP. 소총 한 탄창(MAG_SIZE)으로는 못 잡는다. 물러나며 쏘는 싸움이 된다.
 #   무겁다   — 넉백·멈칫을 덩치로 나눈다. 맞아도 거의 밀리지 않아, 계속 다가온다는 압박이 남는다.
 #   못 탄다  — 벽·천장에 붙지 않고 돌진 점프도 하지 않는다. 저 몸이 천장에 매달리면 우스워지고,
 #             무엇보다 "피할 수 없는 바닥의 벽"이라는 인상이 이 적의 전부다.
 #   다르게 친다 — 일반 크롤러의 단발 뱉기를 **쓰지 않는다**. 멀면 부채꼴 산탄(SPRAY),
 #             가까우면 내려찍기(SLAM). 전자는 서 있던 자리를 지우고, 후자는 붙어 있던 것을 벌한다.
-const GIANT_SIZE := 5.0               # 그림·히트박스·사거리·점프·먼지가 모두 이 배율을 탄다
-const GIANT_HP := 30                  # MAX_HP(3) × 10 — 덩치(5배)보다 더 질기게
+const GIANT_SIZE := 3.5               # 기존 5배 거대종에서 30% 축소
+const GIANT_HP := 30                  # MAX_HP(3) × 10 — 일반종보다 훨씬 질기게
 const GIANT_SPEED := 0.32             # WALK_SPEED 대비 (270 → 86px/s. 플레이어 걷기 380 의 1/4)
 const GIANT_ANIM_SPEED := 0.5         # 전진할 때 걷기 애니가 도는 배속.
                                       # 보폭이 5배라 발을 물리적으로 맞추면 초당 한 프레임도 못 넘긴다 —
@@ -155,12 +157,12 @@ const GIANT_CHUNK_COUNT := 16         # 죽을 때 뜯겨 나가는 육편 수
 ## "이 자리" 가 문제이고, 그래서 Room 이 배치·스폰마다 설 수 있는 구간을 뽑아 그 안에 가둔다
 ## (Room._giant_spans · tools/validate_giant.gd 가 같은 규칙으로 다시 잰다).
 ##
-## 높이 조건을 자세별로 나눈 이유: 가장 높은 자세는 내려찍기(jump 클립, 886px)인데 그건 **가끔**이고,
-## 평소 자세인 걷기(614)·포효(768)는 훨씬 낮다. 한 값으로 묶으면 걸어 다니기만 해도 되는 자리까지
+## 높이 조건을 자세별로 나눈 이유: 가장 높은 자세는 내려찍기(jump 클립, 약 620px)인데 그건 **가끔**이고,
+## 평소 자세인 걷기(약 430)·포효(약 540)는 훨씬 낮다. 한 값으로 묶으면 걸어 다니기만 해도 되는 자리까지
 ## 전부 막혀 거대종이 설 방이 station 전체에 네 곳밖에 남지 않는다.
-const GIANT_HALF_W := 525.0           # 몸 절반 폭 — 벽에서 이만큼은 떨어져야 벽을 파고든다
-const GIANT_CLEARANCE := 790.0        # 걷기·포효가 들어가는 높이 (포효 768 + 여유). 여기 설 수 있나
-const GIANT_SLAM_CLEARANCE := 900.0   # 내려찍기 자세가 들어가는 높이 (886 + 여유). 없으면 산탄으로 바꾼다
+const GIANT_HALF_W := 367.5           # 기존 거대종 폭의 70%
+const GIANT_CLEARANCE := 553.0        # 기존 거대종 높이의 70%
+const GIANT_SLAM_CLEARANCE := 630.0   # 기존 내려찍기 높이의 70%
 
 ## 산탄 (SPRAY) — 입을 벌려 독액 덩어리를 부채꼴로 흩뿌린다. 한 발은 비켜서면 그만이지만
 ## 부채꼴은 **서 있던 자리**를 지워서, 플레이어를 옆으로 움직이게 만든다.
@@ -199,7 +201,7 @@ var state: State = State.IDLE
 ## 나머지 상수는 size 를 곱해 쓴다. make_giant() 가 이 묶음을 한 번에 갈아 끼운다.
 var is_giant := false
 var size := 1.0                       # 세계 길이 배율 — 사거리·점프·먼지·넉백 저항이 이 값을 탄다
-var art_scale := SCALE                # 스프라이트 배율 (= SCALE × size)
+var art_scale := SCALE                # 거대종은 2배 셀을 쓰므로 SCALE × size ÷ GIANT_SOURCE_SCALE
 var max_hp := MAX_HP
 var walk_speed := WALK_SPEED
 var walk_anim_speed := WALK_ANIM_SPEED
@@ -274,7 +276,7 @@ var _bob := Vector2.ONE
 func make_giant() -> void:
 	is_giant = true
 	size = GIANT_SIZE
-	art_scale = SCALE * GIANT_SIZE
+	art_scale = SCALE * GIANT_SIZE / GIANT_SOURCE_SCALE
 	max_hp = GIANT_HP
 	hp = GIANT_HP
 	walk_speed = WALK_SPEED * GIANT_SPEED
@@ -326,7 +328,7 @@ func _ready() -> void:
 
 
 func _load_meta() -> void:
-	var f := FileAccess.open(DIR + "crawler_meta.json", FileAccess.READ)
+	var f := FileAccess.open(_asset_dir() + "crawler_meta.json", FileAccess.READ)
 	if f == null:
 		push_warning("crawler_meta.json 을 읽을 수 없음 — Tools/build_crawler_frames.py 를 먼저 실행")
 		return
@@ -357,8 +359,16 @@ func _build_frames() -> SpriteFrames:
 		sf.set_animation_speed(clip_name, float(cfg["fps"]))
 		sf.set_animation_loop(clip_name, bool(cfg["loop"]))
 		for i in range(1, int(cfg["frames"]) + 1):
-			sf.add_frame(clip_name, Lighting.textured("%s%s/%s_%02d.png" % [DIR, clip_name, clip_name, i]))
+			sf.add_frame(clip_name, Lighting.textured("%s%s/%s_%02d.png" % [_asset_dir(), clip_name, clip_name, i]))
 	return sf
+
+
+func _asset_dir() -> String:
+	return GIANT_DIR if is_giant else DIR
+
+
+func _art_local(point: Vector2) -> Vector2:
+	return point * (GIANT_SOURCE_SCALE if is_giant else 1.0)
 
 
 func _frame_key() -> String:
@@ -680,7 +690,8 @@ func _spit() -> void:
 	if t == null:
 		return
 	_punch(Vector2(1.12, 0.92))                 # 뱉는 반동
-	var mouth := position + Vector2(MOUTH_LOCAL.x * facing, MOUTH_LOCAL.y) * art_scale
+	var mouth_local := _art_local(MOUTH_LOCAL)
+	var mouth := position + Vector2(mouth_local.x * facing, mouth_local.y) * art_scale
 	var glob := AcidGlob.new()
 	glob.setup(mouth, t, floor_y, room)
 	spat.emit(glob)
@@ -732,7 +743,8 @@ func _spit_fan(i: int) -> void:
 		return
 	_punch(Vector2(1.10, 0.93))                  # 뱉을 때마다 반동
 	var k := (float(i) / maxf(1.0, float(SPRAY_COUNT - 1))) * 2.0 - 1.0
-	var mouth := position + Vector2(MOUTH_LOCAL.x * facing, MOUTH_LOCAL.y) * art_scale
+	var mouth_local := _art_local(MOUTH_LOCAL)
+	var mouth := position + Vector2(mouth_local.x * facing, mouth_local.y) * art_scale
 	var glob := AcidGlob.new()
 	glob.setup(mouth, t, floor_y, room, k * SPRAY_ARC, SPRAY_GLOB_SIZE)
 	spat.emit(glob)
@@ -865,7 +877,7 @@ func _process_roar(delta: float) -> void:
 
 ## 입에서 침 방울. frame: 입 위치 기준 프레임, strength: 속도·크기 배율 (트리클은 약하게)
 func _spit_saliva(frame: int, count: int, strength: float) -> void:
-	var local: Vector2 = ROAR_MOUTH.get(frame, ROAR_MOUTH[ROAR_HOLD_FRAME])
+	var local: Vector2 = _art_local(ROAR_MOUTH.get(frame, ROAR_MOUTH[ROAR_HOLD_FRAME]))
 	var mouth := position + Vector2(local.x * facing, local.y - _air_y / art_scale) * art_scale
 	var dir: Vector2 = SALIVA_DIR.get(frame, SALIVA_DIR[ROAR_HOLD_FRAME])
 	dir.x *= facing
@@ -1217,7 +1229,7 @@ func _crawl_ceiling(delta: float) -> void:
 func _spit_from_wall(t: Node2D) -> void:
 	_attack_cd = randf_range(attack_cooldown.x, attack_cooldown.y)
 	_punch(Vector2(1.14, 0.90))
-	var mouth := _pose_point(MOUTH_LOCAL)             # 바닥 자세와 같은 입 위치를 그대로 돌려 쓴다
+	var mouth := _pose_point(_art_local(MOUTH_LOCAL)) # 바닥 자세와 같은 입 위치를 그대로 돌려 쓴다
 	var glob := AcidGlob.new()
 	glob.setup(mouth, t, floor_y, room)
 	spat.emit(glob)
@@ -1287,7 +1299,7 @@ func hit(point: Vector2, dir: float, power := 1.0) -> void:
 		Audio.play_at("crawler_hurt", point, lerpf(-2.0, 2.0, clampf(power, 0.0, 1.0)), voice_pitch)
 	_flash = 1.0
 	_mat.set_shader_parameter("flash", HIT_FLASH_PEAK)
-	_mat.set_shader_parameter("radius_px", HIT_FLASH_RADIUS)
+	_mat.set_shader_parameter("radius_px", HIT_FLASH_RADIUS * (GIANT_SOURCE_SCALE if is_giant else 1.0))
 	# 셰이더 UV 는 셀 전체 기준 (벽·천장이면 스프라이트 회전을 먼저 되돌리고, 뒤집힌 축은 반전)
 	var cell_uv := ((point - position).rotated(-_sprite.rotation) / art_scale - _sprite.offset) / _cell
 	if _sprite.flip_h:
@@ -1374,13 +1386,14 @@ func _spawn_chunks(center: Vector2, dir: float, count := CHUNK_COUNT, power := 1
 	var b := _bbox_cell()
 	var tex: Texture2D = _sprite.sprite_frames.get_frame_texture(_sprite.animation, _sprite.frame)
 	var cells: Array = []
+	var chunk_cell := CHUNK_CELL * (GIANT_SOURCE_SCALE if is_giant else 1.0)
 	var y := b.position.y
 	while y < b.end.y:
 		var x := b.position.x
 		while x < b.end.x:
-			cells.append(Rect2(x, y, minf(CHUNK_CELL, b.end.x - x), minf(CHUNK_CELL, b.end.y - y)))
-			x += CHUNK_CELL
-		y += CHUNK_CELL
+			cells.append(Rect2(x, y, minf(chunk_cell, b.end.x - x), minf(chunk_cell, b.end.y - y)))
+			x += chunk_cell
+		y += chunk_cell
 	cells.shuffle()
 	var parent := get_parent()
 	for i in range(mini(count, cells.size())):

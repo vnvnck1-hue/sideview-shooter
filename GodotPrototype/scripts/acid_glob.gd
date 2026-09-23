@@ -7,8 +7,8 @@ extends Node2D
 const GRAVITY := 1900.0
 const FLIGHT_TIME := 0.55
 const MAX_SPEED := 1500.0
-const PLAYER_HALF_W := 62.0
-const PLAYER_HEIGHT := 250.0
+const PLAYER_HALF_W := 84.0
+const PLAYER_HEIGHT := 360.0
 const PUDDLE_LIFE := 4.5
 const CORE := Color(0.92, 1.0, 0.55)
 const BODY := Color(0.62, 0.82, 0.16)

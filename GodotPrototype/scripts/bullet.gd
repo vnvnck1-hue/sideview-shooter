@@ -2,7 +2,8 @@ class_name Bullet
 extends Node2D
 ## 고속 탄환. 총구에서 목표점(마우스 포인터)까지 직선으로 날아가 정확히 그 지점에 탄착한다.
 ## 시각: 총구부터 탄두까지 이어지는 한 줄 궤적이 찍히고 탄착 직후 사라진다.
-## 탄착: 플래시 + 불꽃 스파크 + 중력을 받는 벽 파편 + 짧은 라이트 (타격감). 궤적·플래시·스파크·라이트는 붉은 팔레트(Lighting.RED_*).
+## 탄착: 플래시 + 불꽃 스파크 + 중력을 받는 벽 파편 + 짧은 라이트 (타격감). 궤적·스파크는 붉은 팔레트(Lighting.RED_*),
+##       플래시·링·라이트는 붉은 노랑 20% (IMPACT_GLOW). 잔열·탄흔은 BulletMark.
 ## 잔상: 궤적 라인이 사라지는 순간 선이 발사 방향으로 누운 긴 선분 1~3개로 끊어지고, 각 선분은 앞으로 살짝 밀리며
 ##       선분 안의 임의 지점을 향해 길이가 점(화면 2px)으로 수렴한 뒤 계단식으로 꺼진다 (만화적 궤적 흔적: 선 → 점 → 소멸).
 ##       개수가 적을수록 한 선분이 길고, 선분마다 길이가 다르다. 색은 가산 블렌드 주황 불씨(EMBER)가 어두워지며 사라진다.
@@ -77,6 +78,11 @@ const GRAVITY := 2600.0
 const FLASH_TIME := 0.08
 const RING_TIME := 0.16
 const LIGHT_TIME := 0.16      # 탄착 라이트 소등 시간
+## 탄착 섬광 (2026-09-23): 흰 빛으로 번져 어색했다 → **붉은 노랑 · 밝기 20%**. 플래시·충격 링·탄착 라이트에 함께 건다.
+## 섬광 뒤의 잔열은 BulletMark 가 같은 톤으로 이어받는다. 착수(WATER)는 청백 물보라라 그대로 둔다.
+const IMPACT_GLOW := 0.2
+const IMPACT_FLASH_COLOR := Color(1.0, 0.46, 0.12)
+const IMPACT_LIGHT_COLOR := Color(1.0, 0.50, 0.16)
 
 enum Impact { WALL, GLASS, PROP, FLESH, WATER }
 
@@ -109,6 +115,7 @@ var _head: ColorRect
 var _flash: ColorRect
 var _ring: Node2D
 var _light: PointLight2D
+var _light_e0 := 0.0           # 탄착 라이트 시작 세기 (여기서 LIGHT_TIME 에 걸쳐 꺼진다)
 var _debris: Array = []        # [{node, vel, spin, gravity, life}]
 var _residue: Array = []       # [{node, pos, vel, life, delay}] 픽셀 잔상
 var _smoke_lines: Array = []   # [{line: Line2D, base: PackedVector2Array, seed: float}] 연기 잔상 구간들
@@ -203,7 +210,7 @@ func _process_impact(delta: float) -> void:
 
 	# 라이트
 	if _light:
-		_light.energy = 2.2 * maxf(0.0, 1.0 - _impact_t / LIGHT_TIME)
+		_light.energy = _light_e0 * maxf(0.0, 1.0 - _impact_t / LIGHT_TIME)
 		_light.enabled = _light.energy > 0.01
 
 	# 파편
@@ -425,12 +432,12 @@ func _impact() -> void:
 
 	# 플래시 (밝은 코어)
 	_flash = ColorRect.new()
-	_flash.color = Color(1.0, 0.70, 0.60)
+	_flash.color = IMPACT_FLASH_COLOR
 	_flash.size = Vector2(24, 24) * power
 	_flash.pivot_offset = _flash.size * 0.5
 	_flash.position = target - _flash.size * 0.5
 	_flash.rotation = randf_range(0.0, TAU)
-	_flash.modulate = Lighting.RED_EMISSIVE
+	_flash.modulate = Color(Lighting.EMISSIVE_SOFT * IMPACT_GLOW * 2.0, 1.0)   # ≈ 앰비언트를 상쇄할 만큼만 — 흰색으로 타지 않는다
 	if impact_kind == Impact.WATER:
 		# 착수: 붉은 섬광 대신 청백 물보라 플래시, 링은 수면에 납작하게
 		_flash.color = Color(0.85, 0.95, 1.0)
@@ -444,7 +451,7 @@ func _impact() -> void:
 	# 충격 링 (얇은 사각 테두리 4개)
 	_ring = Node2D.new()
 	_ring.position = target
-	_ring.modulate = Lighting.RED_EMISSIVE_SOFT
+	_ring.modulate = Color(Lighting.EMISSIVE_SOFT * IMPACT_GLOW * 2.0, 0.8)
 	if impact_kind == Impact.WATER:
 		_ring.modulate = Color(1.6, 2.0, 2.4, 1.0)
 		_ring.scale = Vector2(1.0, 0.3)
@@ -452,7 +459,7 @@ func _impact() -> void:
 	var half := 17.0 * power
 	for side in range(4):
 		var r := ColorRect.new()
-		r.color = Color(1.0, 0.45, 0.32, 0.9)
+		r.color = Color(1.0, 0.46, 0.12, 0.9) if impact_kind != Impact.WATER else Color(1.0, 0.45, 0.32, 0.9)
 		if side < 2:
 			r.size = Vector2(half * 2.0, 3.0 * power)
 			r.position = Vector2(-half, (-half if side == 0 else half) - 1.5)
@@ -466,8 +473,9 @@ func _impact() -> void:
 	_light.texture = Lighting.radial_texture()
 	var imp_e := LightTuning.value("impact", "energy", 2.2)
 	_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("impact", "radius", 260.0) * (0.5 + 0.5 * power))
-	_light.color = Lighting.IMPACT_LIGHT if impact_kind != Impact.WATER else Lighting.WATER
-	_light.energy = (imp_e if impact_kind != Impact.WATER else imp_e * 0.636) * (0.7 + 0.3 * power)
+	_light.color = IMPACT_LIGHT_COLOR if impact_kind != Impact.WATER else Lighting.WATER
+	_light.energy = (imp_e * IMPACT_GLOW if impact_kind != Impact.WATER else imp_e * 0.636) * (0.7 + 0.3 * power)
+	_light_e0 = _light.energy if impact_kind != Impact.WATER else 2.2    # 착수는 예전 곡선 그대로
 	_light.height = LightTuning.value("impact", "height", Lighting.FLASH_HEIGHT)   # 주변 노멀맵이 섬광에 반응
 	_light.position = target
 	add_child(_light)

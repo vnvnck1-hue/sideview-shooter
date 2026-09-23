@@ -1,17 +1,17 @@
 class_name AppFlow
 extends RefCounted
-## 씬 간 흐름: 로비 → 메인 게임(에어록에서 시작, 전체 맵) / 테스트(저수조실에서 시작) / 맵 뷰어.
+## 씬 간 흐름: 로비 → 메인 게임(에어록에서 시작, 전체 맵) / 테스트 씬(Main.tscn, 도구·갤러리 테스트용) / 맵 뷰어.
 
 const LOBBY_SCENE := "res://scenes/Lobby.tscn"
 const MAIN_GAME_SCENE := "res://scenes/MainGame.tscn"
 const TEST_SCENE := "res://scenes/Main.tscn"
 const MAP_VIEWER_SCENE := "res://scenes/MapViewer.tscn"
 const DIALOGUE_LAB_SCENE := "res://scenes/DialogueLab.tscn"
-const SHADOW_LAB_SCENE := "res://scenes/ShadowLab.tscn"
 const WALKER_LAB_SCENE := "res://scenes/WalkerLab.tscn"
 const WALKER_AUTHORING_LAB_SCENE := "res://scenes/WalkerAuthoringLab.tscn"
 const FACE_LAB_SCENE := "res://scenes/FaceLab.tscn"
 const SPACE_LAB_SCENE := "res://scenes/SpaceLab.tscn"
+const GalleryPlaytest := preload("res://scripts/service_gallery_playtest.gd")
 
 ## 디자인 캔버스 = 창 기본 크기 = 스트레치 기준 (project.godot display/window/size 와 반드시 같은 값).
 ## HUD·CRT 오버레이·말풍선 등 창 좌표를 쓰는 모든 곳이 여기를 본다.
@@ -24,14 +24,9 @@ const VIEW_SIZE := Vector2i(2240, 900)
 
 ## Main 이 처음 로드할 방 id (RoomData.ROOMS 키)
 static var start_room := RoomData.START_ROOM
-## 지정 위치에서 시작할 때 쓰는 상태 (로비의 "센트리건 테스트" 등). resume_x < 0 이면 무시.
+## 지정 위치에서 시작할 때 쓰는 상태 (스크린샷 도구 등). resume_x < 0 이면 무시.
 static var resume_x := -1.0
 static var resume_facing := 1
-## 근경 랩 모드: Main 이 플레이어 입력·몬스터를 끄고 ForegroundLab(근경 편집 오버레이)을 올린다
-static var lab_mode := false
-## 앰비언스 랩 모드: Main 이 AmbienceLab 패널을 올린다. 근경 랩과 달리 플레이어는 그대로 움직인다 —
-## 소리는 걸어 다니며 판단하는 것이라 방을 넘나드는 순간을 들어야 한다.
-static var amb_lab := false
 ## 플레이어가 한 번이라도 들어간 방 (방 id → true). 단말기 지도(StationMap)의 안개를 걷는 근거다.
 ## 원격 조종으로 월드가 교체된 방도 포함한다 — 화면 너머로 봤어도 본 것은 본 것이다.
 ## static 이라 씬을 다시 로드해도 남고, 새 게임(start_main_game·start_test)에서만 비운다.
@@ -43,25 +38,19 @@ static func visit(room_id: String) -> void:
 
 
 static func go_lobby(tree: SceneTree) -> void:
-	lab_mode = false
-	amb_lab = false
 	tree.change_scene_to_file(LOBBY_SCENE)
 
 
 ## 메인 게임: 에어록(RoomData.START_ROOM)에서 시작, 전체 맵을 탐색한다
 static func start_main_game(tree: SceneTree) -> void:
-	lab_mode = false
-	amb_lab = false
 	visited = {}
 	start_room = RoomData.START_ROOM
 	tree.change_scene_to_file(MAIN_GAME_SCENE)
 
 
 ## 테스트: 기본은 물이 고인 저수조실(RoomData.TEST_ROOM). room 을 주면 그 방에서 바로 시작하고,
-## spawn_x >= 0 이면 그 위치에 선다 (센트리건 옆처럼 특정 연출 바로 앞에서 시작 — 로비 버튼이 쓴다).
+## spawn_x >= 0 이면 그 위치에 선다 (특정 연출 바로 앞에서 시작 — tools/ 스크린샷 도구가 쓴다).
 static func start_test(tree: SceneTree, room := "", spawn_x := -1.0, facing := 1) -> void:
-	lab_mode = false
-	amb_lab = false
 	visited = {}
 	if RoomData.ROOMS.has(room):
 		start_room = room
@@ -73,52 +62,20 @@ static func start_test(tree: SceneTree, room := "", spawn_x := -1.0, facing := 1
 	tree.change_scene_to_file(TEST_SCENE)
 
 
-## 근경 랩: 실제 방·조명 위에서 근경 실루엣을 마우스로 배치하고 foreground/<방 id>.json 에 저장한다 ([ ] 로 방 전환)
-static func start_foreground_lab(tree: SceneTree, room := "") -> void:
-	lab_mode = true
-	amb_lab = false
-	start_room = room if RoomData.ROOMS.has(room) else RoomData.START_ROOM
-	resume_x = -1.0
-	tree.change_scene_to_file(TEST_SCENE)
-
-
-## 앰비언스 랩: 에어록에서 시작해 실제로 걸어 다니며 방별 앰비언스를 듣고 수치를 고쳐 저장한다.
-## 저장 파일(ambience/tuning.json)은 AudioManager 가 시작할 때 읽으므로 본편에도 그대로 적용된다.
-static func start_ambience_lab(tree: SceneTree, room := "") -> void:
-	lab_mode = false
-	amb_lab = true
-	visited = {}
-	start_room = room if RoomData.ROOMS.has(room) else RoomData.START_ROOM
-	resume_x = -1.0
-	tree.change_scene_to_file(MAIN_GAME_SCENE)
-
-
 ## 대화 UI 랩: 실제 방·인물 위에서 대사 표시 방식 다섯 가지를 1~5 로 바꿔 가며 비교한다 (Docs/DIALOGUE_SYSTEM.md §3)
 static func start_dialogue_lab(tree: SceneTree) -> void:
-	lab_mode = false
 	start_room = "airlock"                       # 첫 상대(에어록 관리인)가 있는 방 — 랩이 [ ] 로 옮겨 다닌다
 	resume_x = -1.0
 	tree.change_scene_to_file(DIALOGUE_LAB_SCENE)
 
 
-## 조명·그림자 랩: 그레이박스 위에서 **마우스가 광원**이 되어 그림자 기하를 눈으로 맞춘다 (scripts/shadow_lab.gd)
-static func start_shadow_lab(tree: SceneTree) -> void:
-	lab_mode = false
-	amb_lab = false
-	tree.change_scene_to_file(SHADOW_LAB_SCENE)
-
-
 ## 사족보행 랩: 인게임 아트·보행을 실시간 조정하고 공유 설정에 저장한다.
 static func start_walker_lab(tree: SceneTree) -> void:
-	lab_mode = false
-	amb_lab = false
 	tree.change_scene_to_file(WALKER_LAB_SCENE)
 
 
 ## 원화 피벗·키프레임 편집기는 보행 튜닝 창에서 왕복한다.
 static func start_walker_authoring_lab(tree: SceneTree) -> void:
-	lab_mode = false
-	amb_lab = false
 	tree.change_scene_to_file(WALKER_AUTHORING_LAB_SCENE)
 
 
@@ -126,8 +83,6 @@ static func start_walker_authoring_lab(tree: SceneTree) -> void:
 ## 조명 수치는 lighting/tuning.json 에 저장돼 본편이 시작할 때 읽고(scripts/light_tuning.gd),
 ## 면 수치는 faces/tuning.json 에 저장된다(scripts/face_normal.gd). 자산에 굽는 것은 tools/bake_face_normals.gd.
 static func start_face_lab(tree: SceneTree, room := "") -> void:
-	lab_mode = false
-	amb_lab = false
 	start_room = room if RoomData.ROOMS.has(room) else "hall"
 	resume_x = -1.0
 	tree.change_scene_to_file(FACE_LAB_SCENE)
@@ -136,11 +91,19 @@ static func start_face_lab(tree: SceneTree, room := "") -> void:
 ## 공간 테스트 랩: 기본 배경 타일로 만든 20,000px 짜리 한 줄에서, 방과 방이 트랜지션 없이 이어지는 감각을 본다.
 ## 본편과 같은 플레이 루프이고 방 데이터만 SpaceLabData 가 RoomData.extra 에 얹는다 (본 맵은 그대로).
 static func start_space_lab(tree: SceneTree) -> void:
-	lab_mode = false
-	amb_lab = false
 	visited = {}
 	resume_x = -1.0
 	tree.change_scene_to_file(SPACE_LAB_SCENE)
+
+
+## Gallery tile playtest runs through the ordinary Main scene and play loop.
+static func start_service_gallery_test(tree: SceneTree) -> void:
+	GalleryPlaytest.register_room()
+	visited = {}
+	start_room = GalleryPlaytest.ROOM_ID
+	resume_x = 960.0
+	resume_facing = 1
+	tree.change_scene_to_file(TEST_SCENE)
 
 
 ## 맵 뷰어: 방을 게임 없이 조립해 자유 카메라로 본다 ([ ] 로 방 전환)

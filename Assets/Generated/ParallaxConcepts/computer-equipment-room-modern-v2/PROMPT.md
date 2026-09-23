@@ -1,8 +1,16 @@
 # 현대식 전산실 v2 — 프롬프트
 
-내장 imagegen으로 기존 전산실 v1을 직접 입력해 장비·건축의 시대감을 재설계했다. 픽셀아트·얕은 사이드뷰·장비 밀집도·두 레이어 분리 구상은 유지하고, 아날로그 장비와 녹슨 산업 시설 표현은 교체한다.
+내장 imagegen으로 기존 전산실 v1을 직접 입력해 장비·건축의 시대감을 재설계했다. 픽셀아트·얕은 사이드뷰·장비 밀집도·두 레이어 분리 구상은 유지하고, 아날로그 장비와 녹슨 산업 시설 표현은 교체한다. 아래는 2026-09-23 실제 성공 호출의 프롬프트다.
 
 입력: `Assets/Generated/ParallaxConcepts/computer-equipment-room-v1/computer_equipment_room.png`
+
+```text
+Use case: precise-object-edit. Asset type: finished wide pixel-art side-scrolling game environment concept. Edit the referenced old-fashioned computer equipment room into a convincingly MODERN, contemporary computer-dense network operations and server-control room. Preserve only the panoramic ~2.49:1 composition, close back wall, shallow side-on perspective, narrow continuous walking deck at the bottom, dense equipment layering, foreground/rear distinction, and crisp substantial clustered pixel-art style. Radically redesign ALL equipment and architecture; do not merely recolor the old room. Remove every curved CRT, beige monitor, tape reel, analog dial board, rusty riveted column, hazard stripe, hanging cage lamp, exposed messy cable and grungy machinery. Replace with varied charcoal server racks with perforated or dark glass doors, clearly structured rackmount storage/network units, enclosed UPS cabinets, neat cable management and cable trays, numerous slim flat wide monitors on articulated arms with a few portrait screens, compact operator desks, thin keyboards and mice, small workstation towers, and ergonomic mesh chairs. At least twelve legibly distinct flat displays, but avoid a monotonous video wall. Modern clean matte light-grey wall/fascia panels, dark metal rack housings, restrained ventilation grilles, integrated linear LED strips and raised-access floor with subtle seams. Contemporary practical technology, NOT sci-fi holograms. Asymmetrical groups and varied silhouettes; near desks partly occlude quieter rear racks. Keep narrow walkable strip and compressed depth, no central tunnel or deep floor. Rear equipment is cooler darker slate with subdued detail; near operator hardware is neutral graphite/light grey with legible form and restrained teal-blue data on a few screens. Screens vary in brightness; no giant blue glow, neon trim, RGB gaming lights, logos, readable text, character, HUD, watermark or border. Coherent few-pixel top/side surfaces and contact shadows at one eye level. Material shapes and functional details remain clear at game scale. One complete full-frame illustration, not diagrams or separated panels.
+```
+
+## 초기 준비안 (미사용)
+
+첫 생성 시도가 사용량 한도로 실패했을 때 보존한 프롬프트다. 이번 결과의 실제 프롬프트는 위 본문이며, 아래 준비안은 실행 입력으로 사용되지 않았다.
 
 ```text
 Use case: precise-object-edit.
@@ -19,4 +27,3 @@ Color/value hierarchy: rear muted deep slate blue and charcoal, deliberately com
 Rendering remains the established hand-designed chunky pixel-art concept language with crisp edges and organized stepped shades; NEVER photorealistic, smooth 3D, painterly or blurred. Modernize design, not the rendering medium.
 Output ONE complete finished room illustration, no comparison layout, no diagrams, no labels, no border or watermark. This is a flattened concept, not separated layer files.
 ```
-

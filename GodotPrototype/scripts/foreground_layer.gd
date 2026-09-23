@@ -11,7 +11,7 @@ extends Node2D
 ##   cable                       : pos 에서 size.x 만큼 오른쪽으로 걸린 처진 선, size.y 가 처짐
 ##   pipe_bracket / utility_housing : 그림 근경(assets/props/foreground_*_v2.png)을 size 로 늘린 스프라이트 (SPRITES)
 ## 방마다 저장된 배치 파일(DATA_DIR/<방 id>.json)이 있으면 그것을 쓰고, 없으면 방 id 시드로 절차 생성한다.
-## 배치는 근경 랩(로비 → "근경 랩", scripts/foreground_lab.gd)에서 마우스로 옮기고 늘려 S 로 저장한다.
+## 배치는 foreground/<방 id>.json 에서 읽는다 (없으면 절차 생성).
 
 const PARALLAX := 1.045                            # 1.12 → 1.06 → 1.03(너무 낮음) → 1.045: 방 끝에서 끝까지 걸으면 근경은 ±40px 정도
 const GRID := 4.0                                  # 1 아트 px = 월드 4px

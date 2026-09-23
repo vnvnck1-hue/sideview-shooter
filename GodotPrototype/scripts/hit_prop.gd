@@ -7,7 +7,7 @@ extends Sprite2D
 ##
 ## 파츠: 텍스처를 CELL px 격자 조각으로 나눠 셀마다 내구도를 둔다. 탄착점 주변 셀에 피해가 누적돼
 ## 부서지면 마스크에서 사라지고 그 조각(ChunkDebris, 노멀맵 포함)이 날아가 바닥에 떨어진다.
-## 붉은 피격 플래시(탄착점 주변) + 열 잔광(HeatSurface)도 함께.
+## 붉은 피격 플래시(탄착점 주변). 탄흔·열 잔광은 BulletMark 가 프랍의 자식으로 붙어 따라간다.
 
 const ANG_IMPULSE := 1.15         # 한 발당 각속도 (rad/s)
 const ANG_GRAVITY := 22.0         # 들린 쪽을 끌어내리는 각가속도 (rad/s^2) — 클수록 딱딱
@@ -142,7 +142,7 @@ func hit(dir: float, hit_y: float, hit_point: Vector2 = Vector2.INF, power := 1.
 	if hit_point.is_finite():
 		var uv := ((hit_point - rect.position) / rect.size).clamp(Vector2.ZERO, Vector2.ONE)
 		_mat.set_shader_parameter("hit_uv", uv)
-		_heat.add_hit(uv, 1.0)
+		# 열 잔광은 BulletMark(모든 면 공용 탄흔)가 맡는다 — 셰이더 heat_hits 를 함께 켜면 붉은 원이 겹친다
 		_damage_cells(hit_point - rect.position, Vector2(dir, 0.0), power)
 
 

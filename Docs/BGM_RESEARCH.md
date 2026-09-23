@@ -1,6 +1,6 @@
 # BGM 리서치 — 폐쇄 기지 SF 호러
 
-> 조사일: 2026-09-21  
+> 조사일: 2026-09-21 · 상시 재생 후보 재확인: 2026-09-23
 > 대상: `GodotPrototype/` · 2D 사이드뷰 슈팅, 폐쇄 연구·산업 기지, AI 로봇 주인공  
 > 레퍼런스 방향: 《Alien: Isolation》의 저음 드론·산업 질감·동적 긴장 구조  
 > 관련 문서: [`SOUND_RESEARCH.md`](SOUND_RESEARCH.md) · [`AMBIENCE_RESEARCH.md`](AMBIENCE_RESEARCH.md) · [`AUDIO_MIX.md`](AUDIO_MIX.md) · [`OPENING_FLOW.md`](OPENING_FLOW.md)
@@ -33,6 +33,24 @@
 
 무료 CC0 팩으로 도입부를 먼저 편집해 본 뒤, 장면별 필요한 길이와 레이어가 확인되면 상용 팩이나 커스텀 작곡으로 교체하는 순서가 안전하다.
 
+### 평상시 상시 재생 권장안 (2026-09-23 재확인)
+
+현재 `GodotPrototype/assets/audio/ambience/`에는 구역별 베드 3개와 방별 텍스처 8개가 있고,
+`Audio.plan_for(room_id)`와 `ambience/tuning.json`으로 이미 배치된다. 음악 파일과 Music 버스는 아직 없다.
+따라서 가장 먼저 시험할 소리는 **기존 구역 베드를 유지한 상태에서 음악 없는 탐색**이다.
+그 위에 음악이 필요한 순간만 얇은 드론을 얹는다. 이는 현재 공간음과 총격, 대사 블립의 가청성을 기준으로 한 설계 제안이며 곡별 청음 평가는 아니다.
+
+| 평상시 상황 | 기본 소리 | 추가 후보 | 사용 판단 |
+|---|---|---|---|
+| 에어록·정비실·승무원 구역 | 현재 `bed_common` / `bed_workshop` / `tex_crew_quiet` | 음악 없음 | NPC 대사와 발소리, 시설의 적막을 먼저 살린다 |
+| 넓은 홀·미탐색 구역 | 구역 베드 | SRG774 `Airy` 또는 `Sector`를 낮게 | 길게 머물러도 거슬리지 않는지, 룸톤을 가리지 않는지 오디션 |
+| 수경재배·전력 구역 | `tex_hydro_*` / `tex_power_*` | 음악 없음 또는 `Gloomy Drone Loops` 1개 | 펌프·기계음이 이미 구역 정체성을 제공한다 |
+| 이상 징후를 발견한 뒤 | 현재 앰비언스 유지 | SRG774 `Pulse` | 평소부터 상시 재생하면 단서와 전투의 대비가 사라진다 |
+
+**무료 오디션 순서:** (1) 현재 앰비언스만 10분, (2) [SRG774 `Airy`·`Sector`](https://opengameart.org/content/dark-sci-fi-audio-pack), (3) 더 얇은 음악층이 필요하면 [mumusi `Gloomy Drone Loops`](https://mumusi-c21.itch.io/gloomydroneloops), (4) 새 환경층이 필요하면 [Signature Sounds `Loops Of Ambience`](https://signaturesounds.org/store/p/ambient-loops-free-download-cc0-wav-sample-pack-)에서 소수만 선별. `Gloomy Drone Loops`는 무료/후원형이며 상업 게임 사용·편집이 허용되고 크레딧은 선택이다. Signature Sounds 팩은 CC0 WAV 90개지만 현재 베드가 있으므로 무작정 더 쌓지 않는다.
+
+**유료 방향을 정할 때:** [Tomality `Analog Horror Music Pack`](https://tomality.itch.io/analog-horror-music-pack)은 8곡·심리스 루프 25개와 OGG를 제공하고 현재 표시 가격은 $6 세일/$15 정가다. 아날로그 단말기와 CRT의 음색에 가장 직접적이다. [Luca Baradel `Anomaly`](https://lucabaradel.itch.io/anomaly)는 $9.99, 음악 12개·앰비언스 6개·스팅어 16개로 사건 반응형 구성이 필요할 때 적합하다. 다만 `Anomaly`의 게시 라이선스는 게임 사용을 허용하면서 **트레일러 등 다른 매체는 별도 문의**를 요구한다. 가격과 조건은 구매 시 재확인한다.
+
 ---
 
 ## 1. 평가 기준
@@ -55,7 +73,7 @@
 | 우선 | 후보 | 내용 | 적합한 용도 | 가격·라이선스 판단 |
 |---:|---|---|---|---|
 | 1 | [Sci-Fi Horror – Ambient Music and Sound Effects](https://heltonyan.itch.io/helton-yan-scifi-horror) | 모듈러 아날로그 스타일 4곡, 분리 스템 제공 | 탐색·불안·위협 레이어를 직접 재조립 | 무료/후원형. 제작자가 댓글에서 CC BY-SA라고 설명하나 상품 본문 표기가 명확하지 않다. **출시 채택 전 서면 확인 필요** |
-| 2 | [Dark Sci-Fi Audio Pack](https://opengameart.org/content/dark-sci-fi-audio-pack) | `Sector`, `Airy`, `Pulse`, `Urgent`, `Transmission`, `Title` | 빠른 도입부 프로토타입 | **CC0**. 상업 사용·수정·무표기 가능. MP3라 루프 경계에는 짧은 크로스페이드 권장 |
+| 2 | [Dark Sci-Fi Audio Pack](https://opengameart.org/content/dark-sci-fi-audio-pack) | `Sector`, `Airy`, `Pulse`, `Urgent`, `Transmission`, `Title` | 빠른 도입부 프로토타입 | **CC0**. 상업 사용·수정·무표기 가능. 개별 MP3와 `ogg.zip` 제공. 루프 경계는 직접 확인 |
 | 3 | [Analog Horror Music Pack](https://tomality.itch.io/analog-horror-music-pack) | 8곡, 심리스 루프 25개, WAV/MP3/OGG | 단말기·통신·탐색·추격 | 조사 시점 약 $6. 상업 사용·편집 가능, 원본 재판매 금지, 인간 제작. 가능하면 크레딧 권장 |
 | 4 | [Anomaly – Horror Music Toolkit](https://lucabaradel.itch.io/anomaly) | 음악 12, 환경음 6, 스팅어 16, 대체 버전·심리스 루프 | 상태 기반 동적 음악 | $9.99. 게임·인터랙티브 미디어 상업 사용 가능, 원본 재배포 금지, 인간 제작. 영상·TV 등은 별도 문의 |
 | 5 | [Sci-Fi Horror Music Pack FREE](https://tomfeldmann.itch.io/sci-fi-horror-music-pack-free) | 탐색·안전실·추격·스트레스용 9곡 | 무료 오디션과 장면별 비교 | **CC BY 4.0**, 상업 사용 가능, 제작자와 페이지 링크 크레딧 필요. 심리스 루프가 아니라 페이드 전환 전제 |
@@ -86,7 +104,7 @@
 | `Transmission` | 회사 회신, 기억 손실, 우선순위 공개 | 전환·반전·엔딩 큐 후보 |
 | `Title` | 메인 메뉴 또는 부팅 직전 | 타이틀 루프 후보 |
 
-장점은 CC0와 명확한 상태 구분이다. 단점은 MP3이고 스템이 없다는 점이다. 최종 음원이라기보다 **음악 상태 설계 검증용**으로 특히 적합하다.
+장점은 CC0와 명확한 상태 구분이다. **2026-07-09에 OGG 묶음이 추가**되어 개별 MP3 대신 이를 바로 시험할 수 있다. 스템은 없고 게시자가 매끄러운 반복을 위해 짧은 크로스페이드를 권한다. 최종 음원이라기보다 **음악 상태 설계 검증용**으로 특히 적합하다.
 
 ### 3.2 Analog Horror Music Pack — 시각 톤과의 결합 후보
 

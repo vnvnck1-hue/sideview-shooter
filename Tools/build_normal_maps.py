@@ -29,6 +29,7 @@ GROUPS = {
     "power_relay_room/Tiles/Frame": (2.4, 0, 1.0),
     "character/Split": (2.8, 4, 0.6),     # 게임이 쓰는 분리 프레임(몸통·팔)만
     "character/ToxicTumorCrawler": (2.6, 5, 0.7),   # 몬스터: 종양 덩어리가 둥글게 굴러 보이도록 베벨을 조금 넓게
+    "character/GiantToxicTumorCrawler": (2.6, 10, 1.4),  # 2배 상세 프레임의 대응 노멀
     "character/npc": (2.8, 4, 0.6),       # NPC 한 장짜리 idle — 플레이어 Split 과 같은 반응
     # 사족보행 기체(버그봇)의 원화 파츠. 금속 각파이프·실린더라 프랍과 같은 세기를 쓰되,
     # 조각이 가늘고 길어(포신 181×112, 로드 230×38) 베벨을 좁게 잡는다 — 넓으면 조각 전체가

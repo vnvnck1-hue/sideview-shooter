@@ -1,275 +1,282 @@
 {
-  "cell": 320,
+  "cell": 512,
+  "art_px": 4,
+  "native_cell": 128,
   "pivot": {
-    "x": 160,
-    "y": 320
+    "x": 256,
+    "y": 512
   },
+  "source": "Assets/Generated/PlayerConcepts/hooded_mechanic_hq_source_v1.webp",
   "frames": {
-    "aim_01": {
-      "shoulder": [
-        199,
-        178
-      ],
-      "shoulder_from_pivot": [
-        39,
-        -142
-      ],
-      "neck": [
-        175,
-        172
-      ],
-      "neck_from_pivot": [
-        15,
-        -148
-      ]
-    },
     "idle_01": {
       "shoulder": [
-        199,
-        178
+        260,
+        324
       ],
       "shoulder_from_pivot": [
-        39,
-        -142
+        4,
+        -188
       ],
       "neck": [
-        175,
-        172
+        264,
+        280
       ],
       "neck_from_pivot": [
-        15,
-        -148
+        8,
+        -232
+      ]
+    },
+    "aim_01": {
+      "shoulder": [
+        260,
+        324
+      ],
+      "shoulder_from_pivot": [
+        4,
+        -188
+      ],
+      "neck": [
+        264,
+        280
+      ],
+      "neck_from_pivot": [
+        8,
+        -232
       ]
     },
     "walk_01": {
       "shoulder": [
-        193,
-        178
+        260,
+        328
       ],
       "shoulder_from_pivot": [
-        33,
-        -142
+        4,
+        -184
       ],
       "neck": [
-        169,
-        172
+        264,
+        284
       ],
       "neck_from_pivot": [
-        9,
-        -148
+        8,
+        -228
       ]
     },
     "walk_02": {
       "shoulder": [
-        193,
-        181
+        260,
+        320
       ],
       "shoulder_from_pivot": [
-        33,
-        -139
+        4,
+        -192
       ],
       "neck": [
-        169,
-        175
+        264,
+        276
       ],
       "neck_from_pivot": [
-        9,
-        -145
+        8,
+        -236
       ]
     },
     "walk_03": {
       "shoulder": [
-        193,
-        179
+        260,
+        336
       ],
       "shoulder_from_pivot": [
-        33,
-        -141
+        4,
+        -176
       ],
       "neck": [
-        169,
-        173
+        264,
+        292
       ],
       "neck_from_pivot": [
-        9,
-        -147
+        8,
+        -220
       ]
     },
     "walk_04": {
       "shoulder": [
-        193,
-        174
+        260,
+        324
       ],
       "shoulder_from_pivot": [
-        33,
-        -146
+        4,
+        -188
       ],
       "neck": [
-        169,
-        168
+        264,
+        280
       ],
       "neck_from_pivot": [
-        9,
-        -152
-      ]
-    },
-    "crouch_01": {
-      "shoulder": [
-        168,
-        178
-      ],
-      "shoulder_from_pivot": [
         8,
-        -142
-      ],
-      "neck": [
-        190,
-        164
-      ],
-      "neck_from_pivot": [
-        30,
-        -156
-      ]
-    },
-    "crouch_02": {
-      "shoulder": [
-        168,
-        209
-      ],
-      "shoulder_from_pivot": [
-        8,
-        -111
-      ],
-      "neck": [
-        214,
-        194
-      ],
-      "neck_from_pivot": [
-        54,
-        -126
-      ]
-    },
-    "crouch_03": {
-      "shoulder": [
-        168,
-        250
-      ],
-      "shoulder_from_pivot": [
-        8,
-        -70
-      ],
-      "neck": [
-        216,
-        236
-      ],
-      "neck_from_pivot": [
-        56,
-        -84
-      ]
-    },
-    "crouch_04": {
-      "shoulder": [
-        168,
-        244
-      ],
-      "shoulder_from_pivot": [
-        8,
-        -76
-      ],
-      "neck": [
-        212,
-        229
-      ],
-      "neck_from_pivot": [
-        52,
-        -91
+        -232
       ]
     },
     "run_01": {
       "shoulder": [
-        204,
-        176
+        274,
+        333
       ],
       "shoulder_from_pivot": [
-        44,
-        -144
+        18,
+        -179
       ],
       "neck": [
-        180,
-        170
+        282,
+        289
       ],
       "neck_from_pivot": [
-        20,
-        -150
+        26,
+        -223
       ]
     },
     "run_02": {
       "shoulder": [
-        190,
-        176
+        274,
+        321
       ],
       "shoulder_from_pivot": [
-        30,
-        -144
+        18,
+        -191
       ],
       "neck": [
-        166,
-        170
+        282,
+        277
       ],
       "neck_from_pivot": [
-        6,
-        -150
+        26,
+        -235
       ]
     },
     "run_03": {
       "shoulder": [
-        202,
-        176
+        274,
+        349
       ],
       "shoulder_from_pivot": [
-        42,
-        -144
+        18,
+        -163
       ],
       "neck": [
-        178,
-        170
+        282,
+        305
       ],
       "neck_from_pivot": [
-        18,
-        -150
+        26,
+        -207
       ]
     },
     "run_04": {
       "shoulder": [
-        218,
-        176
+        274,
+        325
       ],
       "shoulder_from_pivot": [
-        58,
-        -144
+        18,
+        -187
       ],
       "neck": [
-        194,
-        170
+        282,
+        281
       ],
       "neck_from_pivot": [
-        34,
-        -150
+        26,
+        -231
+      ]
+    },
+    "crouch_01": {
+      "shoulder": [
+        261,
+        332
+      ],
+      "shoulder_from_pivot": [
+        5,
+        -180
+      ],
+      "neck": [
+        266,
+        288
+      ],
+      "neck_from_pivot": [
+        10,
+        -224
+      ]
+    },
+    "crouch_02": {
+      "shoulder": [
+        263,
+        348
+      ],
+      "shoulder_from_pivot": [
+        7,
+        -164
+      ],
+      "neck": [
+        270,
+        305
+      ],
+      "neck_from_pivot": [
+        14,
+        -207
+      ]
+    },
+    "crouch_03": {
+      "shoulder": [
+        265,
+        365
+      ],
+      "shoulder_from_pivot": [
+        9,
+        -147
+      ],
+      "neck": [
+        273,
+        321
+      ],
+      "neck_from_pivot": [
+        17,
+        -191
+      ]
+    },
+    "crouch_04": {
+      "shoulder": [
+        267,
+        373
+      ],
+      "shoulder_from_pivot": [
+        11,
+        -139
+      ],
+      "neck": [
+        275,
+        330
+      ],
+      "neck_from_pivot": [
+        19,
+        -182
       ]
     }
   },
   "arm_gun": {
     "size": [
-      87,
-      72
+      152,
+      76
     ],
     "shoulder_local": [
       0,
-      40
+      28
     ],
     "muzzle_local": [
-      83,
-      22
+      148,
+      24
+    ],
+    "eject_from_shoulder": [
+      72,
+      -24
     ]
   },
   "muzzle_flash": {
@@ -279,7 +286,12 @@
     ]
   },
   "head": {
-    "overlap": 28,
-    "note": "head/<clip>/<clip>_NN.png 은 320 셀 그대로, neck 이 회전축"
-  }
+    "note": "head/<clip>/<clip>_NN.png 은 셀 크기 그대로, neck 이 회전축. 몸통에도 후드 아래 5줄이 겹쳐 있다"
+  },
+  "height": 372,
+  "body_center_y": 212,
+  "roll_center": [
+    10,
+    154
+  ]
 }

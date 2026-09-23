@@ -15,9 +15,6 @@
 | 버튼 | 동작 |
 |---|---|
 | ▶ 메인 게임 | `scenes/MainGame.tscn`(`scripts/main_game.gd`, `main.gd` 상속). **에어록**(`RoomData.START_ROOM`)에서 시작해 측벽문·정면문으로 전체 맵을 탐색한다. 우상단에 구역 · 몬스터 밀도(안전/적음/위험) · 탐색한 방 수 |
-| ⚙ 테스트 — 랜덤한 방에서 시작 | `scenes/Main.tscn`. 방 하나를 무작위로 골라 바로 플레이 (원버튼) |
-| ⌖ 센트리건 테스트 — 격납고(가장 큰 방)에서 시작 | `scenes/Main.tscn` 을 맵에서 가장 큰 방(**격납고** 32열 4096px · 몬스터 12)에서 열고, 플레이어를 센트리건 해치 옆(`RoomData.SENTRY_TEST_X` − 250)에 세운다. W/↑ 전개·조종, 좌클릭 연사 |
-| ♪ 앰비언스 랩 | `scenes/MainGame.tscn` + `scripts/ambience_lab.gd` 오버레이(`AppFlow.amb_lab`). **걸어 다니면서** 방마다 무엇이 울리는지 보고 그 자리에서 고친다 — **Tab** 대상(BED/TEX0/TEX1) · **- / =** 음량 ∓0.5dB(Shift ∓2) · **, / .** 파일 순환 · **Backspace** 슬롯 비우기 · **Ctrl+S** `ambience/tuning.json` 저장 · **Ctrl+R** 이 방 초기화 · **F5** 패널 접기. 저장값은 AudioManager 가 시작할 때 읽어 본편에도 적용된다 |
 | ✎ 대화 UI 랩 | `scenes/DialogueLab.tscn`(`scripts/dialogue_lab.gd`, `main.gd` 상속). 실제 방·인물 위에서 **대사 표시 방식 5종**을 **1~5**로, **음성 방식 10종**을 **V / Shift+V** 로 바꿔 가며 비교한다. **Tab** 다음 표시 방식 · **[ ]** 상대 바꾸기 · **R** 대화 다시 · **0** 플래그 초기화 |
 | 사족보행 랩 | `scenes/WalkerLab.tscn`. **인게임 기체의 관절 각도·보폭·스텝 시간을 슬라이더로 조정**하고 **Ctrl+S**로 인게임 공유 설정을 저장한다. 자동 걷기·달리기·점프·본 겹쳐보기. [보행 튜닝 안내](../Docs/WALKER_TUNING.md). 상단 **피벗·키프레임**은 기존 [원화 편집기](../Docs/WALKER_AUTHORING.md)(`WalkerAuthoringLab.tscn`)로 연결한다. |
 | ◧ 조명·면 랩 | `scenes/FaceLab.tscn`(`scripts/face_lab.gd`, **`main.gd` 상속**). 본편과 똑같이 플레이(이동·조준·사격)하면서 **조명 수치**와 **프랍 면 맵**을 그 자리에서 고친다. **F5** 패널 · **우클릭** 화면에서 광원/프랍 고르기 · **Tab** 광원 순환 · **G** 총 계열(클릭 불가) · **F10** 조명 저장 · **P** 마우스 광원(휠 반경 / Shift 세기 / Ctrl 높이) · **N** 면↔자동 A/B · **M** 면 맵 겹쳐 보기 · **F12** 면 맵 다시 읽기. 저장하면 `lighting/tuning.json`·`faces/tuning.json` 에 쓰여 본편에 적용된다. `Docs/LIGHT_TUNING.md` · `Docs/FACE_LIGHTING.md` |
@@ -176,7 +173,7 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 
 ## 센트리건 (`scripts/sentry_turret.gd`)
 
-바닥 격납형 거치 화기. `RoomData.ROOMS[...]["props"]` 에 `{"type": "sentry", "x": 바닥 중심}` 을 적으면 `Room.build` 가 놓는다 (작업실 1230 · 격납고 3495 = `RoomData.SENTRY_TEST_X`). 평소엔 바닥과 같은 높이의 해치로 묻혀 있고, 옆에 서서 **W / ↑** 를 누르면 솟아오른다. 로비의 "센트리건 테스트" 버튼이 가장 큰 방(격납고)의 해치 옆에서 바로 시작한다.
+바닥 격납형 거치 화기. `RoomData.ROOMS[...]["props"]` 에 `{"type": "sentry", "x": 바닥 중심}` 을 적으면 `Room.build` 가 놓는다 (작업실 1230 · 격납고 3495 = `RoomData.SENTRY_TEST_X`). 평소엔 바닥과 같은 높이의 해치로 묻혀 있고, 옆에 서서 **W / ↑** 를 누르면 솟아오른다.
 
 | 단계 | 내용 |
 |---|---|
@@ -354,8 +351,7 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
 | `scripts/crt_overlay.gd` (autoload `CrtFx`) / `scripts/crt_preset.gd` / `shaders/crt.gdshader` | 전역 CRT 모니터 후처리(루트 뷰포트 층 100 풀스크린) · 프리셋 표 · 셰이더. F4 순환, `user://crt.cfg` 저장, 환경 변수 `CRT_PRESET`. 스크린샷 `tools/crt_shot.gd` |
 | `scripts/main.gd` / `scripts/main_game.gd` | 방 로딩·페이드 전환·HUD·입력 맵·마우스 → 월드 조준점·글로우 환경·후처리 / 메인 게임 HUD(구역·밀도·탐색 수) |
 | `scripts/depth_layers.gd` / `scripts/light_mirror.gd` / `scripts/foreground_layer.gd` | 공간감 층 규격(층 번호·인물 층 조명 비율. 프리셋 A/B 는 근경 분리로 확정 후 제거) / 인물 층 전용 거울 라이트 / 근경 실루엣 층(배관·케이블·기둥·상자·트레이, 플레이어 기준 패럴랙스 1.045×, 윤곽 림) |
-| `scripts/foreground_lab.gd` / `tools/foreground_lab_shot.gd` | 근경 랩 편집 오버레이 / 근경 랩 스모크 샷 |
-| `scripts/ambience_lab.gd` / `ambience/tuning.json` | 앰비언스 랩 오버레이(방별 BED/TEXTURE 파일·음량 실시간 조정) / 저장된 방별 보정 — `AudioManager.plan_for()` 가 기본값 위에 덮는다 |
+| `ambience/tuning.json` | 저장된 방별 앰비언스 보정 — `AudioManager.plan_for()` 가 기본값 위에 덮는다 |
 | `scripts/auto_test.gd` | 개발용 자동 테스트. `AutoTest.tscn` 을 실행하면 입력을 시뮬레이션하고 `user://shots/` 에 스크린샷 저장 |
 
 ## 가이드 적용 사항
@@ -373,7 +369,7 @@ HDR 2D 도 시험했지만 2D 가 선형 색공간으로 섞이면서 어두운 
   - **근경 실루엣** (`scripts/foreground_layer.gd`, z7): 근경은 방 윤곽을 덮어 방을 바깥 어둠과 이어 주는 층이다 — 경계에서 짧게 끊기면 그 뒤로 배경 벽이 다시 보인다. 절차 생성 규칙(작업실 `foreground/workshop.json` 수작업 배치에서 뽑음): **천장선마다** 두께 48px 배관을 천장선 가운데에 깔고(마디 틈 28px + 플랜지·행거), 방 끝이나 옆 열이 더 낮은 쪽(위가 어둠)으로 320px 더 뻗음 · **바닥 밴드 하단선**에 두께 56~60px 트레이(양쪽 어둠으로 320px, 마디 틈 96~230px, 위에 잔해) · 실내 **기둥**(방 1300px 당 1, 폭 64~100, 그 열의 천장 위 44px ~ 바닥 밴드 아래 32px) · **상자 무리**(방 1100px 당 1, 바닥선 38px 아래에 닿음, 위에 작은 상자) · 가장 높은 천장 배관에서 처진 **케이블** 1~3. 기둥·상자·케이블은 램프·정면문·방 가운데·서로에서 200px 이상 떨어진 자리. 계단형 천장은 열별 천장(`col_ceilings`)으로 구간을 나눠 처리한다. 몸체는 `light_mask=0` 으로 라이트 제외, 색 (0.07,0.07,0.10) 에 앰비언트가 다시 곱해져 방 밖 순검정과 거의 구분되지 않는다(형체는 림이 알려준다). **윤곽 림**: 사각형 네 변에 4px 띠를 두르고 `shaders/foreground_rim.gdshader` 를 입힌다 — 정점 색에 담긴 변의 바깥 법선이 광원(`LIGHT_DIRECTION`)을 향할 때만 그 광원 색으로 밝아지고(`rim_strength` 0.8, 감쇠는 `pow(0.55)` 로 펴서 멀리서도 살짝), **방 밖(어둠)에 있는 띠와 가까운 방 경계(측벽·열별 천장·바닥 밴드 하단) 쪽을 향한 면은 경계 240px 안에서 림이 0** 이 된다(`room_factor`). 거울 라이트(`LightMirror`) 범위를 z7 까지 넓혀 램프·비상등 림이 닿고, 불·총구·아크는 원래 모든 층을 비춘다. 패럴랙스 기준은 **카메라 화면 중심**(사격 흔들림 `offset` 제외): 마우스·시선 리드로 카메라가 내다볼 때 근경이 반대로 밀리고, 걷기만 할 때는 카메라가 따라오는 만큼만 조금 반응한다. 이동의 **0.045배**, 지수 평활(5/s) 뒤 4px 격자에 한 칸 이상 벌어질 때만 옮기는 히스테리시스로 서 있을 때의 떨림을 막는다. (플레이어 X 기준·같은 방향은 시험 후 롤백) 모양은 방 id 시드로 고정.
   - 글로우(스크린 공간 블룸)는 그대로 모든 층 위. 확정되면 프리셋 0 분기(`DepthPreset.enabled()`)와 F2·HUD 를 제거한다.
   - **그림 근경** (`ForegroundLayer.SPRITES`): `assets/props/foreground_pipe_bracket_v2.png`(파이프 브래킷, 천장 배관에서 내려오는 세로관+밸브)·`foreground_utility_housing_v2.png`(바닥 유틸리티 하우징)를 kind `pipe_bracket`/`utility_housing` 으로 놓는다. 불투명 영역(region)을 항목 size 로 늘리고(기본 원본의 절반: 420×616 · 806×280), 실루엣과 같은 층·같은 어둠(라이트 제외, `SPRITE_TINT` 0.55 × 앰비언트). 시험 방(`SPRITE_ROOMS`: airlock·corr_west·workshop·tank_room)의 절차 생성에 하나씩 들어가고(브래킷은 가장 높은 천장 배관 아래, 하우징은 바닥선 38px 아래에 닿음), 작업실 저장 파일에도 둘을 추가했다. 랩에서 7·8 로 어느 방에나 놓을 수 있다.
-  - **근경 랩** (로비 → "근경 랩", `scripts/foreground_lab.gd`, `AppFlow.start_foreground_lab`): 실제 방·조명·플레이어 위에서 근경을 편집한다. 근경은 `ForegroundLayer.items = [{kind, pos, size}]` 데이터로 그려지고(kind: pipe·pillar·crate·tray·dark·cable), 방마다 `foreground/<방 id>.json` 이 있으면 그것을, 없으면 방 id 시드 절차 생성을 쓴다. 랩에서 **클릭·드래그 이동, 우하단 모서리 드래그 크기, 1~6 추가, Del 삭제, Tab 종류 순환, Q/E 그리기 순서, 방향키 4px(Shift 32px), Ctrl+D·Shift 드래그 복제, R 절차 생성 초기화, H 윤곽선, A/D 카메라, [ ] 방 전환, S 저장**. 저장 파일은 프로젝트 안(`foreground/`)이라 커밋된다. 스모크 테스트: `--script res://tools/foreground_lab_shot.gd -- <방 id>`.
+  - **근경 배치**: 근경은 `ForegroundLayer.items = [{kind, pos, size}]` 데이터로 그려지고(kind: pipe·pillar·crate·tray·dark·cable), 방마다 `foreground/<방 id>.json` 이 있으면 그것을, 없으면 방 id 시드 절차 생성을 쓴다. (편집용 근경 랩은 2026-09-23 삭제 — 저장된 JSON 은 그대로 읽는다.)
 - 리소스는 원본 픽셀 기준(타일 128px, 월드 좌표 = 원본 px), Nearest 필터, 밉맵 없음
 - 타일: Bottom Left 피벗, 같은 Y, `X += 폭` 누적, 캡은 방 끝에만
 - 바닥선: 타일 상단 기준 Y = 486 — 캐릭터·프랍 접지 기준

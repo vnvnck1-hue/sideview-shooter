@@ -92,6 +92,8 @@ signal control_changed(active: bool)
 
 ## 맵에서 유일한 id (room_data.gd 의 props 가 준다). 단말기 원격 접속이 이걸로 찾는다
 var walker_id := ""
+## 사람이 읽는 이름 ("격납고 보행 기체"). 단말기 방어 그리드와 접속 연출이 같은 이름을 쓴다
+var display_name := "보행 기체"
 var state: State = State.DORMANT
 var controlled := false
 var aim_target := Vector2.ZERO    # 월드 마우스 — Main 이 매 프레임 채운다

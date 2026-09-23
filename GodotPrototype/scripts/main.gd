@@ -33,6 +33,21 @@ const ZOOM_DEFAULT := 1
 
 ## 단말기 접속·대화는 기본 줌에서 몇 **단계**(화면 배율 +1 = zoom +0.25) 더 밀어 넣는가로 정한다.
 ## 고정 배수(×1.5 등)로 잡으면 정수 배율이 깨지므로 단계로 센다.
+## ## 보행 기체에 접속한 동안의 화면 (2026-09-23)
+## 기체의 눈으로 보는 화면은 **내 눈으로 보는 화면과 달라야 한다.** 셋을 함께 건다:
+##   · CRT 프리셋이 한 단 낡아진다 (CrtPreset.DEFAULT 아케이드 모니터 → LINKED 가정용 TV — 굽음·색 번짐·잡음·흐르는 띠)
+##   · 화면이 **천천히 조금 물러난다** (2초에 걸쳐. 기체가 사람보다 넓게 보는 눈을 가졌다는 뜻)
+##   · 조종 내내 **가끔 지지직거린다** (LINK_GLITCH_GAP — 접속 중이라는 것을 계속 상기시킨다)
+##
+## 줌 배율만은 "화면 배율 정수" 규칙(아래 줌 절 참고)에서 **일부러 벗어난다.** 정수 단계로 끊으면
+## 2초 줌아웃이 계단으로 튀어 연출이 죽는다. 대신 이 구간에는 가정용 TV 프리셋의 주사선·잡음이
+## 얹혀 있어 픽셀 격자가 어긋나는 것이 눈에 띄지 않는다 — 그래서 둘을 **같이** 건다.
+const LINK_ZOOM := 0.86                # 접속 중 줌 배율 (1 보다 작을수록 물러난다)
+const LINK_ZOOM_TIME := 2.0            # 그만큼 물러나는 데 걸리는 시간
+const LINK_ZOOM_BACK := 0.35           # 돌아올 때는 빠르게 (해제 글리치에 묻힌다)
+const LINK_GLITCH_GAP := Vector2(4.5, 9.0)   # 조종 중 지지직 간격 (초, 이 범위에서 무작위)
+const LINK_GLITCH_POWER := Vector2(0.18, 0.34)  # 그 지지직의 세기 범위 — 약하게, 거슬리지 않게
+
 const TERMINAL_ZOOM_STEP := 2           # 접속하면 화면 배율 +2 (×3 → ×5)
 const DIALOGUE_ZOOM_STEP := Vector2i(1, 3)   # 대화 줌이 오갈 수 있는 단계 범위 (기본 +1 ~ +3)
 
@@ -42,6 +57,7 @@ var zoom_label: Label                   # 우상단: 줌 프리셋 (F3)
 var shadow_label: Label                 # 우상단 둘째 줄: 기본 그림자 프리셋 (F6)
 var dyn_shadow_label: Label             # 우상단 셋째 줄: 동적 광원 그림자 프리셋 (F8)
 var idle_label: Label                   # 우상단 넷째 줄: 아이들 모션 프리셋 (F5)
+var mark_label: Label                   # 우상단 다섯째 줄: 탄흔 프리셋 (F9)
 
 var world_vp: SubViewport                  # 월드 뷰포트
 var world: Node2D                          # 방·플레이어·탄 등 월드 노드의 부모 (world_vp 안)
@@ -65,6 +81,11 @@ var heat_bar_fill: ColorRect
 ## **조종 상태를 한 자리에서만 관리하기 위해서다.** 기계마다 변수를 따로 두면 하나를 놓친 순간
 ## 플레이어 입력이 영영 안 돌아온다.
 var controlled_turret: Node2D
+## 보행 기체 접속 연출 (walker_link.gd). 연출만 하고 무엇을 바꿀지는 모른다 — 콜백으로 받는다
+var walker_link: WalkerLink
+var _link_zoom := 1.0                   # 기체 접속 중 줌 배율 (_base_zoom 에 곱해진다)
+var _link_zoom_tw: Tween
+var _link_glitch_t := 0.0               # 다음 "접속 중" 지지직까지 남은 시간 (초)
 ## 단말기 접속 (Docs/TERMINAL_SYSTEM_CONCEPT.md). 화면 안은 TerminalScreen 이, 카메라·월드 교체는 여기가 맡는다.
 const TERMINAL_PUSH := 0.45             # 카메라 밀어넣기/후퇴 시간 (초)
 var terminal_screen: TerminalScreen
@@ -166,32 +187,6 @@ func _ready() -> void:
 	camera.make_current()
 	camera.set_preset(cam_preset)
 	camera.snap()
-	if AppFlow.lab_mode:
-		_setup_lab()
-	if AppFlow.amb_lab:
-		add_child(AmbienceLab.new())
-		title_label.text += "   ·   앰비언스 랩"
-
-
-## 근경 랩: 플레이어 입력·몬스터·조준점을 끄고 ForegroundLab 편집 오버레이를 근경 층에 붙인다. 안내는 하단 힌트 라벨에.
-func _setup_lab() -> void:
-	player.input_enabled = false
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	crosshair.visible = false
-	ammo_label.visible = false
-	current_room.disable_monsters()
-	if current_room.foreground == null:
-		hint_label.text = "근경 랩: 이 프리셋에는 근경 층이 없습니다 (F2 로 근경 분리 프리셋으로)"
-		return
-	var lab := ForegroundLab.new()
-	lab.name = "ForegroundLab"
-	lab.status_changed.connect(func(t: String): hint_label.text = t)
-	current_room.foreground.add_child(lab)
-	lab.setup(current_room.foreground, player)
-	hint_label.position = Vector2(24, VIEW_SIZE.y - 24 - 110)
-	hint_label.size = Vector2(1552, 110)
-	hint_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	title_label.text += "   ·   근경 랩"
 
 
 ## ── 줌 ─────────────────────────────────────────────────────────────────────
@@ -204,8 +199,10 @@ func _base_px() -> int:
 	return int(ZOOM_PRESETS[zoom_index]["px"])
 
 
+## 기본 줌. 기체에 접속한 동안에는 _link_zoom 이 곱해져 화면이 조금 물러나 있다
+## (LINK_ZOOM 주석 참고 — 이 구간만 정수 배율 규칙에서 벗어난다).
 func _base_zoom() -> float:
-	return _zoom_of(_base_px())
+	return _zoom_of(_base_px()) * _link_zoom
 
 
 func _terminal_zoom() -> float:
@@ -262,6 +259,12 @@ func _process(_delta: float) -> void:
 		set_dyn_shadow(PropShadow.dyn_index + dstep)
 		return
 
+	# 탄흔 프리셋 순환 (F9 다음 · Shift+F9 이전) — 새로 박히는 자국부터 바뀐다
+	if not transitioning and Input.is_action_just_pressed("mark_cycle"):
+		var mstep := -1 if Input.is_key_pressed(KEY_SHIFT) else 1
+		set_mark_preset(BulletMark.preset_index + mstep)
+		return
+
 	# 아이들 모션 프리셋 순환 (F5 다음 · Shift+F5 이전) — 가만히 서서 바로 비교한다
 	if not transitioning and Input.is_action_just_pressed("idle_cycle"):
 		var istep := -1 if Input.is_key_pressed(KEY_SHIFT) else 1
@@ -307,7 +310,16 @@ func _process(_delta: float) -> void:
 	if controlled_turret != null:
 		controlled_turret.aim_target = mouse_world
 		if not transitioning and Input.is_action_just_pressed("crouch"):
-			controlled_turret.set_controlled(false)
+			# 보행 기체는 **접속을 끊는** 연출을 타고 내린다 (포탑은 손만 떼면 되므로 그대로).
+			# 원격(단말기)일 때는 단말기가 제 글리치를 이미 내므로 여기서 또 겹치지 않는다.
+			var machine := controlled_turret
+			if machine is WalkerUnit and remote_link.is_empty():
+				_set_world_hud(false)
+				walker_link.link_out(func(): machine.set_controlled(false))
+			else:
+				machine.set_controlled(false)
+
+	_tick_link_glitch(_delta)
 
 	# 카메라 추적·마우스/시선 리드·흔들림은 GameCamera 가 스스로 처리한다
 	# 사격 색수차: 흔들림과 같은 리듬으로 빠르게 빠진다
@@ -332,6 +344,12 @@ func _process(_delta: float) -> void:
 		n.player_x = player.position.x          # 어슬렁거리는 인물이 플레이어를 뚫고 지나가지 않게
 		if n == near_npc:
 			n.look_at_x(player.position.x)
+
+	# 접속 연출이 도는 동안에는 안내 문구를 접는다 — 화면은 연출의 것이고, 이 블록은 매 프레임
+	# 문구를 다시 켜므로 _set_world_hud(false) 한 번으로는 연출 위로 도로 올라온다 (실제로 그랬다).
+	if walker_link.busy():
+		prompt_label.visible = false
+		return
 
 	# 안내 문구: 센트리건·보행 기체가 먼저(같은 W/↑ 키를 쓴다), 그 다음 생존자·단말기, 없으면 정면문
 	var turret := current_room.sentry_near(player.position.x)
@@ -367,6 +385,7 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	for b in bullets.get_children():
 		b.queue_free()
 	HeatSurface.clear_all()
+	BulletMark.clear_all()
 
 	AppFlow.visit(id)                                   # 단말기 지도(StationMap)의 안개를 걷는 기록
 	current_room = Room.new()
@@ -434,7 +453,21 @@ func _on_front_door_requested() -> void:
 		return
 	var unit := current_room.walker_near(player.position.x)
 	if unit != null:
-		unit.activate()
+		# 기체는 **소프트웨어에 접속하듯** 탄다. 연출 한가운데(화면이 한 번 튀는 순간)에
+		# 카메라 주체와 기동을 함께 넘긴다 — 그래야 "내가 지금 누구인가" 가 한 박자도 흐려지지 않는다.
+		# 이미 조종 중이면 연출 없이 그대로 둔다 (activate 는 그 경우 아무 일도 하지 않는다).
+		if unit.controlled or walker_link.busy():
+			unit.activate()
+			return
+		# 연출이 도는 동안 플레이어가 걸어 나가지 않게 세워 둔다.
+		# 조종이 실제로 넘어가면 _on_turret_control 이 이어받고, 어떤 이유로든 넘어가지 않으면
+		# 연출이 끝날 때 _on_link_finished 가 조작을 돌려준다 — 어느 쪽이든 갇히지 않는다.
+		player.input_enabled = false
+		player.velocity_x = 0.0
+		_set_world_hud(false)                      # 연출이 도는 동안 화면은 연출의 것이다
+		walker_link.link_in(unit.display_name, func():
+			_camera_subject(unit)
+			unit.activate())
 		return
 	var person := current_room.npc_near(player.position.x)
 	if person != null and DialogueRuntime.has_dialogue(person.npc_id):
@@ -519,8 +552,8 @@ func _spawn_shot(muzzle_pos: Vector2, target_pos: Vector2, power := 1.0, tracer 
 			hit["node"].break_light()
 			b.impact_kind = Bullet.Impact.GLASS
 			camera.add_shake(2.5)
-		"wall":
-			current_room.heat_wall(hit["node"], target_pos)
+		"wall", "none":
+			pass                                            # 벽·뒷벽 — 자국은 아래에서 공통으로 남긴다
 		"glass":
 			hit["node"].crack(target_pos)
 			b.impact_kind = Bullet.Impact.GLASS
@@ -530,7 +563,29 @@ func _spawn_shot(muzzle_pos: Vector2, target_pos: Vector2, power := 1.0, tracer 
 			b.impact_kind = Bullet.Impact.PROP
 			camera.add_shake(0.8 * (power - 1.0))
 	bullets.add_child(b)
+	_leave_mark(hit, target_pos, target_pos - muzzle_pos, power)
 	current_room.notify_shot(muzzle_pos, target_pos)      # 전선 등 물리 반응
+
+
+## 탄흔 — **어느 총이든** 박힌 자리에 고열 자국을 남긴다 (BulletMark). 몬스터(체액)·물(물보라)·
+## 램프/비상등/유리(깨짐·금)는 각자 반응이 따로 있어 제외. 프랍은 맞은 셀이 부서져 뚫렸으면 뒤 벽에 남긴다.
+func _leave_mark(hit: Dictionary, point: Vector2, dir: Vector2, power: float) -> void:
+	var host: Node2D = null
+	match hit["kind"]:
+		"wall", "none":
+			# 탄이 뚫고 지나가는 앞쪽 물체(단말기 등)의 앞면이면 그 물체에 붙인다 — 뒷벽에 깔면 물체에 가려진다
+			for sp in current_room.stain_props():
+				if is_instance_valid(sp) and sp.is_solid_at(point):
+					host = sp
+					break
+		"prop":
+			var pr = hit["node"]
+			if is_instance_valid(pr) and pr.is_solid_at(point):
+				host = pr
+		_:
+			return
+	var on_floor: bool = point.y >= current_room.floor_y - BulletMark.CELL * 2.0
+	BulletMark.spawn(current_room, point, dir, host, power, on_floor)
 
 
 func _on_ammo_changed(ammo: int, mag: int, reloading: bool) -> void:
@@ -560,6 +615,80 @@ func _on_turret_heat(heat: float, overheated: bool) -> void:
 
 
 ## 조종 시작/해제 — 조종 중엔 플레이어가 움직이지도 쏘지도 않는다(같은 마우스로 포신을 돌린다)
+## 접속 연출이 끝났다. 조종이 넘어가지 않았다면(기체가 사라졌다거나) 조작을 도로 준다 —
+## 연출 때문에 플레이어가 영영 못 움직이는 일만은 없어야 한다.
+func _on_link_finished() -> void:
+	if not terminal_screen.is_open() and not terminal_busy:
+		_set_world_hud(true)
+	if controlled_turret == null:
+		_player_input_back()
+
+
+## 기체의 눈으로 보는 화면을 켜고 끈다 — CRT 프리셋 한 단 + 천천히 물러나는 줌.
+## 둘 다 여기 한 곳에서만 바뀌므로, 어떤 경로로 조종이 풀리든(방 이동·강제 해제) 원래 화면으로 돌아온다.
+func _set_linked_screen(on: bool) -> void:
+	var crt := get_node_or_null("/root/CrtFx")
+	if crt != null:
+		if on:
+			crt.push_preset(CrtPreset.get_preset(CrtPreset.LINKED)["id"])
+		else:
+			crt.pop_preset()
+	_link_glitch_t = randf_range(LINK_GLITCH_GAP.x, LINK_GLITCH_GAP.y)
+	if _link_zoom_tw != null and _link_zoom_tw.is_valid():
+		_link_zoom_tw.kill()
+	_link_zoom_tw = create_tween()
+	_link_zoom_tw.tween_method(_apply_link_zoom, _link_zoom, 1.0 if not on else LINK_ZOOM,
+		LINK_ZOOM_TIME if on else LINK_ZOOM_BACK).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## 줌 배율 한 걸음. 카메라에 직접 넣지 않고 _base_zoom 을 거친다 — 단말기·대화 줌과 섞이지 않게.
+func _apply_link_zoom(k: float) -> void:
+	_link_zoom = k
+	if camera == null or terminal_screen.is_open() or dialogue.active:
+		return
+	var z := _base_zoom()
+	camera.zoom = Vector2(z, z)
+
+
+## 조종 중 **가끔** 한 번씩 지지직. 접속해 있다는 것을 계속 상기시키는 장치다 —
+## 너무 잦으면 거슬리고 너무 뜸하면 잊어버린다. 연출이 도는 동안에는 건드리지 않는다.
+func _tick_link_glitch(delta: float) -> void:
+	if not (controlled_turret is WalkerUnit) or walker_link.busy() or terminal_screen.is_open():
+		return
+	_link_glitch_t -= delta
+	if _link_glitch_t > 0.0:
+		return
+	_link_glitch_t = randf_range(LINK_GLITCH_GAP.x, LINK_GLITCH_GAP.y)
+	var crt := get_node_or_null("/root/CrtFx")
+	if crt != null:
+		crt.channel_glitch(Callable(), 0.34, randf_range(LINK_GLITCH_POWER.x, LINK_GLITCH_POWER.y))
+
+
+## 플레이어에게 조작을 돌려준다 — **돌려줘도 되는 상황일 때만.**
+## 단말기 화면이 떠 있거나 방을 갈아 끼우는 중이면 그쪽이 조작을 쥐고 있어야 한다.
+## 조종 해제와 접속 연출이 같은 조건을 봐야 해서 한 곳으로 모았다 (한쪽만 고치면 조작이 영영 안 돌아온다).
+func _player_input_back() -> void:
+	if not transitioning and not terminal_screen.is_open() and not terminal_busy:
+		player.input_enabled = true
+
+
+## 카메라가 **누구를 주체로 따라갈 것인가**를 정한다.
+##
+## 보행 기체를 조종하는 동안에는 기체가 곧 플레이어다 — 플레이어 본체는 제자리에 서 있으므로
+## 그대로 두면 기체만 화면 밖으로 걸어 나간다 (포탑은 제자리에 박혀 있어 이 문제가 없었다).
+## focus_at 으로 한 점을 잡는 방식도 안 된다: 그건 **고정점**이라 걸어가는 기체를 따라가지 못한다.
+## 그래서 카메라의 target 자체를 갈아 끼우고 잡아 둔 초점은 푼다.
+##
+## 주체가 바뀌는 순간은 접속 연출(WalkerLink) 한가운데라 snap 해도 보이지 않는다.
+func _camera_subject(node: Node2D) -> void:
+	if node == null or camera.target == node:
+		return
+	camera.target = node
+	if current_room != null:
+		camera.clear_focus(RoomData.room_rect(current_room.room_id).get_center().y)
+	camera.snap()
+
+
 ## 조종을 잡고 놓는 **유일한 자리.** 센트리건·보행 기체가 같이 쓴다.
 func _on_turret_control(active: bool, turret: Node2D) -> void:
 	if active:
@@ -570,13 +699,20 @@ func _on_turret_control(active: bool, turret: Node2D) -> void:
 		player.velocity_x = 0.0
 		heat_bar_bg.visible = remote_link.is_empty()   # 원격일 땐 단말기 머리글이 열을 보여 준다
 		crosshair.set_sentry(true)                 # 조준점이 센트리건 레티클로 바뀐다
+		if turret is WalkerUnit:
+			_camera_subject(turret)                # 걸어다니므로 카메라가 기체를 따라간다
+			_set_linked_screen(true)
+			player.standby = true                  # 몸은 고개를 떨군 채 대기 상태로 남는다
 		_on_turret_heat(turret.heat, turret.overheated)
 	elif controlled_turret == turret:
 		controlled_turret = null
 		heat_bar_bg.visible = false
 		crosshair.set_sentry(false)
-		if not transitioning and not AppFlow.lab_mode and not terminal_screen.is_open() and not terminal_busy:
-			player.input_enabled = true
+		if turret is WalkerUnit:
+			_set_linked_screen(false)
+			player.standby = false
+		_camera_subject(player)                    # 주체를 플레이어로 되돌린다 (방 이동·강제 해제 포함)
+		_player_input_back()
 		_on_ammo_changed(player.ammo, Player.MAG_SIZE, player.reloading)
 
 
@@ -624,7 +760,7 @@ func _finish_disconnect() -> void:
 	terminal_busy = false
 	crosshair.visible = true
 	_set_world_hud(true)
-	if not transitioning and not AppFlow.lab_mode:
+	if not transitioning:
 		player.input_enabled = true
 
 
@@ -809,7 +945,7 @@ func _on_dialogue_finished() -> void:
 		return
 	crosshair.visible = true
 	_set_world_hud(true)
-	if not transitioning and not AppFlow.lab_mode and controlled_turret == null 			and not terminal_screen.is_open() and not terminal_busy:
+	if not transitioning and controlled_turret == null 			and not terminal_screen.is_open() and not terminal_busy:
 		player.input_enabled = true
 
 
@@ -898,6 +1034,19 @@ func set_dyn_shadow(i: int) -> void:
 func set_idle_preset(i: int) -> void:
 	Player.idle_index = wrapi(i, 0, Player.IDLE_PRESETS.size())
 	_update_idle_label()
+
+
+func set_mark_preset(i: int) -> void:
+	BulletMark.set_preset(i)
+	_update_mark_label()
+
+
+func _update_mark_label() -> void:
+	if mark_label == null:
+		return
+	var p := BulletMark.preset()
+	mark_label.text = "탄흔 (F9)  %d/%d  %s — %s" % [
+		BulletMark.preset_index + 1, BulletMark.PRESETS.size(), p["name"], p["desc"]]
 
 
 func _update_idle_label() -> void:
@@ -1077,7 +1226,23 @@ func _setup_ui() -> void:
 	layer.add_child(idle_label)
 	_update_idle_label()
 
+	mark_label = Label.new()
+	mark_label.position = Vector2(VIEW_SIZE.x - 24 - 1100, 132)
+	mark_label.size = Vector2(1100, 30)
+	mark_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	mark_label.add_theme_font_override("font", font)
+	mark_label.add_theme_font_size_override("font_size", 20)
+	mark_label.add_theme_color_override("font_color", Color(1.0, 0.84, 0.46))
+	layer.add_child(mark_label)
+	_update_mark_label()
+
 	# 정면문 안내: 화면 하단 중앙(힌트 바로 위) — 우상단 디버그 라벨과 겹치지 않게
+	# 보행 기체 접속 연출. 안내 문구·조준점보다 위에 떠야 하므로 UI 층 맨 끝에 붙인다
+	walker_link = WalkerLink.new()
+	walker_link.name = "WalkerLink"
+	walker_link.finished.connect(_on_link_finished)
+	layer.add_child(walker_link)
+
 	prompt_label = Label.new()
 	prompt_label.position = Vector2(0, 800)
 	prompt_label.size = Vector2(VIEW_SIZE.x, 40)
@@ -1138,6 +1303,7 @@ func _setup_input_map() -> void:
 	_add_action("shadow_cycle", [KEY_F6])   # 기본(붙박이 광원) 그림자 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("shadow_dyn_cycle", [KEY_F8])  # 동적 광원 그림자 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("idle_cycle", [KEY_F5])     # 플레이어 아이들 모션 프리셋 순환 (Shift 동시 = 이전)
+	_add_action("mark_cycle", [KEY_F9])     # 탄흔 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("dialogue_style", [KEY_F7])  # 대사 표시 방식 순환 — 대화 UI 랩 전용 (게임은 "자막" 고정)
 	# 대화: 넘기기/확인 · 선택지 이동. W/↑(interact)는 말을 **거는** 키라 확인에는 넣지 않는다
 	# — 한 번 누른 키가 말을 걸면서 첫 줄까지 넘겨 버리지 않게.
