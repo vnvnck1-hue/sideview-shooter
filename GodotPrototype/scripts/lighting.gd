@@ -158,10 +158,11 @@ static func rim_key_color() -> Color:
 
 ## 캐릭터용 라이팅 머티리얼: 배경 프리셋 위에 캐릭터 림 프리셋을 덮어쓴다.
 ## px_scale = 스프라이트 스케일 (0.4 면 텍스처 px 가 화면에서 0.4 배 → 폭을 1/0.4 배로 키운다)
-static func character_material(shader_name := "lit_surface", px_scale := 1.0) -> ShaderMaterial:
+static func character_material(shader_name := "lit_surface", px_scale := 1.0, mechanical := false) -> ShaderMaterial:
 	var m := shader_material(shader_name)
 	m.set_meta("rim_character", true)
 	m.set_meta("rim_px_scale", px_scale)
+	m.set_meta("rim_mechanical", mechanical)
 	_apply_rim_to(m, rim_preset())
 	return m
 
@@ -184,7 +185,12 @@ static func _apply_rim_to(m: ShaderMaterial, p: Dictionary) -> void:
 	if not m.has_meta("rim_ambient_fixed"):
 		m.set_shader_parameter("rim_ambient_strength", p["ambient"])
 	if m.has_meta("rim_character"):
-		var c := char_rim_preset()
+		m.set_shader_parameter("dark_actor", 1.0)   # 암흑 시야: 캐릭터는 어둠 속에서도 실루엣이 남는다
+		m.set_shader_parameter("actor_fill", 0.45)
+		m.set_shader_parameter("normal_response", 1.4)
+		m.set_shader_parameter("specular_strength", 0.50)
+		# Mechanical actors retain the narrower rim so every joint is not outlined.
+		var c := rim_preset() if m.get_meta("rim_mechanical", false) else char_rim_preset()
 		if float(c["width"]) > 0.0:
 			var px_scale: float = m.get_meta("rim_px_scale", 1.0)
 			m.set_shader_parameter("rim_width_px", float(c["width"]) / maxf(px_scale, 0.05))
@@ -256,11 +262,41 @@ static func scale_for_radius(radius: float) -> float:
 ## 인물 층(플레이어·몬스터·탄, z5~6)은 ratio 배로 약한 거울 라이트(LightMirror, 자식)가 비춘다.
 ## 근경 층(z7)은 light_mask 0 이라 어느 라이트도 받지 않는다. 벽이 인물보다 밝게 빛나 실루엣이 앞으로 떠 보인다.
 ## 총구·탄착·불·아크처럼 인물 층에 있는 광원은 부르지 않는다 (모든 층을 그대로 비춘다).
+## 광원은 뒷벽에 있으므로 DepthLayers.wall_backlight 가 켜져 있으면 인물은 이 빛을 **역광**으로 받는다 (LightMirror.backlit).
 static func split_by_depth(light: PointLight2D, ratio := DepthLayers.ACTOR_LIGHT_RATIO) -> void:
 	light.range_z_max = DepthLayers.Z_BACK_MAX
 	var m := LightMirror.new()
-	m.setup(light, ratio)
+	m.setup(light, ratio, DepthLayers.wall_backlight)
 	light.add_child(m)
+
+
+## 앞쪽 광원 (인물보다 카메라에 가까운 조명). split_by_depth 의 반대 — 원본이 인물 층(z5~7)을 순광으로 온전히 비추고,
+## 멀리 떨어진 뒷벽(z≤4)은 wall_ratio 배의 거울 라이트가 약하게 받는다. 스프라이트도 인물 앞(z7)에 그려야 말이 맞는다.
+static func split_front(light: PointLight2D, wall_ratio := DepthLayers.FRONT_WALL_RATIO) -> void:
+	light.range_z_min = DepthLayers.Z_ACTOR_MIN
+	light.range_z_max = DepthLayers.Z_FOREGROUND
+	var m := LightMirror.new()
+	m.setup(light, wall_ratio, false, -4096, DepthLayers.Z_BACK_MAX)
+	m.name = "WallMirror"
+	light.add_child(m)
+
+
+## 역광 셰이더 수치 (lit_common.lit_light 의 L.z < 0 분기). project.godot [shader_globals] 에 기본값이 있다.
+static func set_backlight(body: float, dip: float, rim: float) -> void:
+	RenderingServer.global_shader_parameter_set("backlight_body", body)
+	RenderingServer.global_shader_parameter_set("backlight_dip", dip)
+	RenderingServer.global_shader_parameter_set("backlight_rim", rim)
+
+
+## 트리 아래 모든 인물 층 거울 라이트의 역광 여부를 바꾼다 (A/B 비교용). 앞쪽 광원의 WallMirror 는 건드리지 않는다.
+static func set_wall_backlight(root: Node, on: bool) -> int:
+	var n := 0
+	for c in root.get_children():
+		if c is LightMirror and c.name == "ActorMirror":
+			c.backlit = on
+			n += 1
+		n += set_wall_backlight(c, on)
+	return n
 
 
 ## res://assets/<group>/<name>.png 를 노멀맵이 붙은 CanvasTexture 로. 노멀맵이 없으면 원본 텍스처.

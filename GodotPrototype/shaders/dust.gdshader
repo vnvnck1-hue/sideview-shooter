@@ -3,6 +3,8 @@ render_mode blend_add, unshaded;
 // 부유 먼지(엠비언트). 방 전체를 덮는 사각형에 그린다. UV 대신 방 로컬 픽셀 좌표를 쓴다.
 // 어둠 속에서도 아주 희미하게 떠다니고(ambient), 광원(램프·비상등·불·전선 스파크) 근처에서
 // 그 광원의 색으로 밝게 드러난다. 램프는 아래쪽 원뿔, 나머지는 전방향.
+// 암흑 시야(dark_common) 밖에서는 앰비언트 먼지가 그림자 팔레트 색으로 희미해지고, 광원 빛을 받은 알갱이가 반짝인다.
+#include "res://shaders/dark_common.gdshaderinc"
 
 const int MAX_LIGHTS = 16;
 uniform int light_count = 0;
@@ -43,22 +45,29 @@ void fragment() {
 	        + dust_layer(p + vec2(311.0, 97.0), 70.0, 3.5, 4.2, t * 0.8) * 0.7
 	        + dust_layer(p + vec2(77.0, 501.0), 30.0, 9.0, 2.4, t * 1.3) * 0.5
 	        + dust_layer(p + vec2(913.0, 233.0), 120.0, 2.0, 6.0, t * 0.5) * 0.35;   // 큰 느린 알갱이
-	vec3 light = ambient_tint * ambient;
-	for (int i = 0; i < light_count; i++) {
-		vec2 dv = p - lights[i];
-		float rad = light_radius[i];
-		vec4 lc = light_color[i];
-		float fall = 1.0 - smoothstep(0.0, rad, length(dv));
-		float shape = 1.0;
-		if (lc.a > 0.5) {
-			// 램프: 아래쪽 원뿔
-			float below = smoothstep(-40.0, 60.0, dv.y);
-			float cone = 1.0 - smoothstep(0.0, rad * (0.35 + 0.65 * clamp(dv.y / rad, 0.0, 1.0)), abs(dv.x));
-			shape = below * cone;
+	// 알갱이가 없는 픽셀(대부분)은 a = 0 이라 아래 결과가 정확히 (0,0,0,0) — 가산 블렌드에 아무것도 더하지 않는다.
+	// 광원 루프(최대 16개)를 돌 필요가 없다. 방 전체를 덮는 사각형이라 이 셰이더 비용의 대부분이 여기였다.
+	if (d <= 0.0) {
+		COLOR = vec4(0.0);
+	} else {
+		vec4 sh = dv_surface(FRAGCOORD.xy, t, 1.0);
+		vec3 light = mix(sh.rgb * 0.9, ambient_tint * ambient, sh.w);   // 어둠 속 먼지는 그림자 팔레트 색으로 희미하게
+		for (int i = 0; i < light_count; i++) {
+			vec2 dv = p - lights[i];
+			float rad = light_radius[i];
+			vec4 lc = light_color[i];
+			float fall = 1.0 - smoothstep(0.0, rad, length(dv));
+			float shape = 1.0;
+			if (lc.a > 0.5) {
+				// 램프: 아래쪽 원뿔
+				float below = smoothstep(-40.0, 60.0, dv.y);
+				float cone = 1.0 - smoothstep(0.0, rad * (0.35 + 0.65 * clamp(dv.y / rad, 0.0, 1.0)), abs(dv.x));
+				shape = below * cone;
+			}
+			light += lc.rgb * fall * fall * shape;
 		}
-		light += lc.rgb * fall * fall * shape;
+		light = min(light, vec3(1.6));
+		float a = d * density;
+		COLOR = vec4(light * a * 2.4, a * clamp(length(light), 0.0, 1.0));
 	}
-	light = min(light, vec3(1.6));
-	float a = d * density;
-	COLOR = vec4(light * a * 2.4, a * clamp(length(light), 0.0, 1.0));
 }

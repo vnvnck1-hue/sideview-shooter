@@ -175,6 +175,45 @@ const SOUNDS := {
 		"gap": 0.05, "voices": 4,
 	},
 
+	# --- 장애물 프랍 (Kenney CC0 Impact / Foley / Sci-Fi, 2026-09-28 추가) ---
+	# 파괴는 두 레이어(몸통 파열 + 잔해)로 울린다. 피치를 내려 잡아 덩치 있는 물건으로 들리게 한다.
+	"prop_metal_hit": {
+		"files": ["sfx/props/metal_hit_01.ogg", "sfx/props/metal_hit_02.ogg", "sfx/props/metal_hit_03.ogg"],
+		"db": -11.0, "db_var": 2.0, "pitch": [0.82, 1.08], "bus": BUS_SFX,
+		"gap": 0.045, "voices": 3,
+	},
+	"prop_wood_break": {
+		"files": ["sfx/props/wood_break_01.ogg", "sfx/props/wood_break_02.ogg"],
+		"db": -3.0, "db_var": 1.0, "pitch": [0.72, 0.84], "bus": BUS_SFX,
+		"gap": 0.06, "voices": 2,
+	},
+	"prop_plank": {
+		"files": ["sfx/props/plank_01.ogg", "sfx/props/plank_02.ogg"],
+		"db": -7.0, "db_var": 1.5, "pitch": [0.8, 1.0], "bus": BUS_SFX,
+		"gap": 0.04, "voices": 3,
+	},
+	"prop_stone_break": {
+		"files": ["sfx/props/stone_break_01.ogg", "sfx/props/stone_break_02.ogg"],
+		"db": -3.0, "db_var": 1.0, "pitch": [0.62, 0.74], "bus": BUS_SFX,
+		"gap": 0.06, "voices": 2,
+	},
+	"prop_rubble": {
+		"files": ["sfx/props/rubble_01.ogg", "sfx/props/rubble_02.ogg"],
+		"db": -5.0, "db_var": 1.5, "pitch": [0.75, 0.92], "bus": BUS_SFX,
+		"gap": 0.05, "voices": 3,
+	},
+	"gas_explosion": {
+		"files": ["sfx/props/explosion_crunch_01.ogg", "sfx/props/explosion_crunch_02.ogg", "sfx/props/explosion_crunch_03.ogg",
+			"sfx/props/explosion_crunch_04.ogg", "sfx/props/explosion_crunch_05.ogg"],
+		"db": 0.0, "db_var": 1.0, "pitch": [0.7, 0.82], "bus": BUS_WEAPON,
+		"gap": 0.05, "voices": 3,
+	},
+	"gas_explosion_low": {
+		"files": ["sfx/props/explosion_low_01.ogg", "sfx/props/explosion_low_02.ogg"],
+		"db": 1.0, "db_var": 1.0, "pitch": [0.78, 0.9], "bus": BUS_WEAPON,
+		"gap": 0.05, "voices": 3,
+	},
+
 	# --- 환경 원샷 ---
 	# 물방울은 Ambience 버스에 태우면 로우패스에 먹혀 사라진다. SFX 버스에 낮게 건다.
 	"drip": {
@@ -397,6 +436,9 @@ const SLAP2_RATIO := 1.68      # 두 번째 반사(다른 벽) 시간 배율 —
 
 var enabled := true
 
+## 소리 변주(피치·음량·샘플 선택) 전용 난수. 전역 randf 를 쓰면 벽시계 간격(_allowed)에 따라 소리가 울리는지가
+## 갈리면서 게임 쪽 난수 순서까지 흔들려, 같은 시드로도 전투가 매번 다르게 흘렀다 (최적화 전후 비교가 안 됐다).
+var _rng := RandomNumberGenerator.new()
 var _streams := {}             # 경로 → AudioStream
 var _pool_2d: Array[AudioStreamPlayer2D] = []
 var _pool_flat: Array[AudioStreamPlayer] = []
@@ -439,7 +481,7 @@ func _ready() -> void:
 	_setup_buses()
 	_build_pools()
 	_build_beds()
-	_drip_t = randf_range(DRIP_INTERVAL.x, DRIP_INTERVAL.y)
+	_drip_t = _rng.randf_range(DRIP_INTERVAL.x, DRIP_INTERVAL.y)
 	_load_tuning()
 	get_tree().scene_changed.connect(_on_scene_changed)
 	_on_scene_changed.call_deferred()      # 첫 씬은 scene_changed 를 보내지 않는다
@@ -719,9 +761,9 @@ func _voices_of(key: String) -> int:
 
 func _apply(player, cfg: Dictionary) -> void:
 	var pitch: Array = cfg.get("pitch", [1.0, 1.0])
-	player.pitch_scale = randf_range(float(pitch[0]), float(pitch[1]))
+	player.pitch_scale = _rng.randf_range(float(pitch[0]), float(pitch[1]))
 	var var_db := float(cfg.get("db_var", 0.0))
-	player.volume_db = float(cfg["db"]) + randf_range(-var_db, var_db)
+	player.volume_db = float(cfg["db"]) + _rng.randf_range(-var_db, var_db)
 	player.bus = cfg.get("bus", BUS_SFX)
 
 
@@ -735,7 +777,7 @@ func play_at(key: String, pos: Vector2, db_offset := 0.0, pitch_mul := 1.0) -> v
 	if not _allowed(key, cfg):
 		return
 	var files: Array = cfg["files"]
-	var s := _stream(String(files[randi() % files.size()]))
+	var s := _stream(String(files[_rng.randi() % files.size()]))
 	if s == null:
 		return
 	var p := _free_2d()
@@ -758,7 +800,7 @@ func play(key: String, db_offset := 0.0) -> void:
 	if not _allowed(key, cfg):
 		return
 	var files: Array = cfg["files"]
-	var s := _stream(String(files[randi() % files.size()]))
+	var s := _stream(String(files[_rng.randi() % files.size()]))
 	if s == null:
 		return
 	var p := _free_flat()
@@ -781,13 +823,13 @@ func play(key: String, db_offset := 0.0) -> void:
 ## 글자마다 조금씩 흘려야 사람이 말하는 것처럼 들리기 때문이다.
 ## 대화는 화면이 말하는 사람에게 가 있는 순간이라 위치 패닝을 주지 않는다.
 func voice_blip(voice_id: String, vowel := "", pitch := 1.0, db_offset := 0.0) -> void:
-	var v: String = vowel if vowel != "" else DialogueVoice.VOWELS[randi() % DialogueVoice.VOWELS.size()]
+	var v: String = vowel if vowel != "" else DialogueVoice.VOWELS[_rng.randi() % DialogueVoice.VOWELS.size()]
 	_voice_one_shot("%s%s_%s.wav" % [VOICE_DIR, voice_id, v], voice_id, pitch, db_offset)
 
 
 ## 줄머리 한마디 — 줄이 시작될 때 한 번. 세 벌 중 하나를 고른다.
 func voice_opener(voice_id: String, pitch := 1.0, db_offset := 0.0) -> void:
-	var n := 1 + randi() % VOICE_OPEN_COUNT
+	var n := 1 + _rng.randi() % VOICE_OPEN_COUNT
 	_voice_one_shot("%s%s_open_%02d.wav" % [VOICE_DIR, voice_id, n], voice_id, pitch,
 		db_offset + VOICE_OPEN_DB)
 
@@ -807,7 +849,7 @@ func _voice_one_shot(rel: String, voice_id: String, pitch: float, db_offset: flo
 	if p == null:
 		return
 	p.bus = BUS_VOICE
-	p.volume_db = float(VOICE_DB.get(voice_id, -4.0)) + randf_range(-VOICE_DB_VAR, VOICE_DB_VAR) + db_offset
+	p.volume_db = float(VOICE_DB.get(voice_id, -4.0)) + _rng.randf_range(-VOICE_DB_VAR, VOICE_DB_VAR) + db_offset
 	p.pitch_scale = clampf(pitch, 0.4, 2.4)
 	p.stream = s
 	p.play()
@@ -1203,8 +1245,8 @@ func _process(delta: float) -> void:
 	_drip_t -= delta
 	if _drip_t > 0.0:
 		return
-	_drip_t = randf_range(DRIP_INTERVAL.x, DRIP_INTERVAL.y)
-	var at := _listener.global_position + Vector2(randf_range(-DRIP_SPREAD, DRIP_SPREAD), -randf_range(0.0, 260.0))
+	_drip_t = _rng.randf_range(DRIP_INTERVAL.x, DRIP_INTERVAL.y)
+	var at := _listener.global_position + Vector2(_rng.randf_range(-DRIP_SPREAD, DRIP_SPREAD), -_rng.randf_range(0.0, 260.0))
 	play_at("drip", at)
 
 

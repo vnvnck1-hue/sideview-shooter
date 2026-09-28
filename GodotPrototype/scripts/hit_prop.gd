@@ -94,6 +94,7 @@ func _build_cells() -> void:
 	_mask_img.fill(Color.WHITE)
 	_mask_tex = ImageTexture.create_from_image(_mask_img)
 	_mat.set_shader_parameter("mask", _mask_tex)
+	_mat.set_shader_parameter("mask_on", true)
 	_mat.set_shader_parameter("grid", Vector2(_cols, _rows))
 
 

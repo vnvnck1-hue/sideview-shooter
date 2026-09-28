@@ -30,6 +30,10 @@ var _last_hold := 0.015
 var _defaults: Dictionary = GaitSettings.defaults()
 var _travel := 0.0                # 한 발이 붙어 있는 동안 몸이 지날 수 있는 거리 (px). 다리 범위에서 직접 잰다.
 var _travel_key := ""             # 그 값을 잰 조건. 설정이 바뀌면 다시 잰다.
+var _travel_pending := false      # 조건이 바뀌었지만 아직 재지 않았다 (_duration 이 처음 필요할 때 잰다)
+var _travel_body := Vector2.ZERO  # 조건이 바뀐 순간의 몸 위치·기울기·반동 — 지연 측정이 이 값으로 잰다
+var _travel_angle := 0.0
+var _travel_shift := 0.0
 
 
 func configure(path: String) -> void:
@@ -281,34 +285,57 @@ func _duration(walker: Node2D) -> float:
 	var base := _value(walker, "run_step_time" if walker.running else "step_time")
 	var lifted := 1.0 if _value(walker, "legs_up") < 1.5 else 2.0
 	var travel: float = absf(walker.speed) * float(IDS.size()) / lifted
-	if travel < 1.0 or _travel <= 0.0:
+	if travel < 1.0:
+		return base
+	if _travel_pending:
+		_resolve_travel(walker)
+	if _travel <= 0.0:
 		return base
 	return clampf(_travel * TRAVEL_SHARE / travel, MIN_STEP_TIME, base)
 
 
 ## 발 하나를 제자리에 두고 몸을 앞뒤로 밀어 보며, 접지 여유가 남는 구간을 잰다.
 ## 설정(발 벌림·몸 높이·회전 범위)이 바뀔 때만 다시 잰다 — 매 프레임 돌 계산이 아니다.
+##
+## ## 지연 측정 (2026-09-28 최적화)
+## 몸 높이(ride)는 기동·정지 중(WAKING/SLEEPING) 매 서브스텝 바뀐다. 예전엔 그때마다 즉시 IK 72회를 다시 돌려
+## 버그봇이 전투불능·수리 복귀할 때마다 1~2초 동안 프레임당 20~34ms 를 썼다. 그런데 이 값을 읽는 곳은
+## _duration 뿐이고, 그것도 몸이 움직일 때만 읽는다. 그래서 조건이 바뀐 순간의 **입력(몸 위치·기울기·반동)을
+## 그대로 적어 두고**, 실제로 필요해질 때 그 입력으로 잰다 — 즉시 쟀을 때와 같은 값이 나온다.
+## (조건 키에 coxa 편향 둘을 더했다. 게임에서는 고정값이고, 랩에서 바꿀 때 재측정이 빠지던 것을 막는다.)
 func _measure_travel(walker: Node2D) -> void:
 	if walker._legs.is_empty():
 		return
-	var key := "%.3f|%.2f|%.2f|%.2f" % [_value(walker, "stride"), _value(walker, "ride"),
-		_value(walker, "yaw_limit"), _value(walker, "pitch_limit")]
+	var key := "%.3f|%.2f|%.2f|%.2f|%s|%s" % [_value(walker, "stride"), _value(walker, "ride"),
+		_value(walker, "yaw_limit"), _value(walker, "pitch_limit"),
+		walker.tune.get("coxa_yaw_bias", 0.0), walker.tune.get("coxa_pitch_bias", 0.0)]
 	if key == _travel_key:
 		return
 	_travel_key = key
+	_travel_pending = true
+	_travel_body = walker.body_pos
+	_travel_angle = walker._angle
+	_travel_shift = walker.recoil_shift()
+
+
+func _resolve_travel(walker: Node2D) -> void:
+	_travel_pending = false
+	var stride := _value(walker, "stride")
 	var span := INF
 	for leg in walker._legs:
-		var foot := desired(walker, leg, 0.0)
-		span = minf(span, _reach_span(walker, leg, foot, 1.0) + _reach_span(walker, leg, foot, -1.0))
+		# desired(walker, leg, 0.0) 과 같은 식 — 적어 둔 몸 위치·반동으로
+		var x: float = _travel_body.x - _travel_shift + float(leg["rest"]) * stride + 0.0
+		var foot := Vector2(x, float(walker.ground_at.call(x)) + float(leg["ground_depth"]))
+		span = minf(span, _reach_span(leg, foot, 1.0) + _reach_span(leg, foot, -1.0))
 	_travel = maxf(span, 40.0)
 
 
-func _reach_span(walker: Node2D, leg: Dictionary, foot: Vector2, direction: float) -> float:
+func _reach_span(leg: Dictionary, foot: Vector2, direction: float) -> float:
 	var low := 0.0
 	var high := 420.0
 	for iteration in 9:
 		var middle := (low + high) * .5
-		if IK.margin(leg["state"], walker.body_pos + Vector2(direction * middle, 0.0), walker._angle, foot) >= TRAVEL_RESERVE:
+		if IK.margin(leg["state"], _travel_body + Vector2(direction * middle, 0.0), _travel_angle, foot) >= TRAVEL_RESERVE:
 			low = middle
 		else:
 			high = middle

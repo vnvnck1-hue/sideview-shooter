@@ -20,7 +20,7 @@ void fragment() {
 
 void light() {
 	vec3 N = NORMAL;
-	vec3 L = LIGHT_DIRECTION;
+	vec3 L = vec3(LIGHT_DIRECTION.xy, abs(LIGHT_DIRECTION.z));   // 역광 거울 라이트(height 음수)도 예전처럼 받는다 — 역광 모델은 lit_common 만
 	float ndl = dot(N, L);
 	// 래핑 디퓨즈: 얇은 연기라 뒷면도 조금 비친다
 	float wrap = clamp((ndl + light_wrap) / (1.0 + light_wrap), 0.0, 1.0);

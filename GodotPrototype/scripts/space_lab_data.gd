@@ -7,7 +7,7 @@ extends RefCounted
 ##   1. **넓이** — 기본 배경 타일(workshop, 본 맵에서 가장 많이 쓰는 테마)로 만들 수 있는 가장 큰 공간.
 ##      천장 12셀(2026-09-25 방 키우기 시험 — 본 맵 최대치 9셀보다 높다)을 가진 대공동 둘을 양 끝에 둔다.
 ##   2. **길이** — 좌우로 계속 걸을 수 있는 20,000px 짜리 한 줄. 본 맵에서 가장 긴 방(격납고 4,096px)의 다섯 배다.
-##   3. **거대종이 들어가는가** — 크롤러를 5배로 키운 변종(Crawler.make_giant)은 폭 1040 · 높이 614px 라
+##   3. **거대종이 들어가는가** — 상세 프레임을 쓰는 1.75배 변종(Crawler.make_giant)은 최대 내용 영역 약 371 × 310px라
 ##      본 맵의 방 대부분에 안 들어간다. 여기는 천장 9셀 대공동이 둘이라 제대로 걸어 다닐 수 있고,
 ##      계단 천장 격납고에서는 **높은 쪽에 갇히는** 모습이(Room._giant_spans) 그대로 보인다.
 ##      크기 기준자로도 쓴다 — 플레이어(320px)·일반종(123px) 옆에 세워 두면 공간의 크기가 읽힌다.
@@ -254,7 +254,7 @@ static func _fill_workshop(span: Array, props: Array, lamps: Array, fixtures: Ar
 	fx.append({"type": "wire", "x": x + 1760, "cy": 46, "length": 340.0})
 	fx.append({"type": "leak", "x": x + 1120, "cy": 150, "dir": Vector2(0.3, 1.0), "pressure": 0.7})
 	monsters.append({"type": "crawler", "x": x + 1800, "facing": -1})
-	# 7셀 천장(846px) — 걷기·포효는 들어가지만 내려찍기 자세(900px)는 안 들어간다.
+	# 7셀 천장(846px) — 50% 축소 뒤에는 걷기·포효·내려찍기 자세가 모두 들어간다.
 	# 이 자리의 거대종은 산탄만 쓴다 (Crawler._slam_headroom).
 	monsters.append({"type": "giant", "x": x + 1200, "facing": -1})
 

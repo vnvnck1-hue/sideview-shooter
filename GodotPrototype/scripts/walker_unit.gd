@@ -96,6 +96,7 @@ var walker_id := ""
 var display_name := "보행 기체"
 var state: State = State.DORMANT
 var controlled := false
+var autonomous := false          # AI 기체는 플레이어 조종을 잡거나 자동 절전하지 않는다.
 var aim_target := Vector2.ZERO    # 월드 마우스 — Main 이 매 프레임 채운다
 var heat := 0.0
 var overheated := false
@@ -119,7 +120,14 @@ var _spread_heat := 0.0           # 집탄 열 0..1 — 쏠수록 오르고 쉬�
 
 
 ## 방이 부른다. center_x = 처음 놓이는 자리 · floor_line = 바닥선 · fx = 방(Room)
+var _arc_cooldown := 0.0
+var _arc_mount: ArcWeaponMount
+var weapon_id := WeaponCatalog.ARC
+
+
 func setup(center_x: float, floor_line: float, fx: Node2D) -> void:
+	add_to_group("readability_actors")
+	set_meta("readability_bounds", Rect2(-110, -220, 220, 225))
 	floor_y = floor_line
 	_room = fx
 	position = Vector2(center_x, floor_line)
@@ -173,6 +181,11 @@ func _build(center_x: float, fx: Node2D) -> void:
 	_walker.fired.connect(_on_fired)
 	_walker.reset_stance()          # 꺼진 높이(SLEEP_RIDE)에 맞춰 네 발을 제자리에 내려놓는다
 	_sync_node()
+	if weapon_id == WeaponCatalog.ARC:
+		_arc_mount = ArcWeaponMount.new()
+		_arc_mount.name = "ArcWeaver"
+		_arc_mount.unit = self
+		add_child(_arc_mount)
 
 
 ## 실행 중 조정할 때도 선 자세 목표를 보존한다. 전원 애니메이션이 저장값을 덮지 않는다.
@@ -200,7 +213,7 @@ func set_span(left: float, right: float) -> void:
 # ── 센트리건과 같은 창구 ──────────────────────────────────────────────────────
 
 func can_interact(px: float) -> bool:
-	return absf(px - position.x) <= INTERACT_RANGE and state != State.WAKING
+	return not autonomous and absf(px - position.x) <= INTERACT_RANGE and state != State.WAKING
 
 
 func prompt_text() -> String:
@@ -222,6 +235,10 @@ func activate() -> void:
 			pass
 
 
+func vision_origin() -> Vector2:
+	return _scaler.to_global(_walker.body_pos)
+
+
 func set_controlled(active: bool) -> void:
 	if controlled == active:
 		return
@@ -238,8 +255,11 @@ func set_controlled(active: bool) -> void:
 # ── 매 프레임 ────────────────────────────────────────────────────────────────
 
 func _process(delta: float) -> void:
+	_arc_cooldown = maxf(0.0, _arc_cooldown - delta)
 	_tick_power(delta)
 	_tick_input()
+	if _arc_cooldown > 0.0:
+		_walker.firing = false
 	_tick_heat(delta)
 	_tick_spread(delta)
 	_walker.tick(delta)
@@ -257,13 +277,14 @@ func _tick_power(delta: float) -> void:
 			_power = minf(_power + delta / WAKE_TIME, 1.0)
 			if _power >= 1.0:
 				state = State.READY
-				set_controlled(true)
+				if not autonomous:
+					set_controlled(true)
 		State.SLEEPING:
 			_power = maxf(_power - delta / SLEEP_TIME, 0.0)
 			if _power <= 0.0:
 				state = State.DORMANT
 		State.READY:
-			if not controlled:
+			if not controlled and not autonomous:
 				_idle += delta
 				if _idle >= SLEEP_AFTER:
 					state = State.SLEEPING
@@ -434,6 +455,22 @@ func _sync_blast() -> void:
 ## ProcWalker 는 총구 자리와 포신 방향만 준다. 탄착점·산포·화염·탄피·흔들림·열은 여기서 포탑과
 ## 똑같이 만든다. 탄 자체는 Main 의 공용 사격 경로가 처리한다.
 func _on_fired(muzzle: Vector2, dir: Vector2) -> void:
+	if is_instance_valid(_arc_mount):
+		# 아크위버: 연사 대신 한 발이 무겁다. 몸통 반동을 한 번 더 싣고(기체가 확 밀린다) 포 자체도 튄다.
+		# 탄착점은 기관포와 같은 규칙 — 포신 방향으로, 조준점까지의 거리만큼 (_impact_point).
+		var ad := WeaponCatalog.data(WeaponCatalog.ARC)
+		_arc_cooldown = float(ad.cooldown)
+		var origin := _arc_mount.muzzle_world()
+		var direction := _scaler.global_transform.basis_xform(dir).normalized()
+		_walker.recoil_impulse(dir)
+		_arc_mount.kick()
+		shoot_fired.emit(origin, _impact_point(origin, direction))
+		shake_requested.emit(float(ad.shake))
+		heat = minf(heat + 0.1, 1.0)
+		if heat >= 1.0 and not overheated:
+			_overheat()
+		heat_changed.emit(heat, overheated)
+		return
 	# 센트리건은 총구를 **글로벌** 좌표로 넘긴다 (mz.global_position) — Main 의 사격 경로가 그걸 기대한다.
 	# 워커가 주는 값은 그릇 안 좌표이므로 그릇의 글로벌 변환으로 옮긴다. `* SCALE` 로 어림하면
 	# 지금은 맞지만 위쪽 노드에 변환이 하나만 끼어도 조용히 어긋난다 (다리가 사라졌던 것과 같은 함정).
@@ -468,7 +505,7 @@ func _on_fired(muzzle: Vector2, dir: Vector2) -> void:
 ## 마지막에 방의 벽으로 잘라 벽 뒤로 새지 않게 한다.
 func _impact_point(from: Vector2, dir: Vector2) -> Vector2:
 	var dist := LASER_RANGE
-	if controlled:
+	if controlled or autonomous:
 		# 최소 사거리. 센트리건은 400px 이지만 버그봇은 조종석이 포신 바로 뒤라 그 값이면
 		# 코앞을 겨눠도 탄이 머리 한참 너머에 떨어졌다. 총구 코앞도 맞을 수 있게 줄인다.
 		dist = maxf(from.distance_to(aim_target), MIN_SHOT_RANGE)

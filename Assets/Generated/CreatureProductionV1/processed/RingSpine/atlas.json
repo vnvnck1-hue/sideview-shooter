@@ -1,0 +1,403 @@
+{ "frames": [
+   {
+    "filename": "RingSpine 0.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 200
+   },
+   {
+    "filename": "RingSpine 1.aseprite",
+    "frame": { "x": 176, "y": 0, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 200
+   },
+   {
+    "filename": "RingSpine 2.aseprite",
+    "frame": { "x": 352, "y": 0, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 200
+   },
+   {
+    "filename": "RingSpine 3.aseprite",
+    "frame": { "x": 528, "y": 0, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 200
+   },
+   {
+    "filename": "RingSpine 4.aseprite",
+    "frame": { "x": 0, "y": 112, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 5.aseprite",
+    "frame": { "x": 176, "y": 112, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 6.aseprite",
+    "frame": { "x": 352, "y": 112, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 7.aseprite",
+    "frame": { "x": 528, "y": 112, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 8.aseprite",
+    "frame": { "x": 0, "y": 224, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 9.aseprite",
+    "frame": { "x": 176, "y": 224, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 10.aseprite",
+    "frame": { "x": 352, "y": 224, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 11.aseprite",
+    "frame": { "x": 528, "y": 224, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 12.aseprite",
+    "frame": { "x": 0, "y": 336, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 13.aseprite",
+    "frame": { "x": 176, "y": 336, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 14.aseprite",
+    "frame": { "x": 352, "y": 336, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 15.aseprite",
+    "frame": { "x": 528, "y": 336, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 65
+   },
+   {
+    "filename": "RingSpine 16.aseprite",
+    "frame": { "x": 0, "y": 448, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 90
+   },
+   {
+    "filename": "RingSpine 17.aseprite",
+    "frame": { "x": 176, "y": 448, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 100
+   },
+   {
+    "filename": "RingSpine 18.aseprite",
+    "frame": { "x": 352, "y": 448, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 110
+   },
+   {
+    "filename": "RingSpine 19.aseprite",
+    "frame": { "x": 528, "y": 448, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 140
+   },
+   {
+    "filename": "RingSpine 20.aseprite",
+    "frame": { "x": 0, "y": 560, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 120
+   },
+   {
+    "filename": "RingSpine 21.aseprite",
+    "frame": { "x": 176, "y": 560, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 90
+   },
+   {
+    "filename": "RingSpine 22.aseprite",
+    "frame": { "x": 352, "y": 560, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 60
+   },
+   {
+    "filename": "RingSpine 23.aseprite",
+    "frame": { "x": 528, "y": 560, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 130
+   },
+   {
+    "filename": "RingSpine 24.aseprite",
+    "frame": { "x": 0, "y": 672, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 80
+   },
+   {
+    "filename": "RingSpine 25.aseprite",
+    "frame": { "x": 176, "y": 672, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 90
+   },
+   {
+    "filename": "RingSpine 26.aseprite",
+    "frame": { "x": 352, "y": 672, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 100
+   },
+   {
+    "filename": "RingSpine 27.aseprite",
+    "frame": { "x": 528, "y": 672, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 120
+   },
+   {
+    "filename": "RingSpine 28.aseprite",
+    "frame": { "x": 0, "y": 784, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 150
+   },
+   {
+    "filename": "RingSpine 29.aseprite",
+    "frame": { "x": 176, "y": 784, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 100
+   },
+   {
+    "filename": "RingSpine 30.aseprite",
+    "frame": { "x": 352, "y": 784, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 110
+   },
+   {
+    "filename": "RingSpine 31.aseprite",
+    "frame": { "x": 528, "y": 784, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 120
+   },
+   {
+    "filename": "RingSpine 32.aseprite",
+    "frame": { "x": 0, "y": 896, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 140
+   },
+   {
+    "filename": "RingSpine 33.aseprite",
+    "frame": { "x": 176, "y": 896, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 180
+   },
+   {
+    "filename": "RingSpine 34.aseprite",
+    "frame": { "x": 352, "y": 896, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 70
+   },
+   {
+    "filename": "RingSpine 35.aseprite",
+    "frame": { "x": 528, "y": 896, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 90
+   },
+   {
+    "filename": "RingSpine 36.aseprite",
+    "frame": { "x": 0, "y": 1008, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 110
+   },
+   {
+    "filename": "RingSpine 37.aseprite",
+    "frame": { "x": 176, "y": 1008, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 150
+   },
+   {
+    "filename": "RingSpine 38.aseprite",
+    "frame": { "x": 352, "y": 1008, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 120
+   },
+   {
+    "filename": "RingSpine 39.aseprite",
+    "frame": { "x": 528, "y": 1008, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 150
+   },
+   {
+    "filename": "RingSpine 40.aseprite",
+    "frame": { "x": 0, "y": 1120, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 200
+   },
+   {
+    "filename": "RingSpine 41.aseprite",
+    "frame": { "x": 176, "y": 1120, "w": 176, "h": 112 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 176, "h": 112 },
+    "sourceSize": { "w": 176, "h": 112 },
+    "duration": 650
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.5-dev",
+  "image": "atlas.png",
+  "format": "RGBA8888",
+  "size": { "w": 704, "h": 1232 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "idle", "from": 0, "to": 3, "direction": "forward", "color": "#000000ff" },
+   { "name": "roll", "from": 4, "to": 15, "direction": "forward", "color": "#000000ff" },
+   { "name": "uncoil", "from": 16, "to": 19, "direction": "forward", "color": "#000000ff" },
+   { "name": "lash", "from": 20, "to": 23, "direction": "forward", "color": "#000000ff" },
+   { "name": "recoil", "from": 24, "to": 28, "direction": "forward", "color": "#000000ff" },
+   { "name": "coil", "from": 29, "to": 33, "direction": "forward", "color": "#000000ff" },
+   { "name": "hurt", "from": 34, "to": 37, "direction": "forward", "color": "#000000ff" },
+   { "name": "death", "from": 38, "to": 41, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "shared_palette_clusters", "opacity": 255, "blendMode": "normal" },
+   { "name": "local_cluster_cleanup", "opacity": 255, "blendMode": "normal" }
+  ]
+ }
+}

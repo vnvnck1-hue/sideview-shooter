@@ -54,7 +54,7 @@ void fragment() {
 
 void light() {
 	vec3 N = surface_normal();
-	vec3 L = LIGHT_DIRECTION;
+	vec3 L = vec3(LIGHT_DIRECTION.xy, abs(LIGHT_DIRECTION.z));   // 역광 거울 라이트(height 음수)도 예전처럼 받는다 — 역광 모델은 lit_common 만
 	float ndl = max(dot(N, L), 0.0);
 	vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
 	float spec = pow(max(dot(N, H), 0.0), spec_power) * spec_strength;

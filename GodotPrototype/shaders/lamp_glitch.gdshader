@@ -35,11 +35,14 @@ void fragment() {
 		// 순간 하얀 번쩍임
 		col += vec3(1.0, 0.9, 0.7) * bulb * glitch * step(0.7, hash(floor(t * 1.3))) * 3.0;
 	}
-	COLOR = vec4(col, c.a);
+	v_base = col;
+	// 암흑: 갓(몸)만 가라앉고 전구 발광은 그대로 — 어둠 속에서도 켜진 램프가 보인다
+	vec3 glow = c.rgb * emit * bulb;
+	COLOR = vec4(dark_surface(max(col - glow, vec3(0.0)), FRAGCOORD.xy, TIME) + glow, c.a);
 	v_edge = 0.0;
 	v_edge_dir = vec2(0.0);
 }
 
 void light() {
-	LIGHT = lit_light(NORMAL, LIGHT_DIRECTION, LIGHT_COLOR, LIGHT_ENERGY, COLOR.rgb);
+	LIGHT = lit_light(NORMAL, LIGHT_DIRECTION, LIGHT_COLOR, LIGHT_ENERGY, v_base);
 }

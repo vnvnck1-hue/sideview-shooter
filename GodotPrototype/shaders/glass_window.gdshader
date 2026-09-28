@@ -51,11 +51,12 @@ void fragment() {
 		// 균열 주변 미세하게 어둡게(빛 산란)
 		col *= 1.0 - 0.15 * crack * (1.0 - smoothstep(0.0, 0.4, dist));
 	}
-	COLOR = vec4(col, c.a);
+	v_base = col;
+	COLOR = vec4(dark_surface(col, FRAGCOORD.xy, TIME), c.a);
 	v_edge = 0.0;
 	v_edge_dir = vec2(0.0);
 }
 
 void light() {
-	LIGHT = lit_light(NORMAL, LIGHT_DIRECTION, LIGHT_COLOR, LIGHT_ENERGY, COLOR.rgb);
+	LIGHT = lit_light(NORMAL, LIGHT_DIRECTION, LIGHT_COLOR, LIGHT_ENERGY, v_base);
 }

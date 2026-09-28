@@ -15,19 +15,41 @@ var _resting := false
 var _wet := false                 # 고인 물에 한 번 첨벙
 
 
+## 조각마다 AtlasTexture·라이팅 머티리얼을 새로 만들던 것을 공유한다 (크롤러 한 마리가 죽을 때 9~16개, 프랍 파편도 같은 길).
+## 둘 다 만든 뒤 값이 바뀌지 않아 그림은 같고, 같은 머티리얼끼리는 배치로 묶인다.
+static var _atlas_cache := {}           # [원본 텍스처, 영역] → AtlasTexture
+static var _shared_mat: ShaderMaterial
+
+
+static func _atlas(source: Texture2D, region: Rect2) -> AtlasTexture:
+	var key := [source, region]
+	var atlas: AtlasTexture = _atlas_cache.get(key)
+	if atlas == null:
+		if _atlas_cache.size() >= 512:
+			_atlas_cache.clear()
+		atlas = AtlasTexture.new()
+		atlas.atlas = source
+		atlas.region = region
+		_atlas_cache[key] = atlas
+	return atlas
+
+
+static func _material() -> ShaderMaterial:
+	if _shared_mat == null:
+		_shared_mat = Lighting.lit_material()
+		_shared_mat.set_shader_parameter("rim_ambient_strength", 0.6)
+		_shared_mat.set_meta("rim_ambient_fixed", true)
+	return _shared_mat
+
+
 func setup(source: Texture2D, region: Rect2, world_pos: Vector2, velocity: Vector2, floor_line: float) -> void:
-	var atlas := AtlasTexture.new()
-	atlas.atlas = source
-	atlas.region = region
-	texture = atlas
+	texture = _atlas(source, region)
 	centered = true
 	position = world_pos
 	vel = velocity
 	spin = randf_range(-16.0, 16.0)
 	floor_y = floor_line
-	material = Lighting.lit_material()
-	material.set_shader_parameter("rim_ambient_strength", 0.6)
-	material.set_meta("rim_ambient_fixed", true)
+	material = _material()
 
 
 func _process(delta: float) -> void:

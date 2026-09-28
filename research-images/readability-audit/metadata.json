@@ -1,0 +1,13 @@
+{
+	"crt_index": 2,
+	"fog_index": 1,
+	"frame": 600,
+	"note": "Shader TIME may advance between shots. No gameplay or preset files changed.",
+	"paused_poses": true,
+	"room": "hangar",
+	"seed": 4812,
+	"size": [
+		2240,
+		900
+	]
+}

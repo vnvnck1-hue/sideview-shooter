@@ -281,6 +281,14 @@ func temperature() -> float:
 
 func _process(delta: float) -> void:
 	_t += delta
+	# 다 식은 뒤(구멍만 남은 40초)는 흐려질 때까지 할 일이 없다 — 알갱이 배열을 매 프레임 새로 거르지 않는다.
+	# (자국은 방에 90개까지 쌓여 있어서, 빈 배열 filter + 온도 계산이 매 프레임 90번씩 돌았다)
+	if _heat_done and _light == null:
+		if _t > HOLE_LIFE:
+			modulate.a = clampf(1.0 - (_t - HOLE_LIFE) / HOLE_FADE, 0.0, 1.0)
+			if _t > HOLE_LIFE + HOLE_FADE:
+				queue_free()
+		return
 	var total_heat: float = float(_p["hold"]) + _cool
 	for q in _particles:
 		if _t < q["delay"]:
@@ -292,7 +300,8 @@ func _process(delta: float) -> void:
 		else:
 			q["vel"].x += sin(_t * 2.3 + q["pos"].y * 0.05) * 14.0 * delta
 		q["pos"] += q["vel"] * delta
-	_particles = _particles.filter(func(q): return q["t"] < q["life"])
+	if not _particles.is_empty():
+		_particles = _particles.filter(func(q): return q["t"] < q["life"])
 
 	var temp := temperature()
 	if _light != null:

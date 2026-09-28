@@ -232,13 +232,10 @@ func _wear(sp: Sprite2D, key: String) -> void:
 	sp.offset = -(_parts[key]["anchor"] as Vector2)      # 관절이 노드 원점에 오게
 
 
-## 조각이 함께 쓰는 라이팅 머티리얼. 이 기체는 인물이 아니라 **기계**라 센트리건과 같은
-## prop_surface 를 쓴다 (노멀맵 확산 + 스페큘러 + 배경 림). 림 두께는 텍스처 px 기준이라
-## 화면 배율로 나눠 줘야 어떤 크기로 놓든 같은 굵기로 보인다 — SentryTurret._surface_material 과 같다.
+## Moving actor in every gameplay/tuning scene. Keep the metal surface and narrow
+## mechanical rim, but use the same shadow fill as the player and crawlers.
 func _surface_material() -> ShaderMaterial:
-	var m := Lighting.shader_material("prop_surface")
-	m.set_shader_parameter("rim_width_px", float(Lighting.rim_preset()["width"]) / px_scale)
-	return m
+	return Lighting.character_material("prop_surface", px_scale, true)
 
 
 ## 원화 조각이 있으면 그걸 쓴다. 없으면 규격 크기의 단색 판을 만들어 자리부터 맞춘다.

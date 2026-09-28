@@ -4,6 +4,10 @@ extends Node2D
 const LightMood := preload("res://scripts/light_mood.gd")
 const MouseRecoil := preload("res://scripts/mouse_recoil.gd")
 const PropShadow := preload("res://scripts/prop_shadow.gd")
+const BugbotBattle := preload("res://scripts/bugbot_battle.gd")
+const DarkVision := preload("res://scripts/dark_vision.gd")
+var dark_vision: CanvasLayer
+var bugbot_status: Label
 
 const WALL_MARGIN := 110.0                   # 캡 타일 안쪽 벽까지의 여유
 const DOOR_PASS_MARGIN := 60.0              # 열린 측벽문으로 들어갈 때 허용되는 초과 거리
@@ -62,6 +66,8 @@ var shadow_label: Label                 # 우상단 둘째 줄: 기본 그림자
 var dyn_shadow_label: Label             # 우상단 셋째 줄: 동적 광원 그림자 프리셋 (F8)
 var idle_label: Label                   # 우상단 넷째 줄: 아이들 모션 프리셋 (F5)
 var mark_label: Label                   # 우상단 다섯째 줄: 탄흔 프리셋 (F9)
+var hit_fx_label: Label                 # 우상단 여섯째 줄: 몬스터 피격 컬러 (숫자 1~4)
+var fog_label: Label                    # 우상단 일곱째 줄: 바닥 안개 프리셋 (F2)
 
 var world_vp: SubViewport                  # 월드 뷰포트
 var world: Node2D                          # 방·플레이어·탄 등 월드 노드의 부모 (world_vp 안)
@@ -157,6 +163,8 @@ func _ready() -> void:
 	player.shell_ejected.connect(_on_shell_ejected)
 	player.request_front_door.connect(_on_front_door_requested)
 	player.ammo_changed.connect(_on_ammo_changed)
+	player.health_changed.connect(_on_obstacle_health_changed)
+	player.incapacitated.connect(_on_obstacle_incapacitated)
 
 	bullets = Node2D.new()
 	bullets.name = "Bullets"
@@ -177,9 +185,21 @@ func _ready() -> void:
 	Audio.attach_to_world(world)
 	Audio.set_listener(player)
 	world.add_child(player)
+	_on_ammo_changed(player.ammo, player.magazine_size(), player.reloading)
 	world.add_child(bullets)
 	world.add_child(crosshair)
 	world.add_child(camera)
+	dark_vision = DarkVision.new()
+	dark_vision.name = "DarkVision"
+	dark_vision.game = self
+	world_vp.add_child(dark_vision)
+	# Keep the aiming reticle readable even when aiming into unseen space.
+	var reticle_layer := CanvasLayer.new()
+	reticle_layer.name = "Reticle"
+	reticle_layer.layer = 11
+	reticle_layer.follow_viewport_enabled = true
+	world_vp.add_child(reticle_layer)
+	crosshair.reparent(reticle_layer, false)
 	var spawn_x := RoomData.room_width(room_id) * 0.5
 	var face_dir := 1
 	var cam_preset := GameCamera.DEFAULT_PRESET
@@ -285,14 +305,32 @@ func _process(_delta: float) -> void:
 		set_mark_preset(BulletMark.preset_index + mstep)
 		return
 
+	# 바닥 안개 프리셋 순환 (F2 다음 · Shift+F2 이전) — 지금 방에 바로 반영된다
+	if not transitioning and Input.is_action_just_pressed("fog_cycle"):
+		var fstep := -1 if Input.is_key_pressed(KEY_SHIFT) else 1
+		set_fog_preset(GroundFog.index + fstep)
+		return
+
 	# 아이들 모션 프리셋 순환 (F5 다음 · Shift+F5 이전) — 가만히 서서 바로 비교한다
 	if not transitioning and Input.is_action_just_pressed("idle_cycle"):
 		var istep := -1 if Input.is_key_pressed(KEY_SHIFT) else 1
 		set_idle_preset(Player.idle_index + istep)
 		return
 
+	# 숫자 1~4: 모든 현재·이후 크롤러의 피격 컬러를 즉시 바꾸고 무피해 플래시로 확인한다.
+	for i in range(4):
+		if Input.is_action_just_pressed("hit_fx_%d" % (i + 1)):
+			set_monster_hit_fx(i)
+			return
+
 	if current_room == null:
 		return
+	if bugbot_status != null:
+		bugbot_status.visible = not dialogue.active and not terminal_screen.is_open()
+		bugbot_status.text = current_room.bugbot_battle.status_text() if is_instance_valid(current_room.bugbot_battle) else "F10 버그봇 3대 소환 · 자동 사냥 전투"
+	if Input.is_action_just_pressed("bugbot_battle") and not transitioning and not dialogue.active \
+			and not terminal_busy and not terminal_screen.is_open() and controlled_turret == null and not walker_link.busy():
+		_toggle_bugbot_battle()
 
 	# 대화 중에는 **마우스가 아무것도 움직이지 못한다** — 포인터는 잡아 두고(MOUSE_MODE_CAPTURED),
 	# 카메라 리드도 꺼 두고(camera.lead_enabled), 조준점·반동 계산 자체를 건너뛴다.
@@ -401,6 +439,23 @@ func _process(_delta: float) -> void:
 		return
 	var fd := current_room.front_door_near(player.position.x)
 	prompt_label.visible = not fd.is_empty()
+	if fd.is_empty() and not player.is_airborne():
+		# 가장 가까운 것(바라보는 쪽 우선) — 배열 순서대로 고르면 등 뒤 프랍 이름이 뜬다
+		var best: ObstacleProp = null
+		var best_gap := INF
+		for obstacle in current_room.obstacles:
+			if obstacle.destroyed:
+				continue
+			var dx: float = obstacle.position.x - player.position.x
+			var gap: float = absf(dx) - obstacle.rect.size.x * 0.5
+			if gap < 110.0:
+				gap += 0.0 if signf(dx) == float(player.facing) else 90.0
+				if gap < best_gap:
+					best_gap = gap
+					best = obstacle
+		if best != null:
+			prompt_label.visible = true
+			prompt_label.text = "%s · %s" % [ObstacleProp.SPECS[best.kind].name, ObstacleProp.SPECS[best.kind].hint]
 	if not fd.is_empty():
 		prompt_label.text = "▲  W / ↑  —  %s 으로 들어가기" % RoomData.get_room(fd["target"])["title"]
 
@@ -419,8 +474,12 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	current_room = Room.new()
 	current_room.name = "Room_" + id
 	current_room.build(id)
+	if id == ObstaclePlaytest.ROOM_ID and current_room.foreground != null:
+		current_room.foreground.visible = false
 	current_room.player = player
 	current_room.player_hit.connect(_on_player_hit)
+	current_room.obstacle_exploded.connect(_on_obstacle_exploded)
+	current_room.obstacle_broken.connect(_on_obstacle_broken)
 	current_room.monster_roared.connect(_on_monster_roared)
 	current_room.monster_slammed.connect(_on_monster_slammed)
 	current_room.monster_died.connect(_on_monster_died)
@@ -440,7 +499,7 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	# 사족보행 기체도 **완전히 같은 배선**이다 — 사격까지 센트리건 경로를 그대로 탄다.
 	# (연사력만 기체 쪽에서 낮다. 위력·궤적·탄피·흔들림은 WalkerUnit 이 SentryTurret 값을 그대로 쓴다)
 	for w in current_room.walkers:
-		w.shoot_fired.connect(_on_turret_shoot)
+		w.shoot_fired.connect(_on_bugbot_shoot.bind(w))
 		w.shell_ejected.connect(_on_turret_shell)
 		w.heat_changed.connect(_on_turret_heat)
 		w.shake_requested.connect(camera.add_shake)
@@ -450,7 +509,10 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	var left_limit := -DOOR_PASS_MARGIN if current_room.left_door_open else WALL_MARGIN
 	var right_limit := current_room.width + DOOR_PASS_MARGIN if current_room.right_door_open else current_room.width - WALL_MARGIN
 	player.settle()
+	player.weapon_room = current_room
 	player.position = Vector2(spawn_x, current_room.floor_y + 2)
+	if player.health <= 0.0:
+		player.restore_health()
 	player.set_bounds(left_limit, right_limit)
 	player.face(face_dir)
 
@@ -551,12 +613,20 @@ func _transition(target: String, spawn_x: float, face_dir: int) -> void:
 	)
 
 
+## 플레이어 한 발. 기존 소총 경로(흔들림 · 색수차 · 조준점 벌어짐 · 마우스 반동)를 그대로 타고,
+## 무기 수치(WeaponCatalog)만큼 세게 준다. 몬스터에 제대로 박히면(산탄 3알 이상 · 코일 관통 · 처치) 히트스톱.
 func _on_player_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
-	_spawn_shot(muzzle_pos, target_pos)
-	camera.add_shake(SHAKE_PER_SHOT)
-	_aberration = minf(_aberration + ABERRATION_PER_SHOT, ABERRATION_CAP)
+	var id: String = player.weapon_id
+	var d := WeaponCatalog.data(id)
+	var aim := (target_pos - muzzle_pos).normalized()
+	WeaponFx.spawn(bullets, id, "muzzle", muzzle_pos, aim, 1.0)
+	var shot := WeaponProjectile.fire(bullets, current_room, id, muzzle_pos, target_pos, camera)
+	camera.add_shake(float(d.shake))
+	_aberration = minf(_aberration + ABERRATION_PER_SHOT * 1.8, ABERRATION_CAP)
 	crosshair.kick()
 	_recoil.kick(float(player.facing))
+	if shot.kills > 0 or shot.total_hits >= 3 or (id == WeaponCatalog.COIL and shot.total_hits > 0):
+		HitStop.apply(get_tree(), float(d.hitstop) * (1.35 if shot.kills > 0 else 1.0))
 
 
 ## 센트리건 사격 — 탄·탄착은 플레이어와 같은 경로지만 궤적은 2배 굵고(TRACER_SCALE) 탄착·피격 반응은
@@ -566,6 +636,33 @@ func _on_turret_shoot(muzzle_pos: Vector2, target_pos: Vector2) -> void:
 	Audio.turret_fire(muzzle_pos)
 	_aberration = minf(_aberration + ABERRATION_PER_SHOT * 1.3, ABERRATION_CAP)
 	crosshair.kick()
+
+
+func _toggle_bugbot_battle() -> void:
+	if is_instance_valid(current_room.bugbot_battle):
+		current_room.bugbot_battle.stop()
+		return
+	var battle := BugbotBattle.new()
+	current_room.bugbot_battle = battle
+	current_room.add_child(battle)
+	battle.start(current_room, player.position.x)
+	for bot in battle.bots:
+		bot.shoot_fired.connect(_on_bugbot_shoot.bind(bot))
+		bot.shell_ejected.connect(_on_turret_shell)
+
+
+func _on_bugbot_shoot(muzzle_pos: Vector2, target_pos: Vector2, bot: WalkerUnit) -> void:
+	if bot.weapon_id == WeaponCatalog.ARC:
+		WeaponProjectile.fire(bullets, current_room, WeaponCatalog.ARC, muzzle_pos, target_pos, camera)
+		Audio.play_at("turret_crack", muzzle_pos, 2.0, 0.7)
+		Audio.play_at("fire_sub", muzzle_pos, -2.0, 1.3)
+		WeaponAudio.play(bullets, muzzle_pos, "arc", -3.0, randf_range(0.94, 1.06))
+		if bot.controlled:
+			_aberration = minf(_aberration + ABERRATION_PER_SHOT * 1.3, ABERRATION_CAP)
+			crosshair.kick()
+	else:
+		_spawn_shot(muzzle_pos, target_pos, WalkerUnit.SHOT_POWER, WalkerUnit.TRACER_SCALE)
+		Audio.turret_fire(muzzle_pos)
 
 
 ## 한 발이 방에 미치는 결과 — 탄 생성 · 탄착 반응 · 전선 튕김 (플레이어·센트리건·보행 기체 공용).
@@ -610,8 +707,8 @@ func _spawn_shot(muzzle_pos: Vector2, target_pos: Vector2, power := 1.0, tracer 
 			camera.add_shake(1.5)
 		"prop":
 			hit["node"].hit(signf(target_pos.x - muzzle_pos.x), target_pos.y, target_pos, power)
-			b.impact_kind = Bullet.Impact.PROP
-			camera.add_shake(0.8 * (power - 1.0))
+			b.impact_kind = hit["node"].impact_kind() if hit["node"].has_method("impact_kind") else Bullet.Impact.PROP
+			camera.add_shake(0.8 * (power - 1.0) + (0.9 if hit["node"] is ObstacleProp else 0.0))
 	bullets.add_child(b)
 	_leave_mark(hit, target_pos, target_pos - muzzle_pos, power)
 	current_room.notify_shot(muzzle_pos, target_pos)      # 전선 등 물리 반응
@@ -646,6 +743,8 @@ func _on_ammo_changed(ammo: int, mag: int, reloading: bool) -> void:
 		ammo_label.text = "%d / %d" % [ammo, mag]
 		var low := ammo <= mag / 4
 		ammo_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.35) if low else Color(0.95, 0.9, 0.8))
+	if is_instance_valid(player):
+		ammo_label.text = "%s  ·  %s\nQ 무기 교체%s" % [WeaponCatalog.data(player.weapon_id).name, ammo_label.text, "  ·  길게 눌러 충전" if player.weapon_id == WeaponCatalog.COIL else ""]
 
 
 ## 센트리건 총열 과열 (조종 중일 때만 HUD 를 가져간다). 탄약 대신 열이 자원이다 —
@@ -763,7 +862,7 @@ func _on_turret_control(active: bool, turret: Node2D) -> void:
 			player.standby = false
 		_camera_subject(player)                    # 주체를 플레이어로 되돌린다 (방 이동·강제 해제 포함)
 		_player_input_back()
-		_on_ammo_changed(player.ammo, Player.MAG_SIZE, player.reloading)
+		_on_ammo_changed(player.ammo, player.magazine_size(), player.reloading)
 
 
 # ── 단말기 접속 ──────────────────────────────────────────────────────────────
@@ -1047,6 +1146,66 @@ func _on_player_hit(_point: Vector2, dir: float) -> void:
 	if remote_link.is_empty():
 		player.knockback(dir * PLAYER_HIT_KNOCKBACK)   # 원격 조종 중이면 맞는 것은 포탑이다 — 몸은 밀리지 않는다
 
+var _obstacle_health_label: Label
+
+func _on_obstacle_health_changed(value: float) -> void:
+	if _obstacle_health_label == null:
+		_obstacle_health_label = Label.new()
+		_obstacle_health_label.position = Vector2(48,92)
+		_obstacle_health_label.add_theme_font_size_override("font_size",20)
+		_obstacle_health_label.add_theme_color_override("font_color",Color(1.0,0.65,0.3))
+		get_node("UI").add_child(_obstacle_health_label)
+	_obstacle_health_label.text = "체력 %d / 100 · 가스통 폭발 주의" % int(value)
+	_obstacle_health_label.visible = value < 100.0
+
+func _on_obstacle_incapacitated() -> void:
+	if transitioning:
+		player.restore_health()
+		return
+	var id := current_room.room_id
+	var spawn_x := 120.0 if player.position.x < current_room.width*0.5 else current_room.width-120.0
+	_transition(id, spawn_x, 1 if spawn_x<current_room.width*0.5 else -1)
+
+## 가스통 폭발: 히트스톱으로 섬광 프레임을 붙잡고, 거리에 따라 크게 흔들고, 색수차·화면 섬광을 얹는다.
+## 연쇄 폭발은 매번 다시 걸려 "쾅-쾅" 박자가 된다.
+func _on_obstacle_exploded(point: Vector2) -> void:
+	var distance := player.position.distance_to(point)
+	var near := clampf(1.0 - distance / 2000.0, 0.0, 1.0)
+	if near > 0.0:
+		camera.add_shake(18.0 * near, 18.0)
+		_aberration = minf(_aberration + 7.0 * near, ABERRATION_CAP)
+		_screen_flash(0.55 * near)
+	HitStop.apply(get_tree(), 0.09)
+
+
+## 상자·콘크리트가 무너진 순간: 짧은 히트스톱 + 흔들림 (가까울수록 크게)
+func _on_obstacle_broken(point: Vector2, shake: float, stop: float) -> void:
+	var near := clampf(1.0 - player.position.distance_to(point) / 1800.0, 0.3, 1.0)
+	camera.add_shake(shake * near, 12.0)
+	HitStop.apply(get_tree(), stop)
+
+
+var _flash_rect: ColorRect
+var _flash_tween: Tween
+
+## 화면 전체 주황 섬광 (폭발 첫 순간). 가산 합성이라 어두운 방에서도 밝게 번쩍인다.
+func _screen_flash(amount: float) -> void:
+	if _flash_rect == null:
+		_flash_rect = ColorRect.new()
+		_flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_flash_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_flash_rect.color = Color(1.0, 0.78, 0.5, 0.0)
+		var mat := CanvasItemMaterial.new()
+		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		_flash_rect.material = mat
+		get_node("UI").add_child(_flash_rect)
+		get_node("UI").move_child(_flash_rect, 0)
+	if _flash_tween:
+		_flash_tween.kill()
+	_flash_rect.color.a = maxf(_flash_rect.color.a, amount)
+	_flash_tween = create_tween()
+	_flash_tween.tween_property(_flash_rect, "color:a", 0.0, 0.28).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+
 
 ## 몬스터 포효: 가까울수록 카메라가 낮게 울린다 (플레이어 피격 7 대비 최대 2.2).
 ## power 는 덩치 배율 — 거대종은 더 멀리서, 더 크게 울린다.
@@ -1079,6 +1238,23 @@ func set_fire_style(index: int) -> void:
 			f.apply_style(FireSource.style_index)
 
 
+func set_monster_hit_fx(index: int) -> void:
+	Crawler.default_hit_fx_preset = clampi(index, 0, Crawler.HIT_FX_PRESETS.size() - 1)
+	if current_room:
+		for monster in current_room.monsters:
+			if is_instance_valid(monster) and monster is Crawler:
+				monster.set_hit_fx_preset(Crawler.default_hit_fx_preset)
+				monster.preview_hit_fx()
+	_update_hit_fx_label()
+
+
+func _update_hit_fx_label() -> void:
+	if hit_fx_label == null:
+		return
+	var i: int = Crawler.default_hit_fx_preset
+	hit_fx_label.text = "몬스터 피격 (1~4)  %d/4  %s" % [int(i + 1), str(Crawler.HIT_FX_PRESETS[i]["name"])]
+
+
 ## 프랍 그림자 프리셋 (F6 순환 — PropShadow.PRESETS). 방을 다시 만들지 않고 그림자 층만 갈아 끼운다.
 func set_prop_shadow(i: int) -> void:
 	PropShadow.index = wrapi(i, 0, PropShadow.BASE_PRESETS.size())
@@ -1104,6 +1280,21 @@ func set_idle_preset(i: int) -> void:
 func set_mark_preset(i: int) -> void:
 	BulletMark.set_preset(i)
 	_update_mark_label()
+
+
+func set_fog_preset(i: int) -> void:
+	GroundFog.set_preset(i)
+	if current_room:
+		current_room.apply_fog(GroundFog.index)
+	_update_fog_label()
+
+
+func _update_fog_label() -> void:
+	if fog_label == null:
+		return
+	var p := GroundFog.preset()
+	fog_label.text = "바닥 안개 (F2)  %d/%d  %s — %s" % [
+		GroundFog.index + 1, GroundFog.PRESETS.size(), p["name"], p["desc"]]
 
 
 func _update_mark_label() -> void:
@@ -1264,12 +1455,18 @@ func _setup_ui() -> void:
 	layer.add_child(title_label)
 
 	hint_label = Label.new()
-	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기(+A/D 앉아 걷기)    W/↑ 정면문 · 말 걸기 · 사다리 · 없으면 점프    대화 중 Space/E 넘기기 · ↑/↓ 선택    R 재장전    F3 줌    F4 CRT 모니터    F5 아이들 모션    F6·F8 그림자    F11 전체화면"
+	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기(+A/D 앉아 걷기)    W/↑ 정면문 · 말 걸기 · 사다리 · 없으면 점프    대화 중 Space/E 넘기기 · ↑/↓ 선택    R 재장전    1~4 몬스터 피격색    F2 안개    F3 줌    F11 전체화면"
 	_pin(hint_label, Vector2(0, 1), Vector2(24, -40), Vector2.ZERO)
 	hint_label.add_theme_font_override("font", font)
 	hint_label.add_theme_font_size_override("font_size", 20)
 	hint_label.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
 	layer.add_child(hint_label)
+	bugbot_status = Label.new()
+	_pin(bugbot_status, Vector2(0, 1), Vector2(24, -104), Vector2.ZERO)
+	bugbot_status.add_theme_font_override("font", font)
+	bugbot_status.add_theme_font_size_override("font_size", 20)
+	bugbot_status.add_theme_color_override("font_color", Color(0.4, 0.95, 0.88))
+	layer.add_child(bugbot_status)
 
 	# 줌 프리셋 표시 — 우상단 맨 위. 공간감 라벨이 있던 자리(y18)로 올렸다.
 	zoom_label = Label.new()
@@ -1319,6 +1516,24 @@ func _setup_ui() -> void:
 	layer.add_child(mark_label)
 	_update_mark_label()
 
+	hit_fx_label = Label.new()
+	_pin(hit_fx_label, Vector2(1, 0), Vector2(-24 - 1100, 160), Vector2(1100, 30))
+	hit_fx_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hit_fx_label.add_theme_font_override("font", font)
+	hit_fx_label.add_theme_font_size_override("font_size", 20)
+	hit_fx_label.add_theme_color_override("font_color", Color(0.72, 0.92, 1.0))
+	layer.add_child(hit_fx_label)
+	_update_hit_fx_label()
+
+	fog_label = Label.new()
+	_pin(fog_label, Vector2(1, 0), Vector2(-24 - 1100, 188), Vector2(1100, 30))
+	fog_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	fog_label.add_theme_font_override("font", font)
+	fog_label.add_theme_font_size_override("font_size", 20)
+	fog_label.add_theme_color_override("font_color", Color(0.74, 0.80, 0.90))
+	layer.add_child(fog_label)
+	_update_fog_label()
+
 	# 정면문 안내: 화면 하단 중앙(힌트 바로 위) — 우상단 디버그 라벨과 겹치지 않게
 	# 보행 기체 접속 연출. 안내 문구·조준점보다 위에 떠야 하므로 UI 층 맨 끝에 붙인다
 	walker_link = WalkerLink.new()
@@ -1343,14 +1558,14 @@ func _setup_ui() -> void:
 
 	# 우하단: 탄창
 	ammo_label = Label.new()
-	_pin(ammo_label, Vector2(1, 1), Vector2(-24 - 360, -58 - 60), Vector2(360, 60))   # 하단 힌트 줄 위
+	_pin(ammo_label, Vector2(1, 1), Vector2(-24 - 720, -58 - 94), Vector2(720, 94))   # 하단 힌트 줄 위
 	ammo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	ammo_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	ammo_label.add_theme_font_override("font", font)
-	ammo_label.add_theme_font_size_override("font_size", 34)
+	ammo_label.add_theme_font_size_override("font_size", 28)
 	ammo_label.add_theme_color_override("font_color", Color(0.95, 0.9, 0.8))
 	layer.add_child(ammo_label)
-	_on_ammo_changed(Player.MAG_SIZE, Player.MAG_SIZE, false)
+	ammo_label.text = ""
 
 	# 센트리건 총열 과열 게이지 (탄창 라벨 위). 조종 중에만 보인다.
 	heat_bar_bg = ColorRect.new()
@@ -1385,6 +1600,7 @@ static func _pin(c: Control, anchor: Vector2, pos: Vector2, size: Vector2) -> vo
 
 
 func _setup_input_map() -> void:
+	_add_action("bugbot_battle", [KEY_F10])
 	_add_action("move_left", [KEY_A, KEY_LEFT])
 	_add_action("move_right", [KEY_D, KEY_RIGHT])
 	_add_action("run", [KEY_SHIFT])
@@ -1396,12 +1612,17 @@ func _setup_input_map() -> void:
 	_add_action("toggle_fullscreen", [KEY_F11])
 	_add_action("reload", [KEY_R])
 	_add_action("to_lobby", [KEY_F1])
+	_add_action("fog_cycle", [KEY_F2])      # 바닥 안개 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("zoom_cycle", [KEY_F3])     # 줌 프리셋 ×2 → ×3 → ×4 순환
 	_add_action("shadow_cycle", [KEY_F6])   # 기본(붙박이 광원) 그림자 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("shadow_dyn_cycle", [KEY_F8])  # 동적 광원 그림자 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("idle_cycle", [KEY_F5])     # 플레이어 아이들 모션 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("mark_cycle", [KEY_F9])     # 탄흔 프리셋 순환 (Shift 동시 = 이전)
 	_add_action("dialogue_style", [KEY_F7])  # 대사 표시 방식 순환 — 대화 UI 랩 전용 (게임은 "자막" 고정)
+	_add_action("hit_fx_1", [KEY_1, KEY_KP_1])
+	_add_action("hit_fx_2", [KEY_2, KEY_KP_2])
+	_add_action("hit_fx_3", [KEY_3, KEY_KP_3])
+	_add_action("hit_fx_4", [KEY_4, KEY_KP_4])
 	# 대화: 넘기기/확인 · 선택지 이동. W/↑(interact)는 말을 **거는** 키라 확인에는 넣지 않는다
 	# — 한 번 누른 키가 말을 걸면서 첫 줄까지 넘겨 버리지 않게.
 	_add_action("dlg_advance", [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_E])

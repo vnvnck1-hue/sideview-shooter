@@ -21,7 +21,7 @@ const QUADRANT := 3
 ## 바닥 아래 하부층 (2026-09-25). 카메라가 바닥선을 화면 62% 높이에 두므로 바닥 밑 1/3 이 통째로 검게 비어
 ## 방이 화면 위쪽 띠로만 보였다. 그 자리를 **아랫층 단면**으로 채운다 — 바닥 판 바로 밑에 테마 프레임의 가로 보
 ## (천장 조각)를 한 줄 두고, 그 아래는 같은 테마의 배경 타일을 어둡게 깐다. 아래로 갈수록 검게 사라진다(UNDER_FADE).
-## 조명은 받지 않는다(apply_lit_material 제외) — 밟을 수 없는 곳이 램프에 밝혀져 바닥처럼 읽히지 않게.
+## 조명은 받지 않는다(light_mask 0) — 밟을 수 없는 곳이 램프에 밝혀져 바닥처럼 읽히지 않게. 암흑 시야에는 가라앉는다.
 ## 이 노드(under)는 RoomTiles 의 자식이 아니다: 방 실루엣 밖은 WallShadow(z8)가 검게 덮으므로 Room 이 그보다
 ## 위 층에 따로 붙인다(Room.build). 바닥 타일 하단(bottom_y) 아래만 차지해 방 안 그림과는 겹치지 않는다.
 const UNDER_ROWS := 5                              # 바닥 아래로 찍는 셀 줄 수 (640px — 가장 큰 화면에서도 화면 끝까지 닿는다)
@@ -197,9 +197,21 @@ func apply_lit_material() -> void:
 	for child in get_children():
 		if child is TileMapLayer:
 			var m := Lighting.lit_material()
+			m.set_meta("readability_background", true)
+			m.set_shader_parameter("specular_strength", 0.48)
+			m.set_shader_parameter("normal_response", 1.5)
 			m.set_shader_parameter("rim_ambient_strength", 0.0)
 			m.set_meta("rim_ambient_fixed", true)
 			child.material = m
+	# 하부층: 조명은 계속 받지 않되(light_mask 0) 같은 셰이더로 암흑 시야에는 가라앉는다
+	if is_instance_valid(under):
+		for child in under.get_children():
+			if child is TileMapLayer:
+				var um := Lighting.lit_material()
+				um.set_shader_parameter("rim_ambient_strength", 0.0)
+				um.set_meta("rim_ambient_fixed", true)
+				child.material = um
+				child.light_mask = 0
 
 
 ## 월드 점이 타일이 찍힌 셀 안인가 (벽·천장·바닥 포함 — 탄착 판정용)

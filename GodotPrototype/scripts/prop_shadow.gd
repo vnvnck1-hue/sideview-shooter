@@ -480,7 +480,8 @@ func _dominant(base: Vector2, lights: Array, falloff: float, below_ok := false) 
 func _process(delta: float) -> void:
 	var p: Dictionary = BASE_PRESETS[index]
 	var dp: Dictionary = DYN_PRESETS[dyn_index]
-	var dyn_lights: Array = Lighting.dynamic_lights() if dyn_index != 0 else []
+	# 전체 동적 광원 목록은 오클루더 프리셋에서만 쓴다 (기본 프리셋은 "shot" 만 본다) — 안 쓰는 목록을 매 프레임 만들지 않는다.
+	var dyn_lights: Array = Lighting.dynamic_lights() if dyn_index != 0 and dp.get("occluder", false) else []
 	# 투영(쐐기·벽)은 **사격 계열 광원만** 본다 — 불·비상등처럼 늘 켜진 빛이 섞이면
 	# 기여도가 0 으로 안 내려와 "쏴도 반응 안 하는" 상태가 된다. 오클루더는 전부 그대로 쓴다.
 	var shot_lights: Array = Lighting.dynamic_lights("shot") if dyn_index != 0 else []

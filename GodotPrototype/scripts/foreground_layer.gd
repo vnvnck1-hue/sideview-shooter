@@ -74,6 +74,9 @@ var _smooth := Vector2.ZERO                       # 평활된 패럴랙스 목�
 var _rng := RandomNumberGenerator.new()
 var _rim_mat: ShaderMaterial
 var _shapes: Node2D                                # 그려진 폴리곤들의 부모 (rebuild 때 통째로 갈아엎는다)
+var _draw_parent: Node2D
+var _draw_rim: ShaderMaterial
+var _occlusion_items: Array = []
 
 
 func _ready() -> void:
@@ -337,12 +340,18 @@ func hit_item(p: Vector2) -> int:
 
 ## items 를 다시 그린다 (랩에서 옮기거나 늘린 뒤)
 func rebuild_visuals() -> void:
+	_occlusion_items.clear()
 	if _shapes:
 		_shapes.queue_free()
 	_shapes = Node2D.new()
 	_shapes.name = "Shapes"
 	add_child(_shapes)
 	for it in items:
+		_draw_parent = Node2D.new()
+		_shapes.add_child(_draw_parent)
+		_draw_rim = _rim_mat.duplicate() as ShaderMaterial
+		_occlusion_items.append({"node": _draw_parent, "rim": _draw_rim,
+			"rect": Rect2(it["pos"], it["size"].abs()).grow(12.0)})
 		_draw_item(it)
 
 
@@ -376,6 +385,7 @@ func _draw_item(it: Dictionary) -> void:
 
 
 func _process(delta: float) -> void:
+	_update_occlusion(delta)
 	# 패럴랙스 기준은 카메라의 실제 화면 중심(사격 흔들림 offset 제외). 마우스·시선 리드로 카메라가 내다보면 근경이 따라 밀리고,
 	# 캐릭터가 걷기만 할 때는 카메라가 그만큼만 따라오므로 반응이 작다. 떨림 방지: 지수 평활 + 격자 한 칸 이상 벌어질 때만 이동.
 	var cam := get_viewport().get_camera_2d()
@@ -389,6 +399,34 @@ func _process(delta: float) -> void:
 		position.x = snappedf(_smooth.x, GRID)
 	if absf(d.y) >= GRID:
 		position.y = snappedf(_smooth.y, GRID)
+
+
+## Fade only the foreground objects crossing an actor, never the entire layer.
+## Work in this layer's local space so parallax and room transforms are respected.
+func _update_occlusion(delta: float) -> void:
+	var bounds: Array[Rect2] = []
+	var inv := global_transform.affine_inverse()
+	for actor in get_tree().get_nodes_in_group("readability_actors"):
+		if not actor is Node2D or not actor.is_visible_in_tree() or actor.get_viewport() != get_viewport():
+			continue
+		if actor.has_method("is_dead") and actor.is_dead():
+			continue
+		var world_rect: Rect2
+		if actor.has_method("hit_rect"):
+			world_rect = actor.get_parent().global_transform * actor.hit_rect()
+		else:
+			world_rect = actor.global_transform * actor.get_meta("readability_bounds", Rect2(-80, -240, 160, 240))
+		bounds.append((inv * world_rect).grow(18.0))
+	for item in _occlusion_items:
+		var target := 1.0
+		for rect in bounds:
+			if item["rect"].intersects(rect):
+				target = 0.25
+				break
+		var visual: Node2D = item["node"]
+		visual.modulate.a = move_toward(visual.modulate.a, target, delta * 6.0)
+		# The rim shader writes COLOR itself, so give it the same opacity explicitly.
+		item["rim"].set_shader_parameter("occlusion_alpha", visual.modulate.a)
 
 
 ## 격자 스냅
@@ -419,10 +457,10 @@ func _quad(pos: Vector2, size: Vector2, col: Color, normal: Vector2) -> void:
 		p.color = col
 		p.light_mask = 0
 	else:
-		p.material = _rim_mat
+		p.material = _draw_rim
 		var vc := Color(normal.x * 0.5 + 0.5, normal.y * 0.5 + 0.5, 0.0, 1.0)
 		p.vertex_colors = PackedColorArray([vc, vc, vc, vc])
-	_shapes.add_child(p)
+	_draw_parent.add_child(p)
 
 
 ## 그림 근경: 불투명 영역(region)을 pos·size 에 맞춰 늘린 Sprite2D. 라이트 제외 + 어두운 틴트 (앰비언트가 다시 곱해진다)
@@ -438,7 +476,7 @@ func _sprite(kind: String, pos: Vector2, size: Vector2) -> void:
 	sp.modulate = SPRITE_TINT
 	sp.light_mask = 0
 	sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_shapes.add_child(sp)
+	_draw_parent.add_child(sp)
 
 
 ## 처진 케이블: a→b 사이를 포물선으로, 점은 격자 스냅. 끝에는 작은 커넥터 블록.
@@ -453,7 +491,7 @@ func _cable(a: Vector2, b: Vector2, sag: float) -> void:
 		var t := float(i) / n
 		var p := a.lerp(b, t) + Vector2(0, sag * 4.0 * t * (1.0 - t))
 		line.add_point(p.snapped(Vector2(GRID, GRID)))
-	_shapes.add_child(line)
+	_draw_parent.add_child(line)
 	_rect(a - Vector2(8, 0), Vector2(16, 20), INK_DARK, false)
 	_rect(b - Vector2(8, 0), Vector2(16, 20), INK_DARK, false)
 

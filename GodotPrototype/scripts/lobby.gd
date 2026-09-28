@@ -7,6 +7,7 @@ extends Control
 ##   [공간 테스트] 기본 타일로 만든 20,000px 한 줄에서 넓이·길이·트랜지션 없는 방 연결을 본다 (scenes/SpaceLab.tscn)
 ##   [규격 테스트] 그레이박스로 문·통로·턱·상자·층고·프랍 후보 치수를 캐릭터와 비교한다 (scenes/ScaleLab.tscn)
 ##   [공간감 테스트] 성격이 다른 다섯 공간을 이은 그레이박스에서 패럴렉스·명도·깊이별 조명·점프/사다리 동선·카메라 워킹을 본다 (scenes/DepthLab.tscn)
+##   [역광 테스트] 뒷벽 램프를 인물이 역광으로 받는 방식과 예전(순광)을 B 로 바꿔 가며 비교한다. 앞쪽 램프도 있다 (scenes/BacklightLab.tscn)
 ##   [갤러리 타일 테스트] 기존 Main 씬에서 서비스 갤러리 타일과 플레이어·몬스터를 함께 시험한다.
 ##   [조명·면 랩]  실제 게임 그대로 플레이하면서 방 안의 광원 수치와 프랍 면 맵을 고치고 저장한다 (scenes/FaceLab.tscn)
 ##   [화면 모드]   창 모드(최대화) / 전체화면. 고른 값은 저장돼 다음 실행에도 유지된다 (autoload ViewFit). 게임 안에서는 F11
@@ -104,6 +105,24 @@ func _ready() -> void:
 	depth_btn.offset_bottom = 166.0
 	depth_btn.pressed.connect(func(): AppFlow.start_depth_lab(get_tree()))
 	add_child(depth_btn)
+	var backlight_btn := _button("◐   역광 테스트 — 광원의 앞과 뒤", "뒷벽 램프 앞에 선 인물은 몸이 살짝 가라앉고 광원 쪽 윤곽이 빛난다. 앞쪽 램프는 순광. B 역광 켜기/끄기 · U/I 몸 정면 · K/L 노출 딥 · O/P 윤곽 · M 크롤러 · F1 로비")
+	backlight_btn.anchor_left = 1.0
+	backlight_btn.anchor_right = 1.0
+	backlight_btn.offset_left = -730.0
+	backlight_btn.offset_top = 178.0
+	backlight_btn.offset_right = -30.0
+	backlight_btn.offset_bottom = 240.0
+	backlight_btn.pressed.connect(func(): AppFlow.start_backlight_lab(get_tree()))
+	add_child(backlight_btn)
+	var obstacles_btn := _button("▣  장애물 프랍 테스트\n점프 · 파괴 · 가스통 폭발", "A/D 이동 · W/↑ 점프 · 마우스 사격 · Q 무기 교체. 5종 프랍과 가스통 연쇄 폭발을 실제 게임에서 시험한다. F1 로비")
+	obstacles_btn.anchor_left = 1.0
+	obstacles_btn.anchor_right = 1.0
+	obstacles_btn.offset_left = -400.0
+	obstacles_btn.offset_top = 252.0
+	obstacles_btn.offset_right = -30.0
+	obstacles_btn.offset_bottom = 342.0
+	obstacles_btn.pressed.connect(func(): ObstaclePlaytest.start(get_tree()))
+	add_child(obstacles_btn)
 
 	box.add_child(_spacer(6))
 	box.add_child(_display_row())

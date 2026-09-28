@@ -21,7 +21,7 @@ extends Node2D
 ##       정의는 audio_manager.SOUNDS 의 crawler_* 네 항목. 원본은 CC0(Docs/CREDITS.md).
 ## 쫀득함: 발을 축으로 한 스케일 스프링(_squash). 걷기 바운스·점프 웅크림/늘어남/착지 눌림·공격 예비동작을 모두 여기로 표현한다.
 
-## 거대종(Giant): 상세 프레임을 쓰는 3.5배 변종. make_giant() 를 setup() **앞에** 부르면 된다.
+## 거대종(Giant): 상세 프레임을 쓰는 1.75배 변종. make_giant() 를 setup() **앞에** 부르면 된다.
 ##       크기·체력·이동속도·사거리·점프가 모두 한 배율(size)을 타고, 공격은 전용 두 가지로 **갈아 끼운다** —
 ##       멀면 독액 부채꼴 산탄(SPRAY), 가까우면 몸을 세웠다 내리꽂는 내려찍기(SLAM). 벽·천장은 타지 않는다.
 ##       자세한 설계 의도는 아래 "거대종" 상수 블록 주석에 있다.
@@ -53,8 +53,8 @@ const JUMP_INTERVAL := Vector2(2.6, 5.2)      # 걷는 중 점프 시도 간격 
 const JUMP_MIN_DIST := 260.0          # 플레이어가 이보다 가까우면 점프 안 함
 const JUMP_RANGE := Vector2(300.0, 560.0)     # 점프 수평 거리 (플레이어까지 거리로 클램프)
 const JUMP_HEIGHT := 110.0            # 월드 px
-const JUMP_AIR_TIME := 0.62
-const JUMP_CROUCH := 0.14             # 도약 전 웅크림 (jump_01)
+const JUMP_AIR_TIME := 0.48
+const JUMP_CROUCH := 0.18             # Held brace before the faster leap.
 const JUMP_LAND := 0.18               # 착지 자세 유지 (jump_04)
 
 # 벽·천장 이동. **벽 전용 그림을 쓰지 않는다** — 접지점이 노드 원점이라 스프라이트를 그 점에서 돌리기만 하면
@@ -65,7 +65,7 @@ const JUMP_LAND := 0.18               # 착지 자세 유지 (jump_04)
 
 const WALL_INTERVAL := Vector2(2.5, 5.5)      # 걷는 중 벽으로 뛰어오를 시도 간격 (초) — 일반 점프(2.6~5.2초)와 같은 빈도로 노린다
 const WALL_REACH := Vector2(220.0, 1000.0)    # 벽까지 수평 거리가 이 범위여야 뛴다
-const WALL_JUMP_TIME := 0.46
+const WALL_JUMP_TIME := 0.34
 const WALL_JUMP_ARC := 150.0          # 도약 포물선의 추가 높이
 const WALL_RISE := Vector2(300.0, 520.0)      # 벽에 붙는 높이 (바닥 위)
 const WALL_SPEED := 200.0             # 벽·천장을 기어가는 속도
@@ -101,9 +101,15 @@ const IDLE_TIME := Vector2(0.35, 0.9)
 const HIT_KNOCKBACK := 26.0           # 한 발당 밀리는 거리 (px, 위력 1.0 기준)
 const KNOCK_TIME := 0.1               # 그 거리를 미는 데 걸리는 시간 (초) — 위력이 커도 시간은 같다
 const HIT_CHUNK_POWER := 1.5          # 이 위력 이상이면 살아 있어도 살점이 뜯겨 날아간다
-const HIT_FLASH_TIME := 0.12
-const HIT_FLASH_RADIUS := 200.0       # 탄착점 주변만 붉게 (텍스처 px — 월드로는 ×SCALE)
-const HIT_FLASH_PEAK := 0.55
+const HIT_FLASH_RADIUS := 200.0       # 탄착점 국소 마스크 반경 (텍스처 px — 월드로는 ×SCALE)
+const HIT_FX_PRESETS := [
+	{"id": "white_snap", "name": "White Snap", "duration": 0.11, "peak": 1.0},
+	{"id": "complement_pulse", "name": "Complement Pulse", "duration": 0.17, "peak": 0.92},
+	{"id": "toxic_negative", "name": "Toxic Negative", "duration": 0.14, "peak": 1.0},
+	{"id": "heat_echo", "name": "Heat Echo", "duration": 0.20, "peak": 1.0},
+]
+static var default_hit_fx_preset := 0
+@export_enum("White Snap", "Complement Pulse", "Toxic Negative", "Heat Echo") var hit_fx_preset := 0
 const CORPSE_TIME := 7.0
 const CORPSE_FADE := 1.2
 const DEATH_CLIPS := ["death", "death_inflate", "death_flyback", "death_agony"]
@@ -137,11 +143,10 @@ const ATTACK_ANTICIPATION := Vector2(0.92, 1.10)
 const ROAR_ANTICIPATION := Vector2(1.10, 0.90)   # 포효 시작: 살짝 웅크림
 const ROAR_STRETCH := Vector2(0.90, 1.14)        # 입 벌리는 순간 위로 늘어남
 const WALK_BOB := Vector2(0.05, 0.08)         # 걷기 바운스 진폭 (x 줄고 y 늘어남)
-const CHUNK_CELL := 90.0              # 죽음 육편 조각 크기 (텍스처 px)
 const CHUNK_COUNT := 9
 
 # ─── 거대종 (Giant) ──────────────────────────────────────────────────────────
-# 크기만 5배로 키우면 "큰 크롤러"일 뿐이다. 덩치가 데려오는 것들을 함께 바꿔야 다른 적이 된다.
+# 크기만 키우면 "큰 크롤러"일 뿐이다. 덩치가 데려오는 것들을 함께 바꿔야 다른 적이 된다.
 #   느리다   — 세계 기준 속도를 GIANT_SPEED 로 깎는다. 큰 몸이 같은 속도로 오면 미끄러지듯 순간이동한다.
 #   질기다   — GIANT_HP. 소총 한 탄창(MAG_SIZE)으로는 못 잡는다. 물러나며 쏘는 싸움이 된다.
 #   무겁다   — 넉백·멈칫을 덩치로 나눈다. 맞아도 거의 밀리지 않아, 계속 다가온다는 압박이 남는다.
@@ -149,11 +154,11 @@ const CHUNK_COUNT := 9
 #             무엇보다 "피할 수 없는 바닥의 벽"이라는 인상이 이 적의 전부다.
 #   다르게 친다 — 일반 크롤러의 단발 뱉기를 **쓰지 않는다**. 멀면 부채꼴 산탄(SPRAY),
 #             가까우면 내려찍기(SLAM). 전자는 서 있던 자리를 지우고, 후자는 붙어 있던 것을 벌한다.
-const GIANT_SIZE := 3.5               # 기존 5배 거대종에서 30% 축소
+const GIANT_SIZE := 1.75              # 기존 3.5배 거대종에서 50% 축소
 const GIANT_HP := 30                  # MAX_HP(3) × 10 — 일반종보다 훨씬 질기게
 const GIANT_SPEED := 0.32             # WALK_SPEED 대비 (270 → 86px/s. 플레이어 걷기 380 의 1/4)
 const GIANT_ANIM_SPEED := 0.5         # 전진할 때 걷기 애니가 도는 배속.
-                                      # 보폭이 5배라 발을 물리적으로 맞추면 초당 한 프레임도 못 넘긴다 —
+									  # 큰 보폭을 물리적으로 맞추면 애니메이션이 지나치게 느려진다 —
                                       # 발 미끄러짐을 받아들이고 "무겁게 보이는" 쪽을 택한 값이다.
 const GIANT_COOLDOWN := Vector2(2.6, 4.2)       # 공격 간격 (일반 1.5~2.6 보다 느릿하게)
 const GIANT_ROAR_INTERVAL := Vector2(5.0, 9.0)  # 대신 더 자주 운다 — 거대종은 존재 자체가 연출이다
@@ -172,9 +177,9 @@ const GIANT_CHUNK_COUNT := 16         # 죽을 때 뜯겨 나가는 육편 수
 ## 높이 조건을 자세별로 나눈 이유: 가장 높은 자세는 내려찍기(jump 클립, 약 620px)인데 그건 **가끔**이고,
 ## 평소 자세인 걷기(약 430)·포효(약 540)는 훨씬 낮다. 한 값으로 묶으면 걸어 다니기만 해도 되는 자리까지
 ## 전부 막혀 거대종이 설 방이 station 전체에 네 곳밖에 남지 않는다.
-const GIANT_HALF_W := 367.5           # 기존 거대종 폭의 70%
-const GIANT_CLEARANCE := 553.0        # 기존 거대종 높이의 70%
-const GIANT_SLAM_CLEARANCE := 630.0   # 기존 내려찍기 높이의 70%
+const GIANT_HALF_W := 183.75          # 3.5배 시절 폭의 50%
+const GIANT_CLEARANCE := 276.5        # 3.5배 시절 높이의 50%
+const GIANT_SLAM_CLEARANCE := 315.0   # 3.5배 시절 내려찍기 높이의 50%
 
 ## 산탄 (SPRAY) — 입을 벌려 독액 덩어리를 부채꼴로 흩뿌린다. 한 발은 비켜서면 그만이지만
 ## 부채꼴은 **서 있던 자리**를 지워서, 플레이어를 옆으로 움직이게 만든다.
@@ -187,9 +192,9 @@ const SPRAY_GLOB_SIZE := 1.7          # 덩어리 크기 배율
 ## 세우는 구간(SLAM_REAR)이 길고 내리꽂는 구간(SLAM_DROP)이 짧아야 "쿵" 이 된다.
 ## 찍고 난 뒤 SLAM_RECOVER 동안 굳는다 — 이 틈이 플레이어의 반격 구간이다.
 const SLAM_RANGE := 620.0             # 이 안이면 뱉기 대신 내려찍는다 (월드 px)
-const SLAM_REAR := 0.42
+const SLAM_REAR := 0.36
 const SLAM_RISE := 220.0              # 세울 때 뜨는 높이 (월드 px)
-const SLAM_DROP := 0.13
+const SLAM_DROP := 0.055
 const SLAM_LUNGE := 150.0             # 내리꽂으며 앞으로 나가는 거리 (월드 px)
 const SLAM_RECOVER := 0.5
 const SLAM_SHOCK_RANGE := 520.0       # 충격파가 플레이어를 걷어차는 거리 (구르기로 피한다)
@@ -302,6 +307,7 @@ func make_giant() -> void:
 
 
 func setup(room_node: Node2D, x: float, floor_line: float, left: float, right: float, face_dir := -1) -> void:
+	hit_fx_preset = default_hit_fx_preset
 	room = room_node
 	floor_y = floor_line
 	min_x = left
@@ -318,6 +324,7 @@ func setup(room_node: Node2D, x: float, floor_line: float, left: float, right: f
 
 
 func _ready() -> void:
+	add_to_group("readability_actors")
 	_load_meta()
 	_sprite = AnimatedSprite2D.new()
 	_sprite.name = "Body"
@@ -328,6 +335,7 @@ func _ready() -> void:
 	# 림 폭은 스프라이트 배율로 보정된다 — 거대종은 그림이 커진 만큼 텍스처 기준 폭이 얇아져 화면 두께가 같다.
 	_mat = Lighting.character_material("prop_surface", art_scale)
 	_mat.set_shader_parameter("grid", Vector2(1, 1))
+	_apply_hit_fx_preset()
 	_sprite.material = _mat
 	_sprite.frame_changed.connect(_apply_frame_offset)
 	_sprite.animation_finished.connect(_on_animation_finished)
@@ -339,7 +347,25 @@ func _ready() -> void:
 	_enter_idle(randf_range(0.2, 0.7))
 
 
+## 자산 폴더별(일반종·거대종) 메타·프레임 캐시. 예전엔 개체가 생길 때마다 JSON 을 읽어 파싱하고 SpriteFrames 를
+## 새로 조립해서, 버그봇 전투(0.35초마다 증원)에서 스폰 프레임마다 끊김이 났다. 둘 다 읽기 전용이라 공유해도 그림은 같다.
+static var _asset_cache := {}
+
+
 func _load_meta() -> void:
+	var cached: Dictionary = _asset_cache.get(_asset_dir(), {})
+	if not cached.is_empty():
+		_meta = cached["meta"]
+		_cell = cached["cell"]
+		_frame_feet = cached["feet"]
+		_frame_bbox = cached["bbox"]
+		return
+	_load_meta_uncached()
+	if not _meta.is_empty():
+		_asset_cache[_asset_dir()] = {"meta": _meta, "cell": _cell, "feet": _frame_feet, "bbox": _frame_bbox}
+
+
+func _load_meta_uncached() -> void:
 	var f := FileAccess.open(_asset_dir() + "crawler_meta.json", FileAccess.READ)
 	if f == null:
 		push_warning("crawler_meta.json 을 읽을 수 없음 — Tools/build_crawler_frames.py 를 먼저 실행")
@@ -358,6 +384,16 @@ func _load_meta() -> void:
 
 
 func _build_frames() -> SpriteFrames:
+	var cached: Dictionary = _asset_cache.get(_asset_dir(), {})
+	if cached.has("frames"):
+		return cached["frames"]
+	var built := _build_frames_uncached()
+	if not cached.is_empty():
+		cached["frames"] = built
+	return built
+
+
+func _build_frames_uncached() -> SpriteFrames:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
 	var death_resource: SpriteFrames = load(_asset_dir() + "death_variants.tres")
@@ -369,14 +405,15 @@ func _build_frames() -> SpriteFrames:
 	for clip_name in clips.keys():
 		var cfg: Dictionary = clips[clip_name]
 		sf.add_animation(clip_name)
-		sf.set_animation_speed(clip_name, float(cfg["fps"]))
+		sf.set_animation_speed(clip_name, 1.0 if clip_name == "attack" else float(cfg["fps"]))
 		sf.set_animation_loop(clip_name, bool(cfg["loop"]))
 		for i in range(1, int(cfg["frames"]) + 1):
 			var path := "%s%s/%s_%02d.png" % [_asset_dir(), clip_name, clip_name, i]
 			# The authored SpriteFrames resource owns the clip; wrap with the existing normal-map lighting.
 			if death_resource.has_animation(clip_name):
 				path = death_resource.get_frame_texture(clip_name, i - 1).resource_path
-			sf.add_frame(clip_name, Lighting.textured(path))
+			var duration: float = [0.06, 0.24, 0.045, 0.20][mini(i - 1, 3)] if clip_name == "attack" else 1.0
+			sf.add_frame(clip_name, Lighting.textured(path), duration)
 	return sf
 
 
@@ -454,6 +491,8 @@ func is_dead() -> bool:
 
 
 func _target() -> Node2D:
+	if room and is_instance_valid(room.get("bugbot_battle")):
+		return room.bugbot_battle.monster_target(position)
 	return room.get("player") if room else null
 
 
@@ -471,7 +510,7 @@ func spawn_in() -> void:
 func _spawn_burst() -> void:
 	var sb := _burst_node()
 	sb.burst(position, int(10 * size), Vector2(0, -1), 1.0, Vector2(100, 300) * size, ACID_HOT, ACID_COLD,
-		Vector2(0.3, 0.6), 2000.0, 3.5 * size, false)
+		Vector2(0.3, 0.6), 2000.0, 3.5 * size, false, 0.8, MonsterFx.ROW_FLUID)
 
 
 ## 스케일 스프링 갱신 + 걷기 바운스 → 스프라이트 스케일 (발 밑이 축)
@@ -490,6 +529,12 @@ func _update_squash(delta: float) -> void:
 		_bob_phase = 0.0
 	_bob = _bob.lerp(want_bob, minf(1.0, 14.0 * delta))
 	_sprite.scale = Vector2(art_scale, art_scale) * _squash * _bob
+	if state == State.ATTACK or state == State.SPRAY:
+		# Readable brace, one sharp release pose, then a held recovery.
+		var pose := Vector2(0.9, 1.08) if _sprite.frame < 2 else (Vector2(1.12, 0.92) if _sprite.frame == 2 else Vector2.ONE)
+		_sprite.scale = Vector2.ONE * art_scale * pose
+	elif state == State.SLAM and _slam_phase < 2:
+		_sprite.scale = Vector2.ONE * art_scale * (SLAM_REAR_SQUASH if _slam_phase == 0 else Vector2(0.9, 1.12))
 
 
 ## 스케일 펀치: 즉시 그 배율로 튀고 스프링이 (1,1) 로 되돌린다
@@ -498,7 +543,27 @@ func _punch(s: Vector2) -> void:
 	_squash_vel = Vector2.ZERO
 
 
+var arc_slow_left := 0.0
+var weapon_hitstop_left := 0.0
+var _arc_spark_timer := 0.0
+
+
+func apply_arc_slow(seconds: float) -> void:
+	arc_slow_left = maxf(arc_slow_left, seconds)
+
+
 func _process(delta: float) -> void:
+	if arc_slow_left > 0.0 and state != State.DEAD:
+		arc_slow_left = maxf(0.0, arc_slow_left - delta)
+		_arc_spark_timer -= delta
+		if _arc_spark_timer <= 0.0:
+			_arc_spark_timer = 0.34
+			var electric := WeaponFx.spawn(get_parent(), WeaponCatalog.ARC, "stun", hit_center(), Vector2.UP, 0.4)
+			electric.lifetime = 0.22
+		delta *= 0.42
+	if weapon_hitstop_left > 0.0 and state != State.DEAD:
+		weapon_hitstop_left = maxf(0.0, weapon_hitstop_left - get_process_delta_time())
+		delta *= 0.08
 	_update_squash(delta)
 	if _spawn_t >= 0.0:
 		_spawn_t += delta
@@ -509,8 +574,10 @@ func _process(delta: float) -> void:
 				_start_roar()          # 등장 포효
 			_roar_pending = false
 	if _flash > 0.0:
-		_flash = maxf(_flash - delta / HIT_FLASH_TIME, 0.0)
-		_mat.set_shader_parameter("flash", HIT_FLASH_PEAK * _flash * _flash)
+		var profile: Dictionary = HIT_FX_PRESETS[hit_fx_preset]
+		_flash = maxf(_flash - delta / float(profile["duration"]), 0.0)
+		_mat.set_shader_parameter("flash", float(profile["peak"]) * _flash)
+		_mat.set_shader_parameter("hit_fx_phase", 1.0 - _flash)
 	if _knock > 0.0:
 		var step := minf(_knock, _knock_rate * delta)
 		_knock -= step
@@ -803,7 +870,7 @@ func _process_slam(delta: float) -> void:
 	match _slam_phase:
 		0:   # 몸을 세운다 — 천천히 올라가 버틴다. 이 구간이 플레이어에게 주는 유일한 예고다
 			var k := clampf(_slam_t / SLAM_REAR, 0.0, 1.0)
-			_air_y = _slam_rise * sin(k * PI * 0.5)
+			_air_y = _slam_rise * (0.15 if k < 0.2 else (0.82 if k < 0.45 else 1.0))
 			_sprite.frame = 1
 			_apply_frame_offset()
 			if k >= 1.0:
@@ -848,7 +915,11 @@ func _slam_impact() -> void:
 	var rolling: bool = t.has_method("is_rolling") and t.is_rolling()
 	if rolling or absf(t.position.x - position.x) > SLAM_SHOCK_RANGE:
 		return
-	room.player_hit.emit(Vector2(t.position.x, floor_y - 60.0), signf(t.position.x - position.x))
+	var point := Vector2(t.position.x, floor_y - 60.0)
+	if t.has_method("receive_monster_hit"):
+		t.receive_monster_hit(point, signf(t.position.x - position.x), 28.0)
+	else:
+		room.player_hit.emit(point, signf(t.position.x - position.x))
 
 
 func _start_roar() -> void:
@@ -900,7 +971,8 @@ func _spit_saliva(frame: int, count: int, strength: float) -> void:
 	dir.x *= facing
 	var sb := _burst_node()
 	sb.burst(mouth, count, dir, 0.55, Vector2(90, 260) * strength, SALIVA_HOT, SALIVA_COLD,
-		Vector2(0.35, 0.8), 1500.0, 3.0 * lerpf(0.8, 1.0, strength), false, SALIVA_GLOW)
+		Vector2(0.35, 0.8), 1500.0, 3.0 * lerpf(0.8, 1.0, strength), false, SALIVA_GLOW,
+		MonsterFx.ROW_SALIVA)
 
 
 ## 개발용: 지금 바로 포효 (공격 중이면 끊고 포효 — 스크린샷 타이밍이 스폰 난수에 흔들리지 않게)
@@ -1297,6 +1369,14 @@ func _wall_dust() -> void:
 		Color(0.55, 0.52, 0.48), Color(0.35, 0.33, 0.3), Vector2(0.25, 0.5), 1800.0, 4.0, false)
 
 
+## 이 개체가 어떤 식으로든 빠질 때(시체 만료가 아닌 회수 — 버그봇 전투의 원거리 회수·F10 종료 등) 체액 알갱이 노드를
+## 놓아준다. 예전엔 시체 만료 경로에서만 persistent 를 풀어서, 회수된 개체마다 빈 SparkBurst(+사망 라이트)가
+## 방이 바뀔 때까지 매 프레임 돌며 쌓였다. 남은 알갱이는 그대로 다 날아간 뒤 스스로 사라진다.
+func _exit_tree() -> void:
+	if _sparks != null and is_instance_valid(_sparks):
+		_sparks.persistent = false
+
+
 func _burst_node() -> SparkBurst:
 	if _sparks == null or not is_instance_valid(_sparks):
 		_sparks = SparkBurst.spawn(get_parent(), floor_y, true)
@@ -1306,16 +1386,18 @@ func _burst_node() -> SparkBurst:
 
 ## 총알 피격. point: 탄착 월드 좌표, dir: 탄 진행 방향(+1 왼→오),
 ## power: 위력 배율(1.0 플레이어 소총 · 2.0 센트리건) — 넉백·눌림·체액·육편이 모두 이 값에 비례한다.
-func hit(point: Vector2, dir: float, power := 1.0) -> void:
+func hit(point: Vector2, dir: float, power := 1.0, damage := 1) -> void:
 	if state == State.DEAD:
 		return
-	hp -= 1
+	hp -= damage
 	# 죽는 타격에서는 피격음을 내지 않는다 — 죽음 소리와 겹치면 둘 다 뭉개진다.
 	# 마지막 한 발의 소리는 _die() 가 맡는다.
 	if hp > 0:
 		Audio.play_at("crawler_hurt", point, lerpf(-2.0, 2.0, clampf(power, 0.0, 1.0)), voice_pitch)
 	_flash = 1.0
-	_mat.set_shader_parameter("flash", HIT_FLASH_PEAK)
+	_apply_hit_fx_preset()
+	_mat.set_shader_parameter("flash", float(HIT_FX_PRESETS[hit_fx_preset]["peak"]))
+	_mat.set_shader_parameter("hit_fx_phase", 0.0)
 	_mat.set_shader_parameter("radius_px", HIT_FLASH_RADIUS * (GIANT_SOURCE_SCALE if is_giant else 1.0))
 	# 셰이더 UV 는 셀 전체 기준 (벽·천장이면 스프라이트 회전을 먼저 되돌리고, 뒤집힌 축은 반전)
 	var cell_uv := ((point - position).rotated(-_sprite.rotation) / art_scale - _sprite.offset) / _cell
@@ -1334,9 +1416,10 @@ func hit(point: Vector2, dir: float, power := 1.0) -> void:
 	# (2026-09-24 피격 체액 절반 — 대신 죽을 때 GoreBurst 로 몰아서 크게 터진다)
 	var sb := _burst_node()
 	sb.burst(point, maxi(int(4.5 * power), 1), Vector2(-signf(dir), -0.6), 0.9, Vector2(140, 420) * power, ACID_HOT, ACID_COLD,
-		Vector2(0.3, 0.7), 2000.0, 4.5 * (0.7 + 0.3 * power) * size, false)
+		Vector2(0.3, 0.7), 2000.0, 4.5 * (0.7 + 0.3 * power) * size, false, 0.8, MonsterFx.ROW_FLUID)
 	sb.burst(point, maxi(int(3.5 * power), 1), Vector2(signf(dir), -0.3), 0.7, Vector2(200, 520) * power, BLOOD_HOT, BLOOD_COLD,
-		Vector2(0.25, 0.6), 2200.0, 3.5 * (0.7 + 0.3 * power) * size, false, BLOOD_GLOW)
+		Vector2(0.25, 0.6), 2200.0, 3.5 * (0.7 + 0.3 * power) * size, false, BLOOD_GLOW,
+		MonsterFx.ROW_FLUID)
 	# 큰 위력에는 살아 있어도 살점이 뜯겨 날아간다
 	if power >= HIT_CHUNK_POWER:
 		_spawn_chunks(point, dir, int(power), power)
@@ -1352,6 +1435,34 @@ func hit(point: Vector2, dir: float, power := 1.0) -> void:
 			_start_fall()                  # 벽에 붙은 채 맞으면 가끔 떨어진다
 	elif state == State.IDLE:
 		_idle_t = minf(_idle_t, 0.12)      # 맞으면 멈칫 시간을 줄여 바로 반응
+
+
+## 피격 컬러 프리셋을 개체별로 바꾼다. 개발용 비교 씬과 런타임 튜닝에서 공용으로 쓴다.
+func set_hit_fx_preset(preset: int) -> void:
+	hit_fx_preset = clampi(preset, 0, HIT_FX_PRESETS.size() - 1)
+	_apply_hit_fx_preset()
+
+
+func hit_fx_preset_name() -> String:
+	return str(HIT_FX_PRESETS[hit_fx_preset]["name"])
+
+
+func _apply_hit_fx_preset() -> void:
+	if _mat != null:
+		# 0은 프랍 호환용이므로 크롤러 프리셋은 셰이더 값 1~4를 쓴다.
+		_mat.set_shader_parameter("hit_fx_preset", hit_fx_preset + 1)
+
+
+## 프리셋 전환 확인용 무피해 플래시. 실제 hit()와 같은 셰이더 경로지만 HP·넉백·체액은 건드리지 않는다.
+func preview_hit_fx() -> void:
+	if state == State.DEAD or _mat == null:
+		return
+	_flash = 1.0
+	_apply_hit_fx_preset()
+	_mat.set_shader_parameter("flash", float(HIT_FX_PRESETS[hit_fx_preset]["peak"]))
+	_mat.set_shader_parameter("hit_fx_phase", 0.0)
+	_mat.set_shader_parameter("radius_px", HIT_FLASH_RADIUS * (GIANT_SOURCE_SCALE if is_giant else 1.0))
+	_mat.set_shader_parameter("hit_uv", Vector2(0.56, 0.50))
 
 
 func _die(dir: float, power := 1.0) -> void:
@@ -1401,19 +1512,20 @@ func _die(dir: float, power := 1.0) -> void:
 			_dead_falling = false
 			_death_velocity = Vector2(_death_dir * 700.0 * sqrt(_death_power) / sqrt(size), -560.0)
 			sb.burst(c, 14, Vector2(_death_dir, -0.2), 0.25, Vector2(240, 540), GORE_WET, GORE_DRY,
-				Vector2(0.2, 0.45), 1400.0, 3.5 * size, false, 0.25)
+				Vector2(0.2, 0.45), 1400.0, 3.5 * size, false, 0.25, MonsterFx.ROW_FLUID)
 		# All variants become non-interactive immediately; their VFX arrive at the pose event.
 		died.emit(position, power)
 		return
 	# 독액 + 초록 체액이 사방으로 분출 (체액은 더 많이·굵게·오래)
 	sb.burst(c, int(22 * power), Vector2(-signf(dir) * 0.4, -1.0), 1.1, Vector2(160, 560) * power, ACID_HOT, ACID_COLD,
-		Vector2(0.45, 1.1), 2000.0, 5.0 * (0.7 + 0.3 * power) * size, true)
+		Vector2(0.45, 1.1), 2000.0, 5.0 * (0.7 + 0.3 * power) * size, true, 0.8, MonsterFx.ROW_FLUID)
 	sb.burst(c, int(34 * power), Vector2(signf(dir) * 0.3, -0.8), PI, Vector2(220, 760) * power, BLOOD_HOT, BLOOD_COLD,
-		Vector2(0.5, 1.3), 2300.0, 6.0 * (0.7 + 0.3 * power) * size, false, BLOOD_GLOW)
+		Vector2(0.5, 1.3), 2300.0, 6.0 * (0.7 + 0.3 * power) * size, false, BLOOD_GLOW,
+		MonsterFx.ROW_FLUID)
 	# 체액 비산: 몸 중심에서 몸 반길이의 2.2배 반경 (위력이 크면 조금 더). 발광 없는 탁한 색이라 주변 조명을 그대로 받는다
 	GoreBurst.spawn(get_parent(), c, dir, _body_half_len() * 2.2 * sqrt(maxf(power, 0.5)), floor_y,
 		GORE_WET, GORE_DRY)
-	# 육편: 현재 프레임 텍스처를 조각내 사방으로 날린다
+	# 육편: 몬스터 프레임을 사각형으로 자르지 않고 전용 육편 아틀라스를 사용한다.
 	_spawn_chunks(c, dir, chunk_count, power)
 	# 벽에 큰 체액 자국 (탄 방향으로 길게) + 바닥 쪽 작은 자국
 	if room and room.has_method("add_stain"):
@@ -1425,25 +1537,13 @@ func _die(dir: float, power := 1.0) -> void:
 	died.emit(position, power)
 
 
-## 현재 프레임의 내용 영역을 CHUNK_CELL 격자로 나눠 그중 count 조각을 ChunkDebris 로 날린다 (power 만큼 더 멀리)
+## 현재 몸 영역 안에서 전용 육편 스프라이트를 뽑아 ChunkDebris 로 날린다.
 func _spawn_chunks(center: Vector2, dir: float, count := CHUNK_COUNT, power := 1.0) -> void:
 	var b := _bbox_cell()
-	var tex: Texture2D = _sprite.sprite_frames.get_frame_texture(_sprite.animation, _sprite.frame)
-	var cells: Array = []
-	var chunk_cell := CHUNK_CELL * (GIANT_SOURCE_SCALE if is_giant else 1.0)
-	var y := b.position.y
-	while y < b.end.y:
-		var x := b.position.x
-		while x < b.end.x:
-			cells.append(Rect2(x, y, minf(chunk_cell, b.end.x - x), minf(chunk_cell, b.end.y - y)))
-			x += chunk_cell
-		y += chunk_cell
-	cells.shuffle()
 	var parent := get_parent()
-	for i in range(mini(count, cells.size())):
-		var region: Rect2 = cells[i]
-		# 조각의 월드 위치 (뒤집힌 축은 셀 중심 기준 반전)
-		var local := region.get_center()
+	for i in range(count):
+		# 실제 몸 내용 영역 안의 임의 지점에서 뜯겨 나온다 (뒤집힌 축은 셀 중심 기준 반전).
+		var local := Vector2(randf_range(b.position.x, b.end.x), randf_range(b.position.y, b.end.y))
 		if _sprite.flip_h:
 			local.x = _cell.x - local.x
 		if _sprite.flip_v:
@@ -1453,13 +1553,16 @@ func _spawn_chunks(center: Vector2, dir: float, count := CHUNK_COUNT, power := 1
 		var fwd := Vector2(signf(dir), 0.0).rotated(randf_range(-0.55, 0.55))
 		var away := (world - center)
 		away = away.normalized() if away.length() > 1.0 else Vector2(0, -1)
-		var vel := fwd * randf_range(380.0, 820.0) + away * randf_range(40.0, 140.0) \
-			+ Vector2(0, -randf_range(200.0, 560.0))
+		var vel := (fwd * randf_range(380.0, 820.0) + away * randf_range(40.0, 140.0) \
+			+ Vector2(0, -randf_range(200.0, 560.0)))
+		vel *= sqrt(maxf(power, 0.5))
 		var chunk := ChunkDebris.new()
-		chunk.setup(tex, region, world, vel, floor_y)
-		chunk.scale = Vector2(art_scale, art_scale)
-		chunk.rotation = _sprite.rotation             # 몸에 붙어 있던 방향 그대로 떨어져 나간다
-		chunk.flip_h = _sprite.flip_h
+		var variant := randi_range(0, MonsterFx.VARIANTS - 1)
+		chunk.setup(MonsterFx.ATLAS, MonsterFx.region(MonsterFx.ROW_FLESH, variant), world, vel, floor_y)
+		var piece_scale := 0.62 * size * randf_range(0.78, 1.14)
+		chunk.scale = Vector2(piece_scale, piece_scale)
+		chunk.rotation = _sprite.rotation + randf_range(-0.65, 0.65)
+		chunk.flip_h = randf() < 0.5
 		chunk.z_index = 1
 		parent.add_child(chunk)
 
@@ -1493,7 +1596,7 @@ func _process_dead(delta: float) -> void:
 			if _death_leak_t <= 0.0:
 				_death_leak_t = 0.16
 				_burst_node().burst(hit_center(), 3, Vector2(0, 1), 0.3, Vector2(25, 80), GORE_WET, GORE_DRY,
-					Vector2(0.35, 0.65), 1600.0, 3.0 * size, false, 0.25)
+					Vector2(0.35, 0.65), 1600.0, 3.0 * size, false, 0.25, MonsterFx.ROW_FLUID)
 		else:
 			_sprite.position.x = 0.0
 			if not _death_fx_done:
@@ -1521,7 +1624,8 @@ func _death_variant_burst(strength: float, direction: Vector2, spread: float) ->
 	var c := hit_center()
 	var power := _death_power * strength
 	_burst_node().burst(c, maxi(4, int(42 * power)), direction, spread, Vector2(140, 620) * strength,
-		GORE_WET, GORE_DRY, Vector2(0.35, 1.0), 2200.0, 5.0 * size, false, 0.25)
+		GORE_WET, GORE_DRY, Vector2(0.35, 1.0), 2200.0, 5.0 * size, false, 0.25,
+		MonsterFx.ROW_FLUID)
 	if death_clip == "death_inflate":
 		GoreBurst.spawn(get_parent(), c, 0.0, _body_half_len() * 2.8, floor_y, GORE_WET, GORE_DRY)
 		_spawn_chunks(c, _death_dir, chunk_count + 5, power)

@@ -1,0 +1,124 @@
+{
+    "date":  "2026-09-28",
+    "profile":  "source-preserving nearest, world height 264",
+    "files":  [
+                  {
+                      "sha256":  "f30e7074abd7e5b679b6ce4a65be21ef6e1aba6107b182abe8dc278ebde1c84a",
+                      "path":  "Deliverables/무기_컨셉_시안/P02_bulldog.png"
+                  },
+                  {
+                      "sha256":  "4cd171c3ff8ca923fec88ac65da2e1911606d6395def99775aaa69c8bf0f0bf6",
+                      "path":  "Deliverables/무기_컨셉_시안/P03_coil_lance.png"
+                  },
+                  {
+                      "sha256":  "78388e47ec267cc882b05c2ba927f147c3e47c72c8ca860554c7874c19cb31b6",
+                      "path":  "Deliverables/무기_컨셉_시안/B04_arc_weaver.png"
+                  },
+                  {
+                      "sha256":  "f32f501519501bea484920a51f4c2a780320829d5cc3f5782dd411ed4db317c9",
+                      "path":  "Tools/Aseprite/build_weapon_concepts.lua"
+                  },
+                  {
+                      "sha256":  "9bbc0e4e33c0ba881c0129c55b14b3dc009758301c7a9b9bd9db1326c1a4b90d",
+                      "path":  "Assets/Generated/WeaponImplementation/Source/arc_weaver_turret.png"
+                  },
+                  {
+                      "sha256":  "ba55ff30dfeca112425a33a3efdbadadb069187d2ce84c5e30219066be2feac2",
+                      "path":  "Assets/Generated/WeaponImplementation/Source/bulldog_equipped.png"
+                  },
+                  {
+                      "sha256":  "65beb0036e0b210a051347505cf36498fe67172c87dd6408e38cb58cffcfeeeb",
+                      "path":  "Assets/Generated/WeaponImplementation/Source/coil_equipped.png"
+                  },
+                  {
+                      "sha256":  "e8f05da6860153ceaf029bfbcc390f98ddb74c5a6e83c806db591c08d7effdb9",
+                      "path":  "Assets/Generated/WeaponImplementation/Aseprite/arc_orb.aseprite"
+                  },
+                  {
+                      "sha256":  "3c10e78b5dcfc5aa888f30d595ef330c6e3a19675554fae724982a0de88a3bce",
+                      "path":  "Assets/Generated/WeaponImplementation/Aseprite/arc_weaver.aseprite"
+                  },
+                  {
+                      "sha256":  "c45d066bd122c40b13ce71ba745d28bef40cd9a5e42077444384148b1030775d",
+                      "path":  "Assets/Generated/WeaponImplementation/Aseprite/bulldog.aseprite"
+                  },
+                  {
+                      "sha256":  "31b25d3922feebffe0cc18a84d85a086705a711a3d503f64a1bd60a7aa965bea",
+                      "path":  "Assets/Generated/WeaponImplementation/Aseprite/bulldog_pellet.aseprite"
+                  },
+                  {
+                      "sha256":  "1a19e9648eec04b86ab5a02ec3b15f3b6a75b767c2be9e9f86a345740d9ebb67",
+                      "path":  "Assets/Generated/WeaponImplementation/Aseprite/coil.aseprite"
+                  },
+                  {
+                      "sha256":  "5c8364e70c026832e03d43983b6cc737ca329404b0cc3c0148157b9b65ad3235",
+                      "path":  "Assets/Generated/WeaponImplementation/Aseprite/coil_dart.aseprite"
+                  },
+                  {
+                      "sha256":  "aab4c823352e18f050f1fcf8b1bef6608373cb33b5c91e5475881be5da77f68a",
+                      "path":  "GodotPrototype/assets/weapons/arc_orb.png"
+                  },
+                  {
+                      "sha256":  "491249120e2875a036c3fd5635c18bb234e5f0d7e1dc06c1d3fc0a0680688147",
+                      "path":  "GodotPrototype/assets/weapons/arc_weaver.png"
+                  },
+                  {
+                      "sha256":  "4d80ade31fb8f1f86d0143c28ca34e6b02407ddb8dea511581297e1b41aa38cb",
+                      "path":  "GodotPrototype/assets/weapons/bulldog.json"
+                  },
+                  {
+                      "sha256":  "d89076220e614e410360754b2b6eb8c48194a966aff148513e067d1ba836ab56",
+                      "path":  "GodotPrototype/assets/weapons/bulldog_body.png"
+                  },
+                  {
+                      "sha256":  "0552b165809593348c46e3b401ed9cd0b7554e58220aa56c762c4a91a70a23ae",
+                      "path":  "GodotPrototype/assets/weapons/bulldog_equipped.png"
+                  },
+                  {
+                      "sha256":  "1a940a8c6c7934141b0f4c3aca0dbea961a98fa77624afa5f7e6ced72b840865",
+                      "path":  "GodotPrototype/assets/weapons/bulldog_gun.png"
+                  },
+                  {
+                      "sha256":  "6d6c88bc74bdfe350bc6828d335a4994dc24fd74fef9a734644947803f770b69",
+                      "path":  "GodotPrototype/assets/weapons/bulldog_leg_back.png"
+                  },
+                  {
+                      "sha256":  "d11f9e249cec1c217856371fbbe49c93a03107f39ab25548f044f77c8d6a82d1",
+                      "path":  "GodotPrototype/assets/weapons/bulldog_leg_front.png"
+                  },
+                  {
+                      "sha256":  "c9cc7d82302736ee175d8f3c539ff5955f0bc8b862b1d9f70ee6d7cbadec171f",
+                      "path":  "GodotPrototype/assets/weapons/bulldog_pellet.png"
+                  },
+                  {
+                      "sha256":  "97608bca5d301a669687e86cd608a8db60051d82ead83c6419da131eb5970cc7",
+                      "path":  "GodotPrototype/assets/weapons/coil.json"
+                  },
+                  {
+                      "sha256":  "70326900c437c25aff8c56fc696d60d33a5363f0dda5d27ebf02f1eb40420671",
+                      "path":  "GodotPrototype/assets/weapons/coil_body.png"
+                  },
+                  {
+                      "sha256":  "ff58d0c7b4161ddc91e25ade94d5151c60fd83215c6245bd81f3ffd5e6812b90",
+                      "path":  "GodotPrototype/assets/weapons/coil_dart.png"
+                  },
+                  {
+                      "sha256":  "df2a5be93188206d2dec7b04ab82ef33c9cc7d02c04dad206db319a7c5610d76",
+                      "path":  "GodotPrototype/assets/weapons/coil_equipped.png"
+                  },
+                  {
+                      "sha256":  "3c76f6e5ce922c2f0184910059e0da677ba2300d55fdf8c6fa9ab0958664ce39",
+                      "path":  "GodotPrototype/assets/weapons/coil_gun.png"
+                  },
+                  {
+                      "sha256":  "772815b0a021b13b28e4722cadbfc502dfcced1e3d3df1835d7ff5165b21761f",
+                      "path":  "GodotPrototype/assets/weapons/coil_leg_back.png"
+                  },
+                  {
+                      "sha256":  "ae4673520231a90f835c49777a97c3a228ddb68547b3f2d8384a592932b6a297",
+                      "path":  "GodotPrototype/assets/weapons/coil_leg_front.png"
+                  }
+              ],
+    "finalUserReview":  "pending",
+    "implementationAuthorized":  true
+}

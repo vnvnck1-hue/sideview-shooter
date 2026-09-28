@@ -124,6 +124,19 @@ func _check_room(id: String) -> void:
 				ph = float(t.get_height())
 		else:
 			match p["type"]:
+				"obstacle":
+					var kind := str(p.get("kind", ""))
+					var path := "res://assets/props/obstacles/%s.png" % kind
+					label = "obstacle:" + kind
+					if kind not in ["barricade","cable_reel","supply_crate","rubble_block","gas_cylinder"] or not ResourceLoader.exists(path):
+						_errors.append("%s: obstacle asset missing: %s" % [id,path])
+					else:
+						var tex: Texture2D = load(path)
+						pw = tex.get_width()
+						ph = tex.get_height()
+						for suffix in ["_broken.png", ".png"]:
+							if not ResourceLoader.exists("res://assets/props/obstacles/"+kind+suffix):
+								_errors.append("%s: missing obstacle state %s%s" % [id,kind,suffix])
 				"cabinet": pw = 368.0
 				"capacitor": pw = 360.0
 				"cart": pw = 224.0

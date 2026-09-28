@@ -1,0 +1,331 @@
+{ "frames": [
+   {
+    "filename": "SeamAmbusher 0.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 300
+   },
+   {
+    "filename": "SeamAmbusher 1.aseprite",
+    "frame": { "x": 144, "y": 0, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 250
+   },
+   {
+    "filename": "SeamAmbusher 2.aseprite",
+    "frame": { "x": 288, "y": 0, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 300
+   },
+   {
+    "filename": "SeamAmbusher 3.aseprite",
+    "frame": { "x": 432, "y": 0, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 250
+   },
+   {
+    "filename": "SeamAmbusher 4.aseprite",
+    "frame": { "x": 0, "y": 160, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 150
+   },
+   {
+    "filename": "SeamAmbusher 5.aseprite",
+    "frame": { "x": 144, "y": 160, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 150
+   },
+   {
+    "filename": "SeamAmbusher 6.aseprite",
+    "frame": { "x": 288, "y": 160, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 160
+   },
+   {
+    "filename": "SeamAmbusher 7.aseprite",
+    "frame": { "x": 432, "y": 160, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 220
+   },
+   {
+    "filename": "SeamAmbusher 8.aseprite",
+    "frame": { "x": 0, "y": 320, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 90
+   },
+   {
+    "filename": "SeamAmbusher 9.aseprite",
+    "frame": { "x": 144, "y": 320, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 70
+   },
+   {
+    "filename": "SeamAmbusher 10.aseprite",
+    "frame": { "x": 288, "y": 320, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 60
+   },
+   {
+    "filename": "SeamAmbusher 11.aseprite",
+    "frame": { "x": 432, "y": 320, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 160
+   },
+   {
+    "filename": "SeamAmbusher 12.aseprite",
+    "frame": { "x": 0, "y": 480, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 160
+   },
+   {
+    "filename": "SeamAmbusher 13.aseprite",
+    "frame": { "x": 144, "y": 480, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 160
+   },
+   {
+    "filename": "SeamAmbusher 14.aseprite",
+    "frame": { "x": 288, "y": 480, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 160
+   },
+   {
+    "filename": "SeamAmbusher 15.aseprite",
+    "frame": { "x": 432, "y": 480, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 160
+   },
+   {
+    "filename": "SeamAmbusher 16.aseprite",
+    "frame": { "x": 0, "y": 640, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 100
+   },
+   {
+    "filename": "SeamAmbusher 17.aseprite",
+    "frame": { "x": 144, "y": 640, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 100
+   },
+   {
+    "filename": "SeamAmbusher 18.aseprite",
+    "frame": { "x": 288, "y": 640, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 120
+   },
+   {
+    "filename": "SeamAmbusher 19.aseprite",
+    "frame": { "x": 432, "y": 640, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 140
+   },
+   {
+    "filename": "SeamAmbusher 20.aseprite",
+    "frame": { "x": 0, "y": 800, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 160
+   },
+   {
+    "filename": "SeamAmbusher 21.aseprite",
+    "frame": { "x": 144, "y": 800, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 120
+   },
+   {
+    "filename": "SeamAmbusher 22.aseprite",
+    "frame": { "x": 288, "y": 800, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 130
+   },
+   {
+    "filename": "SeamAmbusher 23.aseprite",
+    "frame": { "x": 432, "y": 800, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 140
+   },
+   {
+    "filename": "SeamAmbusher 24.aseprite",
+    "frame": { "x": 0, "y": 960, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 150
+   },
+   {
+    "filename": "SeamAmbusher 25.aseprite",
+    "frame": { "x": 144, "y": 960, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 200
+   },
+   {
+    "filename": "SeamAmbusher 26.aseprite",
+    "frame": { "x": 288, "y": 960, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 70
+   },
+   {
+    "filename": "SeamAmbusher 27.aseprite",
+    "frame": { "x": 432, "y": 960, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 90
+   },
+   {
+    "filename": "SeamAmbusher 28.aseprite",
+    "frame": { "x": 0, "y": 1120, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 110
+   },
+   {
+    "filename": "SeamAmbusher 29.aseprite",
+    "frame": { "x": 144, "y": 1120, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 150
+   },
+   {
+    "filename": "SeamAmbusher 30.aseprite",
+    "frame": { "x": 288, "y": 1120, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 120
+   },
+   {
+    "filename": "SeamAmbusher 31.aseprite",
+    "frame": { "x": 432, "y": 1120, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 160
+   },
+   {
+    "filename": "SeamAmbusher 32.aseprite",
+    "frame": { "x": 0, "y": 1280, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 220
+   },
+   {
+    "filename": "SeamAmbusher 33.aseprite",
+    "frame": { "x": 144, "y": 1280, "w": 144, "h": 160 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 160 },
+    "sourceSize": { "w": 144, "h": 160 },
+    "duration": 650
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.5-dev",
+  "image": "atlas.png",
+  "format": "RGBA8888",
+  "size": { "w": 576, "h": 1440 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "dormant", "from": 0, "to": 3, "direction": "forward", "color": "#000000ff" },
+   { "name": "emerge", "from": 4, "to": 7, "direction": "forward", "color": "#000000ff" },
+   { "name": "snap", "from": 8, "to": 11, "direction": "forward", "color": "#000000ff" },
+   { "name": "hold", "from": 12, "to": 15, "direction": "forward", "color": "#000000ff" },
+   { "name": "release", "from": 16, "to": 20, "direction": "forward", "color": "#000000ff" },
+   { "name": "withdraw", "from": 21, "to": 25, "direction": "forward", "color": "#000000ff" },
+   { "name": "hurt", "from": 26, "to": 29, "direction": "forward", "color": "#000000ff" },
+   { "name": "death", "from": 30, "to": 33, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "shared_palette_clusters", "opacity": 255, "blendMode": "normal" },
+   { "name": "local_cluster_cleanup", "opacity": 255, "blendMode": "normal" }
+  ]
+ }
+}

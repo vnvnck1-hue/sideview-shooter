@@ -2,7 +2,8 @@ class_name GoreBurst
 extends Node2D
 ## 몬스터가 죽는 순간 터지는 체액 비산 (2026-09-24).
 ## 피격 체액을 절반으로 줄인 대신, 죽음 한 번에 몰아서 터뜨려 체액을 확실히 느끼게 한다.
-## 한 노드가 전부 _draw 로 그린다 (SparkBurst 와 같은 규약 — 월드 좌표, 부모는 변환 없는 층).
+## 한 노드가 전부 _draw 로 그리되, 형태는 MonsterFx 전용 아틀라스를 사용한다
+## (SparkBurst 와 같은 규약 — 월드 좌표, 부모는 변환 없는 층).
 ##
 ## ## 사실적으로 (2차 조정)
 ## 1차는 쨍한 형광 초록 + 가시 돋친 팝이라 만화 같았다. 지금은:
@@ -64,11 +65,12 @@ func _start(pos: Vector2, dir: float, radius: float, wet: Color, dry: Color) -> 
 		_mist.append({
 			"p": pos, "v": v * radius * randf_range(3.0, 8.0),
 			"life": randf_range(0.25, 0.5), "age": 0.0,
-			"size": randf_range(1.0, 2.2) * s,
+			"size": randf_range(1.0, 2.2) * s, "variant": randi_range(2, 3),
 		})
 	for i in range(6):
 		_puff.append({"off": Vector2.RIGHT.rotated(randf() * TAU) * radius * randf_range(0.1, 0.35),
-			"r": radius * randf_range(0.35, 0.6)})
+			"r": radius * randf_range(0.35, 0.6), "variant": randi_range(2, 3),
+			"rot": randf_range(-PI, PI)})
 	queue_redraw()
 
 
@@ -77,6 +79,7 @@ func _add_drop(p: Vector2, v: Vector2, size: float, drag: float) -> void:
 		"p": p, "v": v, "life": randf_range(0.8, 1.3), "age": 0.0,
 		"size": size, "drag": drag,
 		"stuck": false, "flat": Vector2.ONE, "slide": 0.0, "splashed": false,
+		"variant": randi_range(0, MonsterFx.VARIANTS - 1), "rot": randf_range(-PI, PI),
 	})
 
 
@@ -158,40 +161,42 @@ func _col(k: float, alpha: float) -> Color:
 
 
 func _draw() -> void:
-	# 비말 구름 — 옅게 부풀었다 가라앉는다 (가시 팝 대신)
+	# 비말 구름 — 전용 점액/미스트 스프라이트가 옅게 부풀었다 가라앉는다.
 	if _t <= PUFF_LIFE:
 		var k := _t / PUFF_LIFE
 		var grow := 1.0 - pow(1.0 - k, 2.0)
 		var a := 0.14 * (1.0 - k)
 		for pf in _puff:
-			# 동심원 세 겹으로 가장자리를 흐린다 (한 겹이면 테두리가 딱딱하게 보인다)
 			var pc: Vector2 = _center + (pf["off"] as Vector2) * (0.6 + grow) + Vector2(0, k * 10.0)
 			var pr: float = float(pf["r"]) * (0.5 + 0.7 * grow)
-			for layer in [1.0, 0.72, 0.45]:
-				draw_circle(pc, pr * layer, _col(0.3 + k * 0.4, a))
+			draw_set_transform(pc, float(pf["rot"]), Vector2.ONE)
+			MonsterFx.draw(self, MonsterFx.ROW_SALIVA, int(pf["variant"]),
+				Rect2(Vector2(-pr, -pr), Vector2(pr, pr) * 2.0), Color(1, 1, 1, a * 1.6))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	for m in _mist:
 		var mk: float = m["age"] / m["life"]
-		draw_circle(m["p"], m["size"], _col(0.4 + mk * 0.5, 0.45 * (1.0 - mk)))
+		var ms: float = float(m["size"]) * 4.0
+		MonsterFx.draw(self, MonsterFx.ROW_SALIVA, int(m["variant"]),
+			Rect2((m["p"] as Vector2) - Vector2.ONE * ms, Vector2.ONE * ms * 2.0),
+			Color(1, 1, 1, 0.5 * (1.0 - mk)))
 	for d in _drops:
 		var sz: float = d["size"]
 		var p: Vector2 = d["p"]
 		if d["stuck"]:
 			var sk := clampf((d["age"] - d["life"]) / STICK_LIFE, 0.0, 1.0)
 			var sa := 1.0 - sk * sk
-			draw_set_transform(p, 0.0, d["flat"])
-			draw_circle(Vector2.ZERO, sz * 0.55 + 1.5, Color(RIM_DARK.r, RIM_DARK.g, RIM_DARK.b, 0.6 * sa))
-			draw_circle(Vector2.ZERO, sz * 0.55, _col(0.5 + sk * 0.4, 0.9 * sa))
+			var stuck_size := Vector2.ONE * sz * 3.4
+			draw_set_transform(p, float(d["rot"]), d["flat"])
+			MonsterFx.draw(self, MonsterFx.ROW_SPLAT, int(d["variant"]),
+				Rect2(-stuck_size * 0.5, stuck_size), Color(1, 1, 1, 0.92 * sa))
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 			continue
 		var k: float = d["age"] / d["life"]
 		var col := _col(k * 0.5, 0.95 * (1.0 - smoothstep(0.85, 1.0, k)))
-		# 모션 블러 — 속도 방향으로 얇게 늘어진다 (굵은 방울일수록 덜 늘어진다)
-		var tail: Vector2 = (d["v"] as Vector2) * 0.012
-		if tail.length() > sz * 0.6:
-			draw_line(p - tail, p, Color(col.r, col.g, col.b, col.a * 0.6), sz * 0.7)
-		if sz > 3.0:
-			draw_circle(p, sz * 0.5 + 1.5, Color(RIM_DARK.r, RIM_DARK.g, RIM_DARK.b, col.a * 0.7))
-		draw_circle(p, sz * 0.5, col)
-		# 굵은 방울엔 작은 반사광 하나 — 젖은 표면으로 읽힌다
-		if sz > 4.0:
-			draw_circle(p + Vector2(-sz * 0.15, -sz * 0.15), sz * 0.14, Color(0.85, 0.88, 0.78, col.a * 0.45))
+		var speed: float = (d["v"] as Vector2).length()
+		var drop_size := Vector2(sz * 3.1, sz * 3.1 * clampf(speed / 360.0, 0.9, 1.8))
+		var rot := (d["v"] as Vector2).angle() - PI * 0.5 + float(d["rot"]) * 0.12
+		draw_set_transform(p, rot, Vector2.ONE)
+		MonsterFx.draw(self, MonsterFx.ROW_FLUID, int(d["variant"]), Rect2(-drop_size * 0.5, drop_size),
+			Color(1, 1, 1, col.a))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

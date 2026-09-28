@@ -72,6 +72,8 @@ func setup(id: String, center_x: float, floor_line: float, face_dir := -1) -> vo
 
 
 func _ready() -> void:
+	add_to_group("readability_actors")
+	set_meta("readability_bounds", Rect2(-85, -270, 170, 275))
 	_pivot = Node2D.new()
 	_pivot.name = "Pivot"
 	add_child(_pivot)

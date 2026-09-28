@@ -8,7 +8,7 @@ extends RefCounted
 ##
 ## 확정된 구성:
 ##   먼지·빛 기둥은 벽과 인물 사이(z3~4)에 있고, 벽 램프·채광·비상등은 배경 층(z≤4)만 정면으로 비춘다.
-##   인물 층(z5~6)은 55%(바닥 풀·바닥 라이트는 75%) 의 거울 라이트(LightMirror)가 비춘다.
+##   인물 층(z5~6)은 70%(바닥 풀·바닥 라이트는 80%) 의 거울 라이트(LightMirror)가 비춘다.
 ##   근경 실루엣 층(ForegroundLayer, z7)은 몸체가 라이트를 받지 않고 윤곽 띠만 림으로 반응하며,
 ##   플레이어 이동의 1.045배로 움직여 카메라 앞을 스쳐 간다.
 
@@ -19,5 +19,12 @@ const Z_ACTOR_MAX := 6
 const Z_FOREGROUND := 7      # 근경 실루엣
 
 ## 인물 층이 받는 벽 조명 비율 (배경 층 = 1.0)
-const ACTOR_LIGHT_RATIO := 0.55
-const ACTOR_FLOOR_LIGHT_RATIO := 0.75
+const ACTOR_LIGHT_RATIO := 0.70
+const ACTOR_FLOOR_LIGHT_RATIO := 0.80
+
+## 역광 (2026-09-28 시험 중 — scenes/BacklightLab.tscn 에서 비교). 뒷벽 광원(split_by_depth)을 인물이 역광으로 받는가.
+## 켜면 광원 앞에 선 인물은 몸이 살짝 어두워지고 광원 쪽 윤곽이 빛난다. 방을 만들기 **전에** 정해야 새 라이트에 반영된다
+## (이미 만든 라이트는 Lighting.set_wall_backlight 로 바꾼다). 본편 기본값은 비교가 끝날 때까지 꺼 둔다.
+static var wall_backlight := false
+## 앞쪽 광원(split_front)이 뒷벽을 비추는 비율 — 광원이 벽에서 멀어 인물보다 덜 받는다
+const FRONT_WALL_RATIO := 0.55

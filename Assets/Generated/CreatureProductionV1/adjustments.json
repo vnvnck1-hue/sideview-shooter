@@ -1,0 +1,1745 @@
+﻿{
+    "CeilingBell":  {
+                        "frames":  {
+                                       "close_01":  {
+                                                        "key":  "close_01",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\close_01.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     266,
+                                                                     242
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             35,
+                                                                             337,
+                                                                             297,
+                                                                             575
+                                                                         ],
+                                                        "sourceOpaquePixels":  27519,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                       "retract_04":  {
+                                                          "key":  "retract_04",
+                                                          "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\retract_04.png",
+                                                          "rect":  [
+                                                                       0,
+                                                                       0,
+                                                                       259,
+                                                                       243
+                                                                   ],
+                                                          "sourceBounds":  [
+                                                                               958,
+                                                                               13,
+                                                                               1213,
+                                                                               252
+                                                                           ],
+                                                          "sourceOpaquePixels":  26752,
+                                                          "removedSpeckPixels":  0
+                                                      },
+                                       "hurt_02":  {
+                                                       "key":  "hurt_02",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\hurt_02.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    204,
+                                                                    253
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            364,
+                                                                            631,
+                                                                            564,
+                                                                            880
+                                                                        ],
+                                                       "sourceOpaquePixels":  24280,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "hurt_03":  {
+                                                       "key":  "hurt_03",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\hurt_03.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    168,
+                                                                    255
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            696,
+                                                                            631,
+                                                                            860,
+                                                                            882
+                                                                        ],
+                                                       "sourceOpaquePixels":  24342,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "death_04":  {
+                                                        "key":  "death_04",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\death_04.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     280,
+                                                                     302
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             948,
+                                                                             930,
+                                                                             1224,
+                                                                             1228
+                                                                         ],
+                                                        "sourceOpaquePixels":  23519,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                       "death_03":  {
+                                                        "key":  "death_03",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\death_03.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     234,
+                                                                     315
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             668,
+                                                                             930,
+                                                                             898,
+                                                                             1241
+                                                                         ],
+                                                        "sourceOpaquePixels":  30690,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                       "hold_04":  {
+                                                       "key":  "hold_04",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\hold_04.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    241,
+                                                                    261
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            979,
+                                                                            950,
+                                                                            1216,
+                                                                            1207
+                                                                        ],
+                                                       "sourceOpaquePixels":  21957,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "retract_01":  {
+                                                          "key":  "retract_01",
+                                                          "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\retract_01.png",
+                                                          "rect":  [
+                                                                       0,
+                                                                       0,
+                                                                       257,
+                                                                       322
+                                                                   ],
+                                                          "sourceBounds":  [
+                                                                               36,
+                                                                               14,
+                                                                               289,
+                                                                               332
+                                                                           ],
+                                                          "sourceOpaquePixels":  28948,
+                                                          "removedSpeckPixels":  0
+                                                      },
+                                       "death_02":  {
+                                                        "key":  "death_02",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\death_02.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     229,
+                                                                     293
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             359,
+                                                                             930,
+                                                                             584,
+                                                                             1219
+                                                                         ],
+                                                        "sourceOpaquePixels":  32702,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                       "strike_04":  {
+                                                         "key":  "strike_04",
+                                                         "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\strike_04.png",
+                                                         "rect":  [
+                                                                      0,
+                                                                      0,
+                                                                      241,
+                                                                      297
+                                                                  ],
+                                                         "sourceBounds":  [
+                                                                              979,
+                                                                              637,
+                                                                              1216,
+                                                                              930
+                                                                          ],
+                                                         "sourceOpaquePixels":  23357,
+                                                         "removedSpeckPixels":  0
+                                                     },
+                                       "idle_02":  {
+                                                       "key":  "idle_02",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\idle_02.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    133,
+                                                                    259
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            408,
+                                                                            14,
+                                                                            537,
+                                                                            269
+                                                                        ],
+                                                       "sourceOpaquePixels":  17820,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "hold_03":  {
+                                                       "key":  "hold_03",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\hold_03.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    241,
+                                                                    268
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            665,
+                                                                            950,
+                                                                            902,
+                                                                            1214
+                                                                        ],
+                                                       "sourceOpaquePixels":  22329,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "strike_03":  {
+                                                         "key":  "strike_03",
+                                                         "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\strike_03.png",
+                                                         "rect":  [
+                                                                      0,
+                                                                      0,
+                                                                      241,
+                                                                      267
+                                                                  ],
+                                                         "sourceBounds":  [
+                                                                              665,
+                                                                              637,
+                                                                              902,
+                                                                              900
+                                                                          ],
+                                                         "sourceOpaquePixels":  22387,
+                                                         "removedSpeckPixels":  0
+                                                     },
+                                       "close_03":  {
+                                                        "key":  "close_03",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\close_03.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     165,
+                                                                     264
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             700,
+                                                                             336,
+                                                                             861,
+                                                                             596
+                                                                         ],
+                                                        "sourceOpaquePixels":  25213,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                       "idle_03":  {
+                                                       "key":  "idle_03",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\idle_03.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    132,
+                                                                    259
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            722,
+                                                                            14,
+                                                                            850,
+                                                                            269
+                                                                        ],
+                                                       "sourceOpaquePixels":  17788,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "anticipate_01":  {
+                                                             "key":  "anticipate_01",
+                                                             "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\anticipate_01.png",
+                                                             "rect":  [
+                                                                          0,
+                                                                          0,
+                                                                          142,
+                                                                          247
+                                                                      ],
+                                                             "sourceBounds":  [
+                                                                                  88,
+                                                                                  323,
+                                                                                  226,
+                                                                                  566
+                                                                              ],
+                                                             "sourceOpaquePixels":  18719,
+                                                             "removedSpeckPixels":  0
+                                                         },
+                                       "strike_02":  {
+                                                         "key":  "strike_02",
+                                                         "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\strike_02.png",
+                                                         "rect":  [
+                                                                      0,
+                                                                      0,
+                                                                      241,
+                                                                      244
+                                                                  ],
+                                                         "sourceBounds":  [
+                                                                              352,
+                                                                              637,
+                                                                              589,
+                                                                              877
+                                                                          ],
+                                                         "sourceOpaquePixels":  21297,
+                                                         "removedSpeckPixels":  0
+                                                     },
+                                       "close_02":  {
+                                                        "key":  "close_02",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\close_02.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     201,
+                                                                     248
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             373,
+                                                                             336,
+                                                                             570,
+                                                                             580
+                                                                         ],
+                                                        "sourceOpaquePixels":  26397,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                       "anticipate_04":  {
+                                                             "key":  "anticipate_04",
+                                                             "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\anticipate_04.png",
+                                                             "rect":  [
+                                                                          0,
+                                                                          0,
+                                                                          243,
+                                                                          233
+                                                                      ],
+                                                             "sourceBounds":  [
+                                                                                  979,
+                                                                                  323,
+                                                                                  1218,
+                                                                                  552
+                                                                              ],
+                                                             "sourceOpaquePixels":  23212,
+                                                             "removedSpeckPixels":  0
+                                                         },
+                                       "anticipate_02":  {
+                                                             "key":  "anticipate_02",
+                                                             "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\anticipate_02.png",
+                                                             "rect":  [
+                                                                          0,
+                                                                          0,
+                                                                          169,
+                                                                          246
+                                                                      ],
+                                                             "sourceBounds":  [
+                                                                                  386,
+                                                                                  323,
+                                                                                  551,
+                                                                                  565
+                                                                              ],
+                                                             "sourceOpaquePixels":  20866,
+                                                             "removedSpeckPixels":  0
+                                                         },
+                                       "hurt_01":  {
+                                                       "key":  "hurt_01",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\hurt_01.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    212,
+                                                                    255
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            67,
+                                                                            631,
+                                                                            275,
+                                                                            882
+                                                                        ],
+                                                       "sourceOpaquePixels":  25207,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "anticipate_03":  {
+                                                             "key":  "anticipate_03",
+                                                             "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\anticipate_03.png",
+                                                             "rect":  [
+                                                                          0,
+                                                                          0,
+                                                                          210,
+                                                                          240
+                                                                      ],
+                                                             "sourceBounds":  [
+                                                                                  680,
+                                                                                  323,
+                                                                                  886,
+                                                                                  559
+                                                                              ],
+                                                             "sourceOpaquePixels":  21823,
+                                                             "removedSpeckPixels":  0
+                                                         },
+                                       "hurt_04":  {
+                                                       "key":  "hurt_04",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\hurt_04.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    162,
+                                                                    263
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            1009,
+                                                                            631,
+                                                                            1167,
+                                                                            890
+                                                                        ],
+                                                       "sourceOpaquePixels":  22355,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "hold_02":  {
+                                                       "key":  "hold_02",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\hold_02.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    241,
+                                                                    261
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            352,
+                                                                            950,
+                                                                            589,
+                                                                            1207
+                                                                        ],
+                                                       "sourceOpaquePixels":  22015,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "retract_02":  {
+                                                          "key":  "retract_02",
+                                                          "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\retract_02.png",
+                                                          "rect":  [
+                                                                       0,
+                                                                       0,
+                                                                       258,
+                                                                       303
+                                                                   ],
+                                                          "sourceBounds":  [
+                                                                               343,
+                                                                               13,
+                                                                               597,
+                                                                               312
+                                                                           ],
+                                                          "sourceOpaquePixels":  28856,
+                                                          "removedSpeckPixels":  0
+                                                      },
+                                       "death_01":  {
+                                                        "key":  "death_01",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\death_01.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     195,
+                                                                     286
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             72,
+                                                                             930,
+                                                                             263,
+                                                                             1212
+                                                                         ],
+                                                        "sourceOpaquePixels":  30744,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                       "hold_01":  {
+                                                       "key":  "hold_01",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\hold_01.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    240,
+                                                                    268
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            39,
+                                                                            950,
+                                                                            275,
+                                                                            1214
+                                                                        ],
+                                                       "sourceOpaquePixels":  22352,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "retract_03":  {
+                                                          "key":  "retract_03",
+                                                          "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\retract_03.png",
+                                                          "rect":  [
+                                                                       0,
+                                                                       0,
+                                                                       258,
+                                                                       273
+                                                                   ],
+                                                          "sourceBounds":  [
+                                                                               653,
+                                                                               13,
+                                                                               907,
+                                                                               282
+                                                                           ],
+                                                          "sourceOpaquePixels":  27838,
+                                                          "removedSpeckPixels":  0
+                                                      },
+                                       "idle_04":  {
+                                                       "key":  "idle_04",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\idle_04.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    131,
+                                                                    259
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            1035,
+                                                                            14,
+                                                                            1162,
+                                                                            269
+                                                                        ],
+                                                       "sourceOpaquePixels":  17638,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "close_04":  {
+                                                        "key":  "close_04",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\close_04.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     162,
+                                                                     262
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             1009,
+                                                                             336,
+                                                                             1167,
+                                                                             594
+                                                                         ],
+                                                        "sourceOpaquePixels":  21801,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                       "idle_01":  {
+                                                       "key":  "idle_01",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\idle_01.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    133,
+                                                                    259
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            95,
+                                                                            14,
+                                                                            224,
+                                                                            269
+                                                                        ],
+                                                       "sourceOpaquePixels":  17673,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                       "strike_01":  {
+                                                         "key":  "strike_01",
+                                                         "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\CeilingBell\\strike_01.png",
+                                                         "rect":  [
+                                                                      0,
+                                                                      0,
+                                                                      240,
+                                                                      214
+                                                                  ],
+                                                         "sourceBounds":  [
+                                                                              39,
+                                                                              637,
+                                                                              275,
+                                                                              847
+                                                                          ],
+                                                         "sourceOpaquePixels":  20378,
+                                                         "removedSpeckPixels":  0
+                                                     }
+                                   },
+                        "pitch":  3
+                    },
+    "SeamAmbusher":  {
+                         "frames":  {
+                                        "release_01":  {
+                                                           "key":  "release_01",
+                                                           "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\release_01.png",
+                                                           "rect":  [
+                                                                        0,
+                                                                        0,
+                                                                        123,
+                                                                        212
+                                                                    ],
+                                                           "sourceBounds":  [
+                                                                                105,
+                                                                                28,
+                                                                                224,
+                                                                                236
+                                                                            ],
+                                                           "sourceOpaquePixels":  18137,
+                                                           "removedSpeckPixels":  3
+                                                       },
+                                        "hurt_02":  {
+                                                        "key":  "hurt_02",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\hurt_02.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     284,
+                                                                     243
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             443,
+                                                                             516,
+                                                                             723,
+                                                                             755
+                                                                         ],
+                                                        "sourceOpaquePixels":  35814,
+                                                        "removedSpeckPixels":  3
+                                                    },
+                                        "snap_04":  {
+                                                        "key":  "snap_04",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\snap_04.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     294,
+                                                                     202
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             1223,
+                                                                             544,
+                                                                             1513,
+                                                                             742
+                                                                         ],
+                                                        "sourceOpaquePixels":  28941,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                        "emerge_01":  {
+                                                          "key":  "emerge_01",
+                                                          "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\emerge_01.png",
+                                                          "rect":  [
+                                                                       0,
+                                                                       0,
+                                                                       225,
+                                                                       219
+                                                                   ],
+                                                          "sourceBounds":  [
+                                                                               62,
+                                                                               282,
+                                                                               283,
+                                                                               497
+                                                                           ],
+                                                          "sourceOpaquePixels":  30443,
+                                                          "removedSpeckPixels":  0
+                                                      },
+                                        "emerge_04":  {
+                                                          "key":  "emerge_04",
+                                                          "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\emerge_04.png",
+                                                          "rect":  [
+                                                                       0,
+                                                                       0,
+                                                                       342,
+                                                                       236
+                                                                   ],
+                                                          "sourceBounds":  [
+                                                                               1182,
+                                                                               281,
+                                                                               1520,
+                                                                               513
+                                                                           ],
+                                                          "sourceOpaquePixels":  43462,
+                                                          "removedSpeckPixels":  0
+                                                      },
+                                        "hurt_03":  {
+                                                        "key":  "hurt_03",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\hurt_03.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     281,
+                                                                     224
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             805,
+                                                                             529,
+                                                                             1082,
+                                                                             749
+                                                                         ],
+                                                        "sourceOpaquePixels":  32498,
+                                                        "removedSpeckPixels":  3
+                                                    },
+                                        "withdraw_01":  {
+                                                            "key":  "withdraw_01",
+                                                            "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\withdraw_01.png",
+                                                            "rect":  [
+                                                                         0,
+                                                                         0,
+                                                                         338,
+                                                                         234
+                                                                     ],
+                                                            "sourceBounds":  [
+                                                                                 36,
+                                                                                 267,
+                                                                                 370,
+                                                                                 497
+                                                                             ],
+                                                            "sourceOpaquePixels":  41924,
+                                                            "removedSpeckPixels":  3
+                                                        },
+                                        "death_04":  {
+                                                         "key":  "death_04",
+                                                         "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\death_04.png",
+                                                         "rect":  [
+                                                                      0,
+                                                                      0,
+                                                                      152,
+                                                                      235
+                                                                  ],
+                                                         "sourceBounds":  [
+                                                                              1247,
+                                                                              782,
+                                                                              1395,
+                                                                              1013
+                                                                          ],
+                                                         "sourceOpaquePixels":  22317,
+                                                         "removedSpeckPixels":  3
+                                                     },
+                                        "snap_01":  {
+                                                        "key":  "snap_01",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\snap_01.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     325,
+                                                                     238
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             52,
+                                                                             533,
+                                                                             373,
+                                                                             767
+                                                                         ],
+                                                        "sourceOpaquePixels":  41460,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                        "dormant_02":  {
+                                                           "key":  "dormant_02",
+                                                           "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\dormant_02.png",
+                                                           "rect":  [
+                                                                        0,
+                                                                        0,
+                                                                        105,
+                                                                        237
+                                                                    ],
+                                                           "sourceBounds":  [
+                                                                                477,
+                                                                                15,
+                                                                                578,
+                                                                                248
+                                                                            ],
+                                                           "sourceOpaquePixels":  18412,
+                                                           "removedSpeckPixels":  0
+                                                       },
+                                        "death_03":  {
+                                                         "key":  "death_03",
+                                                         "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\death_03.png",
+                                                         "rect":  [
+                                                                      0,
+                                                                      0,
+                                                                      269,
+                                                                      228
+                                                                  ],
+                                                         "sourceBounds":  [
+                                                                              822,
+                                                                              778,
+                                                                              1087,
+                                                                              1002
+                                                                          ],
+                                                         "sourceOpaquePixels":  36662,
+                                                         "removedSpeckPixels":  3
+                                                     },
+                                        "hold_04":  {
+                                                        "key":  "hold_04",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\hold_04.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     310,
+                                                                     199
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             1207,
+                                                                             803,
+                                                                             1513,
+                                                                             998
+                                                                         ],
+                                                        "sourceOpaquePixels":  31004,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                        "emerge_03":  {
+                                                          "key":  "emerge_03",
+                                                          "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\emerge_03.png",
+                                                          "rect":  [
+                                                                       0,
+                                                                       0,
+                                                                       313,
+                                                                       236
+                                                                   ],
+                                                          "sourceBounds":  [
+                                                                               815,
+                                                                               282,
+                                                                               1124,
+                                                                               514
+                                                                           ],
+                                                          "sourceOpaquePixels":  40458,
+                                                          "removedSpeckPixels":  0
+                                                      },
+                                        "withdraw_04":  {
+                                                            "key":  "withdraw_04",
+                                                            "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\withdraw_04.png",
+                                                            "rect":  [
+                                                                         0,
+                                                                         0,
+                                                                         119,
+                                                                         217
+                                                                     ],
+                                                            "sourceBounds":  [
+                                                                                 1241,
+                                                                                 281,
+                                                                                 1356,
+                                                                                 494
+                                                                             ],
+                                                            "sourceOpaquePixels":  17985,
+                                                            "removedSpeckPixels":  3
+                                                        },
+                                        "hold_03":  {
+                                                        "key":  "hold_03",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\hold_03.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     311,
+                                                                     197
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             822,
+                                                                             803,
+                                                                             1129,
+                                                                             996
+                                                                         ],
+                                                        "sourceOpaquePixels":  30989,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                        "release_02":  {
+                                                           "key":  "release_02",
+                                                           "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\release_02.png",
+                                                           "rect":  [
+                                                                        0,
+                                                                        0,
+                                                                        236,
+                                                                        211
+                                                                    ],
+                                                           "sourceBounds":  [
+                                                                                443,
+                                                                                29,
+                                                                                675,
+                                                                                236
+                                                                            ],
+                                                           "sourceOpaquePixels":  31462,
+                                                           "removedSpeckPixels":  3
+                                                       },
+                                        "withdraw_03":  {
+                                                            "key":  "withdraw_03",
+                                                            "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\withdraw_03.png",
+                                                            "rect":  [
+                                                                         0,
+                                                                         0,
+                                                                         246,
+                                                                         197
+                                                                     ],
+                                                            "sourceBounds":  [
+                                                                                 833,
+                                                                                 285,
+                                                                                 1075,
+                                                                                 478
+                                                                             ],
+                                                            "sourceOpaquePixels":  31938,
+                                                            "removedSpeckPixels":  3
+                                                        },
+                                        "release_03":  {
+                                                           "key":  "release_03",
+                                                           "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\release_03.png",
+                                                           "rect":  [
+                                                                        0,
+                                                                        0,
+                                                                        284,
+                                                                        212
+                                                                    ],
+                                                           "sourceBounds":  [
+                                                                                807,
+                                                                                28,
+                                                                                1087,
+                                                                                236
+                                                                            ],
+                                                           "sourceOpaquePixels":  35330,
+                                                           "removedSpeckPixels":  3
+                                                       },
+                                        "hurt_04":  {
+                                                        "key":  "hurt_04",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\hurt_04.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     339,
+                                                                     234
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             1167,
+                                                                             522,
+                                                                             1502,
+                                                                             752
+                                                                         ],
+                                                        "sourceOpaquePixels":  41499,
+                                                        "removedSpeckPixels":  3
+                                                    },
+                                        "snap_02":  {
+                                                        "key":  "snap_02",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\snap_02.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     278,
+                                                                     233
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             459,
+                                                                             538,
+                                                                             733,
+                                                                             767
+                                                                         ],
+                                                        "sourceOpaquePixels":  36693,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                        "withdraw_02":  {
+                                                            "key":  "withdraw_02",
+                                                            "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\withdraw_02.png",
+                                                            "rect":  [
+                                                                         0,
+                                                                         0,
+                                                                         281,
+                                                                         216
+                                                                     ],
+                                                            "sourceBounds":  [
+                                                                                 441,
+                                                                                 276,
+                                                                                 718,
+                                                                                 488
+                                                                             ],
+                                                            "sourceOpaquePixels":  37176,
+                                                            "removedSpeckPixels":  3
+                                                        },
+                                        "hurt_01":  {
+                                                        "key":  "hurt_01",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\hurt_01.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     336,
+                                                                     232
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             35,
+                                                                             522,
+                                                                             367,
+                                                                             750
+                                                                         ],
+                                                        "sourceOpaquePixels":  41335,
+                                                        "removedSpeckPixels":  3
+                                                    },
+                                        "dormant_04":  {
+                                                           "key":  "dormant_04",
+                                                           "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\dormant_04.png",
+                                                           "rect":  [
+                                                                        0,
+                                                                        0,
+                                                                        107,
+                                                                        234
+                                                                    ],
+                                                           "sourceBounds":  [
+                                                                                1232,
+                                                                                18,
+                                                                                1335,
+                                                                                248
+                                                                            ],
+                                                           "sourceOpaquePixels":  17804,
+                                                           "removedSpeckPixels":  0
+                                                       },
+                                        "emerge_02":  {
+                                                          "key":  "emerge_02",
+                                                          "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\emerge_02.png",
+                                                          "rect":  [
+                                                                       0,
+                                                                       0,
+                                                                       274,
+                                                                       223
+                                                                   ],
+                                                          "sourceBounds":  [
+                                                                               448,
+                                                                               282,
+                                                                               718,
+                                                                               501
+                                                                           ],
+                                                          "sourceOpaquePixels":  36297,
+                                                          "removedSpeckPixels":  0
+                                                      },
+                                        "snap_03":  {
+                                                        "key":  "snap_03",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\snap_03.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     293,
+                                                                     206
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             842,
+                                                                             541,
+                                                                             1131,
+                                                                             743
+                                                                         ],
+                                                        "sourceOpaquePixels":  36498,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                        "hold_02":  {
+                                                        "key":  "hold_02",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\hold_02.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     303,
+                                                                     198
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             456,
+                                                                             802,
+                                                                             755,
+                                                                             996
+                                                                         ],
+                                                        "sourceOpaquePixels":  30392,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                        "dormant_01":  {
+                                                           "key":  "dormant_01",
+                                                           "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\dormant_01.png",
+                                                           "rect":  [
+                                                                        0,
+                                                                        0,
+                                                                        103,
+                                                                        235
+                                                                    ],
+                                                           "sourceBounds":  [
+                                                                                76,
+                                                                                12,
+                                                                                175,
+                                                                                243
+                                                                            ],
+                                                           "sourceOpaquePixels":  18124,
+                                                           "removedSpeckPixels":  0
+                                                       },
+                                        "death_01":  {
+                                                         "key":  "death_01",
+                                                         "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\death_01.png",
+                                                         "rect":  [
+                                                                      0,
+                                                                      0,
+                                                                      336,
+                                                                      232
+                                                                  ],
+                                                         "sourceBounds":  [
+                                                                              35,
+                                                                              769,
+                                                                              367,
+                                                                              997
+                                                                          ],
+                                                         "sourceOpaquePixels":  41810,
+                                                         "removedSpeckPixels":  3
+                                                     },
+                                        "hold_01":  {
+                                                        "key":  "hold_01",
+                                                        "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\hold_01.png",
+                                                        "rect":  [
+                                                                     0,
+                                                                     0,
+                                                                     310,
+                                                                     198
+                                                                 ],
+                                                        "sourceBounds":  [
+                                                                             57,
+                                                                             803,
+                                                                             363,
+                                                                             997
+                                                                         ],
+                                                        "sourceOpaquePixels":  30691,
+                                                        "removedSpeckPixels":  0
+                                                    },
+                                        "release_04":  {
+                                                           "key":  "release_04",
+                                                           "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\release_04.png",
+                                                           "rect":  [
+                                                                        0,
+                                                                        0,
+                                                                        341,
+                                                                        236
+                                                                    ],
+                                                           "sourceBounds":  [
+                                                                                1159,
+                                                                                13,
+                                                                                1496,
+                                                                                245
+                                                                            ],
+                                                           "sourceOpaquePixels":  41770,
+                                                           "removedSpeckPixels":  3
+                                                       },
+                                        "death_02":  {
+                                                         "key":  "death_02",
+                                                         "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\death_02.png",
+                                                         "rect":  [
+                                                                      0,
+                                                                      0,
+                                                                      268,
+                                                                      222
+                                                                  ],
+                                                         "sourceBounds":  [
+                                                                              446,
+                                                                              779,
+                                                                              710,
+                                                                              997
+                                                                          ],
+                                                         "sourceOpaquePixels":  37912,
+                                                         "removedSpeckPixels":  3
+                                                     },
+                                        "dormant_03":  {
+                                                           "key":  "dormant_03",
+                                                           "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\SeamAmbusher\\dormant_03.png",
+                                                           "rect":  [
+                                                                        0,
+                                                                        0,
+                                                                        105,
+                                                                        235
+                                                                    ],
+                                                           "sourceBounds":  [
+                                                                                856,
+                                                                                17,
+                                                                                957,
+                                                                                248
+                                                                            ],
+                                                           "sourceOpaquePixels":  17666,
+                                                           "removedSpeckPixels":  0
+                                                       }
+                                    },
+                         "pitch":  3
+                     },
+    "RingSpine":  {
+                      "pitch":  4,
+                      "frames":  {
+                                     "death_01":  {
+                                                      "key":  "death_01",
+                                                      "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\death_01.png",
+                                                      "rect":  [
+                                                                   0,
+                                                                   0,
+                                                                   256,
+                                                                   235
+                                                               ],
+                                                      "sourceBounds":  [
+                                                                           72,
+                                                                           767,
+                                                                           324,
+                                                                           998
+                                                                       ],
+                                                      "sourceOpaquePixels":  35580,
+                                                      "removedSpeckPixels":  4
+                                                  },
+                                     "recoil_03":  {
+                                                       "key":  "recoil_03",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\recoil_03.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    285,
+                                                                    220
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            793,
+                                                                            17,
+                                                                            1074,
+                                                                            233
+                                                                        ],
+                                                       "sourceOpaquePixels":  22356,
+                                                       "removedSpeckPixels":  4
+                                                   },
+                                     "uncoil_04":  {
+                                                       "key":  "uncoil_04",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\uncoil_04.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    370,
+                                                                    130
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            1148,
+                                                                            626,
+                                                                            1514,
+                                                                            752
+                                                                        ],
+                                                       "sourceOpaquePixels":  26707,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                     "lash_02":  {
+                                                     "key":  "lash_02",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\lash_02.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  368,
+                                                                  219
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          403,
+                                                                          788,
+                                                                          767,
+                                                                          1003
+                                                                      ],
+                                                     "sourceOpaquePixels":  30746,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "hurt_02":  {
+                                                     "key":  "hurt_02",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\hurt_02.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  248,
+                                                                  229
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          476,
+                                                                          523,
+                                                                          720,
+                                                                          748
+                                                                      ],
+                                                     "sourceOpaquePixels":  34850,
+                                                     "removedSpeckPixels":  4
+                                                 },
+                                     "recoil_04":  {
+                                                       "key":  "recoil_04",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\recoil_04.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    367,
+                                                                    147
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            1151,
+                                                                            91,
+                                                                            1514,
+                                                                            234
+                                                                        ],
+                                                       "sourceOpaquePixels":  26811,
+                                                       "removedSpeckPixels":  4
+                                                   },
+                                     "coil_04":  {
+                                                     "key":  "coil_04",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\coil_04.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  234,
+                                                                  225
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          1239,
+                                                                          263,
+                                                                          1469,
+                                                                          484
+                                                                      ],
+                                                     "sourceOpaquePixels":  31534,
+                                                     "removedSpeckPixels":  4
+                                                 },
+                                     "uncoil_03":  {
+                                                       "key":  "uncoil_03",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\uncoil_03.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    366,
+                                                                    175
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            783,
+                                                                            581,
+                                                                            1145,
+                                                                            752
+                                                                        ],
+                                                       "sourceOpaquePixels":  31729,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                     "recoil_02":  {
+                                                       "key":  "recoil_02",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\recoil_02.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    339,
+                                                                    190
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            416,
+                                                                            47,
+                                                                            751,
+                                                                            233
+                                                                        ],
+                                                       "sourceOpaquePixels":  28707,
+                                                       "removedSpeckPixels":  4
+                                                   },
+                                     "uncoil_01":  {
+                                                       "key":  "uncoil_01",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\uncoil_01.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    256,
+                                                                    232
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            67,
+                                                                            524,
+                                                                            319,
+                                                                            752
+                                                                        ],
+                                                       "sourceOpaquePixels":  34969,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                     "death_04":  {
+                                                      "key":  "death_04",
+                                                      "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\death_04.png",
+                                                      "rect":  [
+                                                                   0,
+                                                                   0,
+                                                                   363,
+                                                                   87
+                                                               ],
+                                                      "sourceBounds":  [
+                                                                           1149,
+                                                                           907,
+                                                                           1508,
+                                                                           990
+                                                                       ],
+                                                      "sourceOpaquePixels":  18391,
+                                                      "removedSpeckPixels":  4
+                                                  },
+                                     "death_03":  {
+                                                      "key":  "death_03",
+                                                      "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\death_03.png",
+                                                      "rect":  [
+                                                                   0,
+                                                                   0,
+                                                                   346,
+                                                                   171
+                                                               ],
+                                                      "sourceBounds":  [
+                                                                           787,
+                                                                           824,
+                                                                           1129,
+                                                                           991
+                                                                       ],
+                                                      "sourceOpaquePixels":  28361,
+                                                      "removedSpeckPixels":  4
+                                                  },
+                                     "idle_02":  {
+                                                     "key":  "idle_02",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\idle_02.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  253,
+                                                                  229
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          457,
+                                                                          24,
+                                                                          706,
+                                                                          249
+                                                                      ],
+                                                     "sourceOpaquePixels":  34592,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "death_02":  {
+                                                      "key":  "death_02",
+                                                      "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\death_02.png",
+                                                      "rect":  [
+                                                                   0,
+                                                                   0,
+                                                                   247,
+                                                                   222
+                                                               ],
+                                                      "sourceBounds":  [
+                                                                           449,
+                                                                           777,
+                                                                           692,
+                                                                           995
+                                                                       ],
+                                                      "sourceOpaquePixels":  31432,
+                                                      "removedSpeckPixels":  4
+                                                  },
+                                     "idle_03":  {
+                                                     "key":  "idle_03",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\idle_03.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  253,
+                                                                  230
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          832,
+                                                                          24,
+                                                                          1081,
+                                                                          250
+                                                                      ],
+                                                     "sourceOpaquePixels":  34641,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "roll_03":  {
+                                                     "key":  "roll_03",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\roll_03.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  249,
+                                                                  240
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          832,
+                                                                          272,
+                                                                          1077,
+                                                                          508
+                                                                      ],
+                                                     "sourceOpaquePixels":  35182,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "lash_01":  {
+                                                     "key":  "lash_01",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\lash_01.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  353,
+                                                                  241
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          20,
+                                                                          766,
+                                                                          369,
+                                                                          1003
+                                                                      ],
+                                                     "sourceOpaquePixels":  31922,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "uncoil_02":  {
+                                                       "key":  "uncoil_02",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\uncoil_02.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    326,
+                                                                    228
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            426,
+                                                                            528,
+                                                                            748,
+                                                                            752
+                                                                        ],
+                                                       "sourceOpaquePixels":  34553,
+                                                       "removedSpeckPixels":  0
+                                                   },
+                                     "roll_02":  {
+                                                     "key":  "roll_02",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\roll_02.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  248,
+                                                                  235
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          458,
+                                                                          272,
+                                                                          702,
+                                                                          503
+                                                                      ],
+                                                     "sourceOpaquePixels":  34834,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "hurt_01":  {
+                                                     "key":  "hurt_01",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\hurt_01.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  261,
+                                                                  237
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          71,
+                                                                          518,
+                                                                          328,
+                                                                          751
+                                                                      ],
+                                                     "sourceOpaquePixels":  36015,
+                                                     "removedSpeckPixels":  4
+                                                 },
+                                     "recoil_01":  {
+                                                       "key":  "recoil_01",
+                                                       "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\recoil_01.png",
+                                                       "rect":  [
+                                                                    0,
+                                                                    0,
+                                                                    358,
+                                                                    145
+                                                                ],
+                                                       "sourceBounds":  [
+                                                                            20,
+                                                                            91,
+                                                                            374,
+                                                                            232
+                                                                        ],
+                                                       "sourceOpaquePixels":  26654,
+                                                       "removedSpeckPixels":  4
+                                                   },
+                                     "coil_01":  {
+                                                     "key":  "coil_01",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\coil_01.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  341,
+                                                                  169
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          26,
+                                                                          319,
+                                                                          363,
+                                                                          484
+                                                                      ],
+                                                     "sourceOpaquePixels":  28235,
+                                                     "removedSpeckPixels":  4
+                                                 },
+                                     "hurt_04":  {
+                                                     "key":  "hurt_04",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\hurt_04.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  260,
+                                                                  240
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          1231,
+                                                                          516,
+                                                                          1487,
+                                                                          752
+                                                                      ],
+                                                     "sourceOpaquePixels":  36541,
+                                                     "removedSpeckPixels":  4
+                                                 },
+                                     "roll_01":  {
+                                                     "key":  "roll_01",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\roll_01.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  256,
+                                                                  233
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          81,
+                                                                          274,
+                                                                          333,
+                                                                          503
+                                                                      ],
+                                                     "sourceOpaquePixels":  35318,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "coil_02":  {
+                                                     "key":  "coil_02",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\coil_02.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  237,
+                                                                  226
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          492,
+                                                                          265,
+                                                                          725,
+                                                                          487
+                                                                      ],
+                                                     "sourceOpaquePixels":  27960,
+                                                     "removedSpeckPixels":  4
+                                                 },
+                                     "lash_04":  {
+                                                     "key":  "lash_04",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\lash_04.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  392,
+                                                                  111
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          1135,
+                                                                          896,
+                                                                          1523,
+                                                                          1003
+                                                                      ],
+                                                     "sourceOpaquePixels":  24552,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "hurt_03":  {
+                                                     "key":  "hurt_03",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\hurt_03.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  256,
+                                                                  232
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          850,
+                                                                          524,
+                                                                          1102,
+                                                                          752
+                                                                      ],
+                                                     "sourceOpaquePixels":  35151,
+                                                     "removedSpeckPixels":  4
+                                                 },
+                                     "idle_04":  {
+                                                     "key":  "idle_04",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\idle_04.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  254,
+                                                                  230
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          1201,
+                                                                          24,
+                                                                          1451,
+                                                                          250
+                                                                      ],
+                                                     "sourceOpaquePixels":  34684,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "coil_03":  {
+                                                     "key":  "coil_03",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\coil_03.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  241,
+                                                                  233
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          855,
+                                                                          258,
+                                                                          1092,
+                                                                          487
+                                                                      ],
+                                                     "sourceOpaquePixels":  33552,
+                                                     "removedSpeckPixels":  4
+                                                 },
+                                     "idle_01":  {
+                                                     "key":  "idle_01",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\idle_01.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  251,
+                                                                  231
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          84,
+                                                                          22,
+                                                                          331,
+                                                                          249
+                                                                      ],
+                                                     "sourceOpaquePixels":  34268,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "roll_04":  {
+                                                     "key":  "roll_04",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\roll_04.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  250,
+                                                                  235
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          1205,
+                                                                          272,
+                                                                          1451,
+                                                                          503
+                                                                      ],
+                                                     "sourceOpaquePixels":  34751,
+                                                     "removedSpeckPixels":  0
+                                                 },
+                                     "lash_03":  {
+                                                     "key":  "lash_03",
+                                                     "file":  "D:\\2020_이전승찬파일\\작업,내파일\\2026\\프로토타입 게임\\sideview-shooter\\Assets\\Generated\\CreatureProductionV1\\prepared\\RingSpine\\lash_03.png",
+                                                     "rect":  [
+                                                                  0,
+                                                                  0,
+                                                                  409,
+                                                                  180
+                                                              ],
+                                                     "sourceBounds":  [
+                                                                          747,
+                                                                          827,
+                                                                          1152,
+                                                                          1003
+                                                                      ],
+                                                     "sourceOpaquePixels":  28990,
+                                                     "removedSpeckPixels":  0
+                                                 }
+                                 }
+                  }
+}

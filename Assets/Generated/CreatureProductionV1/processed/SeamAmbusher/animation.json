@@ -1,0 +1,1317 @@
+{
+  "cell": [
+    144,
+    160
+  ],
+  "clips": [
+    {
+      "durationsMs": [
+        300,
+        250,
+        300,
+        250
+      ],
+      "from": 0,
+      "loop": true,
+      "name": "dormant",
+      "sheet": "sheets/dormant.png",
+      "to": 3
+    },
+    {
+      "durationsMs": [
+        150,
+        150,
+        160,
+        220
+      ],
+      "from": 4,
+      "loop": false,
+      "name": "emerge",
+      "sheet": "sheets/emerge.png",
+      "to": 7
+    },
+    {
+      "durationsMs": [
+        90,
+        70,
+        60,
+        160
+      ],
+      "from": 8,
+      "loop": false,
+      "name": "snap",
+      "sheet": "sheets/snap.png",
+      "to": 11
+    },
+    {
+      "durationsMs": [
+        160,
+        160,
+        160,
+        160
+      ],
+      "from": 12,
+      "loop": true,
+      "name": "hold",
+      "sheet": "sheets/hold.png",
+      "to": 15
+    },
+    {
+      "durationsMs": [
+        100,
+        100,
+        120,
+        140,
+        160
+      ],
+      "from": 16,
+      "loop": false,
+      "name": "release",
+      "sheet": "sheets/release.png",
+      "to": 20
+    },
+    {
+      "durationsMs": [
+        120,
+        130,
+        140,
+        150,
+        200
+      ],
+      "from": 21,
+      "loop": false,
+      "name": "withdraw",
+      "sheet": "sheets/withdraw.png",
+      "to": 25
+    },
+    {
+      "durationsMs": [
+        70,
+        90,
+        110,
+        150
+      ],
+      "from": 26,
+      "loop": false,
+      "name": "hurt",
+      "sheet": "sheets/hurt.png",
+      "to": 29
+    },
+    {
+      "durationsMs": [
+        120,
+        160,
+        220,
+        650
+      ],
+      "from": 30,
+      "loop": false,
+      "name": "death",
+      "sheet": "sheets/death.png",
+      "to": 33
+    }
+  ],
+  "frames": [
+    {
+      "bounds": [
+        12,
+        16,
+        45,
+        93
+      ],
+      "cleanupPixels": 14,
+      "clip": "dormant",
+      "clipped": 0,
+      "durationMs": 300,
+      "index": 0,
+      "key": "dormant_01",
+      "localFrame": 0,
+      "projectedBounds": [
+        12,
+        15.271028037383182,
+        45,
+        92.27102803738319
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        112.18691588785046
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        31,
+        46
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        46,
+        93
+      ],
+      "cleanupPixels": 15,
+      "clip": "dormant",
+      "clipped": 0,
+      "durationMs": 250,
+      "index": 1,
+      "key": "dormant_02",
+      "localFrame": 1,
+      "projectedBounds": [
+        12,
+        15.357354028085737,
+        45.666666666666664,
+        93.02402069475241
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        111.92793791574279
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        37,
+        51
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        17,
+        46,
+        94
+      ],
+      "cleanupPixels": 17,
+      "clip": "dormant",
+      "clipped": 0,
+      "durationMs": 300,
+      "index": 2,
+      "key": "dormant_03",
+      "localFrame": 2,
+      "projectedBounds": [
+        12,
+        16.71422764227642,
+        45.666666666666664,
+        93.71422764227643
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        107.85731707317073
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        36,
+        58
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        19,
+        47,
+        95
+      ],
+      "cleanupPixels": 19,
+      "clip": "dormant",
+      "clipped": 0,
+      "durationMs": 250,
+      "index": 3,
+      "key": "dormant_04",
+      "localFrame": 3,
+      "projectedBounds": [
+        12,
+        18.278940027894002,
+        46.333333333333336,
+        94.94560669456067
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        103.16317991631799
+      ],
+      "sourceRect": null
+    },
+    {
+      "bounds": [
+        12,
+        18,
+        86,
+        89
+      ],
+      "cleanupPixels": 18,
+      "clip": "emerge",
+      "clipped": 0,
+      "durationMs": 150,
+      "index": 4,
+      "key": "emerge_01",
+      "localFrame": 0,
+      "projectedBounds": [
+        12,
+        17.378260869565217,
+        85.66666666666667,
+        89.04492753623188
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        105.86521739130434
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        45,
+        53
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        102,
+        89
+      ],
+      "cleanupPixels": 43,
+      "clip": "emerge",
+      "clipped": 0,
+      "durationMs": 150,
+      "index": 5,
+      "key": "emerge_02",
+      "localFrame": 1,
+      "projectedBounds": [
+        12,
+        15.940740740740743,
+        102,
+        88.94074074074075
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        110.17777777777778
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        51,
+        53
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        14,
+        115,
+        91
+      ],
+      "cleanupPixels": 48,
+      "clip": "emerge",
+      "clipped": 0,
+      "durationMs": 160,
+      "index": 6,
+      "key": "emerge_03",
+      "localFrame": 2,
+      "projectedBounds": [
+        12,
+        13.438845144356954,
+        115,
+        90.77217847769029
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        117.68346456692913
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        55,
+        49
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        125,
+        93
+      ],
+      "cleanupPixels": 48,
+      "clip": "emerge",
+      "clipped": 0,
+      "durationMs": 220,
+      "index": 7,
+      "key": "emerge_04",
+      "localFrame": 3,
+      "projectedBounds": [
+        12,
+        15.538900785153466,
+        124.66666666666667,
+        92.8722341184868
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        111.38329764453961
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        55,
+        52
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        13,
+        119,
+        91
+      ],
+      "cleanupPixels": 38,
+      "clip": "snap",
+      "clipped": 0,
+      "durationMs": 90,
+      "index": 8,
+      "key": "snap_01",
+      "localFrame": 0,
+      "projectedBounds": [
+        12,
+        12.263775971093047,
+        119,
+        90.26377597109305
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        121.20867208672087
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        53,
+        50
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        13,
+        104,
+        89
+      ],
+      "cleanupPixels": 34,
+      "clip": "snap",
+      "clipped": 0,
+      "durationMs": 70,
+      "index": 9,
+      "key": "snap_02",
+      "localFrame": 1,
+      "projectedBounds": [
+        12,
+        12.733483483483482,
+        103.33333333333333,
+        89.06681681681681
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        119.79954954954955
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        50,
+        49
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        14,
+        109,
+        81
+      ],
+      "cleanupPixels": 45,
+      "clip": "snap",
+      "clipped": 0,
+      "durationMs": 60,
+      "index": 10,
+      "key": "snap_03",
+      "localFrame": 2,
+      "projectedBounds": [
+        12,
+        13.621212121212118,
+        108.33333333333333,
+        80.95454545454545
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        117.13636363636364
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        53,
+        51
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        15,
+        109,
+        81
+      ],
+      "cleanupPixels": 22,
+      "clip": "snap",
+      "clipped": 0,
+      "durationMs": 160,
+      "index": 11,
+      "key": "snap_04",
+      "localFrame": 3,
+      "projectedBounds": [
+        12,
+        15,
+        108.66666666666667,
+        81
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        113
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        61,
+        50
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        114,
+        81
+      ],
+      "cleanupPixels": 31,
+      "clip": "hold",
+      "clipped": 0,
+      "durationMs": 160,
+      "index": 12,
+      "key": "hold_01",
+      "localFrame": 0,
+      "projectedBounds": [
+        12,
+        15.996491228070177,
+        114,
+        80.66315789473684
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        110.01052631578948
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        72,
+        49
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        112,
+        81
+      ],
+      "cleanupPixels": 23,
+      "clip": "hold",
+      "clipped": 0,
+      "durationMs": 160,
+      "index": 13,
+      "key": "hold_02",
+      "localFrame": 1,
+      "projectedBounds": [
+        12,
+        15.555246053853296,
+        111.66666666666667,
+        80.22191272051997
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        111.33426183844011
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        67,
+        49
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        12,
+        115,
+        77
+      ],
+      "cleanupPixels": 35,
+      "clip": "hold",
+      "clipped": 0,
+      "durationMs": 160,
+      "index": 14,
+      "key": "hold_03",
+      "localFrame": 2,
+      "projectedBounds": [
+        12,
+        11.986345381526107,
+        114.33333333333333,
+        76.31967871485944
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        122.04096385542168
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        64,
+        46
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        17,
+        114,
+        82
+      ],
+      "cleanupPixels": 39,
+      "clip": "hold",
+      "clipped": 0,
+      "durationMs": 160,
+      "index": 15,
+      "key": "hold_04",
+      "localFrame": 3,
+      "projectedBounds": [
+        12,
+        16.299568965517246,
+        114,
+        81.29956896551724
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        109.10129310344827
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        65,
+        50
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        15,
+        109,
+        81
+      ],
+      "cleanupPixels": 22,
+      "clip": "release",
+      "clipped": 0,
+      "durationMs": 100,
+      "index": 16,
+      "key": "release_01",
+      "localFrame": 0,
+      "projectedBounds": [
+        12,
+        15,
+        108.66666666666667,
+        81
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        113
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        61,
+        50
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        14,
+        109,
+        81
+      ],
+      "cleanupPixels": 45,
+      "clip": "release",
+      "clipped": 0,
+      "durationMs": 100,
+      "index": 17,
+      "key": "release_02",
+      "localFrame": 1,
+      "projectedBounds": [
+        12,
+        13.621212121212118,
+        108.33333333333333,
+        80.95454545454545
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        117.13636363636364
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        53,
+        51
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        13,
+        104,
+        89
+      ],
+      "cleanupPixels": 34,
+      "clip": "release",
+      "clipped": 0,
+      "durationMs": 120,
+      "index": 18,
+      "key": "release_03",
+      "localFrame": 2,
+      "projectedBounds": [
+        12,
+        12.733483483483482,
+        103.33333333333333,
+        89.06681681681681
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        119.79954954954955
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        50,
+        49
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        13,
+        119,
+        91
+      ],
+      "cleanupPixels": 38,
+      "clip": "release",
+      "clipped": 0,
+      "durationMs": 140,
+      "index": 19,
+      "key": "release_04",
+      "localFrame": 3,
+      "projectedBounds": [
+        12,
+        12.263775971093047,
+        119,
+        90.26377597109305
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        121.20867208672087
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        53,
+        50
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        125,
+        93
+      ],
+      "cleanupPixels": 48,
+      "clip": "release",
+      "clipped": 0,
+      "durationMs": 160,
+      "index": 20,
+      "key": "release_05",
+      "localFrame": 4,
+      "projectedBounds": [
+        12,
+        15.538900785153466,
+        124.66666666666667,
+        92.8722341184868
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        111.38329764453961
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        55,
+        52
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        125,
+        93
+      ],
+      "cleanupPixels": 48,
+      "clip": "withdraw",
+      "clipped": 0,
+      "durationMs": 120,
+      "index": 21,
+      "key": "withdraw_01",
+      "localFrame": 0,
+      "projectedBounds": [
+        12,
+        15.538900785153466,
+        124.66666666666667,
+        92.8722341184868
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        111.38329764453961
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        55,
+        52
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        14,
+        115,
+        91
+      ],
+      "cleanupPixels": 48,
+      "clip": "withdraw",
+      "clipped": 0,
+      "durationMs": 130,
+      "index": 22,
+      "key": "withdraw_02",
+      "localFrame": 1,
+      "projectedBounds": [
+        12,
+        13.438845144356954,
+        115,
+        90.77217847769029
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        117.68346456692913
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        55,
+        49
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        102,
+        89
+      ],
+      "cleanupPixels": 43,
+      "clip": "withdraw",
+      "clipped": 0,
+      "durationMs": 140,
+      "index": 23,
+      "key": "withdraw_03",
+      "localFrame": 2,
+      "projectedBounds": [
+        12,
+        15.940740740740743,
+        102,
+        88.94074074074075
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        110.17777777777778
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        51,
+        53
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        18,
+        86,
+        89
+      ],
+      "cleanupPixels": 18,
+      "clip": "withdraw",
+      "clipped": 0,
+      "durationMs": 150,
+      "index": 24,
+      "key": "withdraw_04",
+      "localFrame": 3,
+      "projectedBounds": [
+        12,
+        17.378260869565217,
+        85.66666666666667,
+        89.04492753623188
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        105.86521739130434
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        45,
+        53
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        45,
+        93
+      ],
+      "cleanupPixels": 14,
+      "clip": "withdraw",
+      "clipped": 0,
+      "durationMs": 200,
+      "index": 25,
+      "key": "withdraw_05",
+      "localFrame": 4,
+      "projectedBounds": [
+        12,
+        15.271028037383182,
+        45,
+        92.27102803738319
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        112.18691588785046
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        31,
+        46
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        15,
+        123,
+        91
+      ],
+      "cleanupPixels": 38,
+      "clip": "hurt",
+      "clipped": 0,
+      "durationMs": 70,
+      "index": 26,
+      "key": "hurt_01",
+      "localFrame": 0,
+      "projectedBounds": [
+        12,
+        15.16550657385924,
+        122.66666666666667,
+        91.16550657385923
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        112.50348027842227
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        53,
+        53
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        13,
+        106,
+        92
+      ],
+      "cleanupPixels": 30,
+      "clip": "hurt",
+      "clipped": 0,
+      "durationMs": 90,
+      "index": 27,
+      "key": "hurt_02",
+      "localFrame": 1,
+      "projectedBounds": [
+        12,
+        12.167092924126173,
+        105.33333333333333,
+        91.83375959079284
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        121.49872122762149
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        53,
+        51
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        18,
+        105,
+        91
+      ],
+      "cleanupPixels": 33,
+      "clip": "hurt",
+      "clipped": 0,
+      "durationMs": 110,
+      "index": 28,
+      "key": "hurt_03",
+      "localFrame": 2,
+      "projectedBounds": [
+        12,
+        17.5,
+        104.33333333333333,
+        90.83333333333334
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        105.5
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        49,
+        53
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        14,
+        124,
+        91
+      ],
+      "cleanupPixels": 37,
+      "clip": "hurt",
+      "clipped": 0,
+      "durationMs": 150,
+      "index": 29,
+      "key": "hurt_04",
+      "localFrame": 3,
+      "projectedBounds": [
+        12,
+        13.620842572062081,
+        123.66666666666667,
+        90.28750923872875
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        117.13747228381375
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        53,
+        51
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        16,
+        123,
+        92
+      ],
+      "cleanupPixels": 28,
+      "clip": "death",
+      "clipped": 0,
+      "durationMs": 120,
+      "index": 30,
+      "key": "death_01",
+      "localFrame": 0,
+      "projectedBounds": [
+        12,
+        15.297997644287399,
+        122.66666666666667,
+        91.29799764428739
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        112.10600706713781
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        60,
+        51
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        21,
+        100,
+        94
+      ],
+      "cleanupPixels": 44,
+      "clip": "death",
+      "clipped": 0,
+      "durationMs": 160,
+      "index": 31,
+      "key": "death_02",
+      "localFrame": 1,
+      "projectedBounds": [
+        12,
+        20.622112211221122,
+        100,
+        93.28877887788778
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        96.13366336633663
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        56,
+        53
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        21,
+        101,
+        96
+      ],
+      "cleanupPixels": 40,
+      "clip": "death",
+      "clipped": 0,
+      "durationMs": 220,
+      "index": 32,
+      "key": "death_03",
+      "localFrame": 2,
+      "projectedBounds": [
+        12,
+        20.76825396825397,
+        100.33333333333333,
+        95.43492063492064
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        95.6952380952381
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        53,
+        55
+      ]
+    },
+    {
+      "bounds": [
+        12,
+        23,
+        61,
+        100
+      ],
+      "cleanupPixels": 18,
+      "clip": "death",
+      "clipped": 0,
+      "durationMs": 650,
+      "index": 33,
+      "key": "death_04",
+      "localFrame": 3,
+      "projectedBounds": [
+        12,
+        22.22854561878952,
+        61.333333333333336,
+        99.22854561878952
+      ],
+      "samplePitch": 3,
+      "sourceAnchor": [
+        2,
+        91.31436314363144
+      ],
+      "sourceRect": null,
+      "weakPointVisualCenter": [
+        37,
+        58
+      ]
+    }
+  ],
+  "gameImported": false,
+  "id": "SeamAmbusher",
+  "losses": [
+    "High-frequency concept texture reduced to native pixel clusters; source pose sheets preserved separately.",
+    "Generated pose topology and scale reviewed visually; exact physics geometry is not provided."
+  ],
+  "palette": [
+    [
+      16,
+      4,
+      7
+    ],
+    [
+      41,
+      12,
+      18
+    ],
+    [
+      67,
+      23,
+      32
+    ],
+    [
+      48,
+      41,
+      21
+    ],
+    [
+      58,
+      43,
+      25
+    ],
+    [
+      99,
+      33,
+      41
+    ],
+    [
+      134,
+      60,
+      65
+    ],
+    [
+      90,
+      80,
+      41
+    ],
+    [
+      105,
+      84,
+      52
+    ],
+    [
+      172,
+      107,
+      93
+    ],
+    [
+      158,
+      122,
+      89
+    ],
+    [
+      159,
+      138,
+      69
+    ],
+    [
+      187,
+      155,
+      128
+    ],
+    [
+      221,
+      200,
+      109
+    ],
+    [
+      223,
+      196,
+      160
+    ],
+    [
+      244,
+      235,
+      210
+    ]
+  ],
+  "pivot": [
+    12,
+    52
+  ],
+  "schemaVersion": 1,
+  "suggestedWorldScale": 4,
+  "units": "native art pixels",
+  "events": [
+    {
+      "clip": "emerge",
+      "frame": 1,
+      "type": "weak_open"
+    },
+    {
+      "clip": "snap",
+      "frame": 2,
+      "type": "damage_on"
+    },
+    {
+      "clip": "release",
+      "frame": 0,
+      "type": "damage_off"
+    },
+    {
+      "clip": "withdraw",
+      "frame": 3,
+      "type": "weak_closed"
+    },
+    {
+      "clip": "death",
+      "frame": 0,
+      "type": "disable_damage"
+    },
+    {
+      "clip": "death",
+      "frame": 3,
+      "type": "corpse_hold"
+    }
+  ],
+  "defaultClip": "dormant",
+  "playback": {
+    "frameIndexBase": 0,
+    "death": "play once and hold last frame",
+    "rootMotion": "none; world movement belongs to game logic",
+    "hurtReturn": "resume previous state; hurt is a pose reaction, not a state controller",
+    "geometry": "bounds and green-organ centroids are visual authoring guides, not tested physics colliders"
+  },
+  "runtime4x": {
+    "scale": 4,
+    "cell": [
+      576,
+      640
+    ],
+    "pivot": [
+      48,
+      208
+    ],
+    "color": "runtime4x/frames/<clip>/<frame>.png",
+    "normal": "runtime4x/normals/<clip>/<frame>.png",
+    "filter": "nearest",
+    "mipmaps": false,
+    "normalConvention": "OpenGL Y+; derived luminance/bevel draft"
+  }
+}

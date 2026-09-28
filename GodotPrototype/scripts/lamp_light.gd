@@ -40,6 +40,9 @@ const POOL_ENERGY_RATIO := 0.35   # 램프 밝기 대비 (0.7 → 절반)
 const POOL_SQUASH := 0.4          # 바닥에 납작하게
 
 var broken := false
+## 앞쪽 램프: 인물보다 카메라에 가까이 매달렸다. 스프라이트·줄·빛 기둥은 인물 앞(z7)에 그려지고(Room 이 정한다),
+## 빛은 인물을 순광으로 온전히 비추며 먼 뒷벽은 약하게 받는다 (Lighting.split_front). 트리에 넣기 **전에** 정한다.
+var front := false
 var hp := MAX_HP
 var bulb_rect := Rect2()          # 월드 좌표 전구 픽셀 영역
 ## 램프를 매단 줄. 물리는 끊긴 전선과 같은 것을 쓴다 (scripts/rope_chain.gd).
@@ -79,7 +82,10 @@ func _ready() -> void:
 	LightTuning.register(self, "lamp")
 	_phase = randf() * TAU
 	_next_flicker = randf_range(2.0, 6.0)
-	Lighting.split_by_depth(self)                  # 벽 정면, 인물 층은 55%
+	if front:
+		Lighting.split_front(self)                 # 인물 순광 100%, 먼 뒷벽은 55%
+	else:
+		Lighting.split_by_depth(self)              # 벽 정면, 인물 층은 70% (wall_backlight 면 역광)
 
 
 ## 전구 픽셀을 덮을 커버 (깨진 뒤 보임). parent 는 타일 위 레이어.
@@ -215,7 +221,10 @@ func attach_cone(parent: Node2D, floor_y: float) -> void:
 	_pool.shadow_enabled = false
 	_pool.position = Vector2(0.0, floor_y + 8.0 - global_position.y)
 	add_child(_pool)
-	Lighting.split_by_depth(_pool, DepthLayers.ACTOR_FLOOR_LIGHT_RATIO)   # 발 밑 바닥 빛은 인물에도 조금 더
+	if front:
+		Lighting.split_front(_pool, DepthLayers.ACTOR_FLOOR_LIGHT_RATIO)
+	else:
+		Lighting.split_by_depth(_pool, DepthLayers.ACTOR_FLOOR_LIGHT_RATIO)   # 발 밑 바닥 빛은 인물에도 조금 더
 
 
 ## 조명 랩이 수치를 바꿨을 때. 깜빡임·파괴 상태는 건드리지 않고 기준값만 갈아 끼운다.

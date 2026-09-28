@@ -1,0 +1,61 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   GDScript backtrace (most recent call first):
+       [0] shader_material (res://scripts/lighting.gd:344)
+       [1] character_material (res://scripts/lighting.gd:162)
+       [2] _ready (res://scripts/player.gd:294)
+       [3] _ready (res://scripts/main.gd:187)
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   GDScript backtrace (most recent call first):
+       [0] shader_material (res://scripts/lighting.gd:344)
+       [1] character_material (res://scripts/lighting.gd:162)
+       [2] _ready (res://scripts/player.gd:294)
+       [3] _ready (res://scripts/main.gd:187)
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   GDScript backtrace (most recent call first):
+       [0] shader_material (res://scripts/lighting.gd:344)
+       [1] _build_fixtures (res://scripts/room.gd:424)
+       [2] build (res://scripts/room.gd:141)
+       [3] _load_room (res://scripts/main.gd:459)
+       [4] _ready (res://scripts/main.gd:210)
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   GDScript backtrace (most recent call first):
+       [0] shader_material (res://scripts/lighting.gd:344)
+       [1] _build_fixtures (res://scripts/room.gd:424)
+       [2] build (res://scripts/room.gd:141)
+       [3] _load_room (res://scripts/main.gd:459)
+       [4] _ready (res://scripts/main.gd:210)
+PASS F10 starts battle
+PASS exactly three bots
+PASS AI wake preserves player input
+PASS all bots awake autonomously
+PASS acid damages bot armor
+PASS disabled bot enters repair
+PASS disabled bot returns after repair
+BATTLE t=0 shots=[6, 7, 58] kills=2 alive=5 target=4 interval=1.70
+BATTLE t=10 shots=[39, 14, 99] kills=5 alive=5 target=4 interval=1.65
+BATTLE t=20 shots=[79, 21, 161] kills=11 alive=3 target=4 interval=1.31
+BATTLE t=30 shots=[96, 28, 185] kills=14 alive=4 target=3 interval=1.92
+BATTLE t=40 shots=[138, 30, 211] kills=19 alive=4 target=7 interval=0.94
+PASS all three bots fire
+PASS all bots move to hunt
+PASS autonomous shots actually kill monsters (24)
+PASS monsters fight back during natural combat
+PASS live population stays bounded (7)
+PASS reinforcements continue beyond initial population
+PASS combat never takes player control
+PASS repairing squad reduces pressure
+PASS fast kills increase pressure
+PASS F10 stops battle
+PASS stop removes summoned bots
+PASS original spawn configuration preserved
+PASS restart creates exactly three bots
+PASS room transition cleans up battle
+BUGBOT RESULT: 0 failures

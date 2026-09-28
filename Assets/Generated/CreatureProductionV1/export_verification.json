@@ -1,0 +1,38 @@
+﻿[
+    {
+        "status":  "passed",
+        "frames":  33,
+        "id":  "CeilingBell",
+        "checks":  [
+                       "every native frame equals all 16 pixels in corresponding 4x block",
+                       "native/4x normal dimensions match color frames",
+                       "normal vectors normalized within 1.5 percent",
+                       "transparent diffuse regions have flat normals",
+                       "all 8 GIF frame counts match clip metadata"
+                   ]
+    },
+    {
+        "status":  "passed",
+        "frames":  42,
+        "id":  "RingSpine",
+        "checks":  [
+                       "every native frame equals all 16 pixels in corresponding 4x block",
+                       "native/4x normal dimensions match color frames",
+                       "normal vectors normalized within 1.5 percent",
+                       "transparent diffuse regions have flat normals",
+                       "all 8 GIF frame counts match clip metadata"
+                   ]
+    },
+    {
+        "status":  "passed",
+        "frames":  34,
+        "id":  "SeamAmbusher",
+        "checks":  [
+                       "every native frame equals all 16 pixels in corresponding 4x block",
+                       "native/4x normal dimensions match color frames",
+                       "normal vectors normalized within 1.5 percent",
+                       "transparent diffuse regions have flat normals",
+                       "all 8 GIF frame counts match clip metadata"
+                   ]
+    }
+]

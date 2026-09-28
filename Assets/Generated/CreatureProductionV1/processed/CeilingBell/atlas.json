@@ -1,0 +1,322 @@
+{ "frames": [
+   {
+    "filename": "CeilingBell 0.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 240
+   },
+   {
+    "filename": "CeilingBell 1.aseprite",
+    "frame": { "x": 144, "y": 0, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 240
+   },
+   {
+    "filename": "CeilingBell 2.aseprite",
+    "frame": { "x": 288, "y": 0, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 240
+   },
+   {
+    "filename": "CeilingBell 3.aseprite",
+    "frame": { "x": 432, "y": 0, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 240
+   },
+   {
+    "filename": "CeilingBell 4.aseprite",
+    "frame": { "x": 0, "y": 192, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 120
+   },
+   {
+    "filename": "CeilingBell 5.aseprite",
+    "frame": { "x": 144, "y": 192, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 120
+   },
+   {
+    "filename": "CeilingBell 6.aseprite",
+    "frame": { "x": 288, "y": 192, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 160
+   },
+   {
+    "filename": "CeilingBell 7.aseprite",
+    "frame": { "x": 432, "y": 192, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 220
+   },
+   {
+    "filename": "CeilingBell 8.aseprite",
+    "frame": { "x": 0, "y": 384, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 60
+   },
+   {
+    "filename": "CeilingBell 9.aseprite",
+    "frame": { "x": 144, "y": 384, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 60
+   },
+   {
+    "filename": "CeilingBell 10.aseprite",
+    "frame": { "x": 288, "y": 384, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 80
+   },
+   {
+    "filename": "CeilingBell 11.aseprite",
+    "frame": { "x": 432, "y": 384, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 140
+   },
+   {
+    "filename": "CeilingBell 12.aseprite",
+    "frame": { "x": 0, "y": 576, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 150
+   },
+   {
+    "filename": "CeilingBell 13.aseprite",
+    "frame": { "x": 144, "y": 576, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 150
+   },
+   {
+    "filename": "CeilingBell 14.aseprite",
+    "frame": { "x": 288, "y": 576, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 150
+   },
+   {
+    "filename": "CeilingBell 15.aseprite",
+    "frame": { "x": 432, "y": 576, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 150
+   },
+   {
+    "filename": "CeilingBell 16.aseprite",
+    "frame": { "x": 0, "y": 768, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 100
+   },
+   {
+    "filename": "CeilingBell 17.aseprite",
+    "frame": { "x": 144, "y": 768, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 90
+   },
+   {
+    "filename": "CeilingBell 18.aseprite",
+    "frame": { "x": 288, "y": 768, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 100
+   },
+   {
+    "filename": "CeilingBell 19.aseprite",
+    "frame": { "x": 432, "y": 768, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 140
+   },
+   {
+    "filename": "CeilingBell 20.aseprite",
+    "frame": { "x": 0, "y": 960, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 100
+   },
+   {
+    "filename": "CeilingBell 21.aseprite",
+    "frame": { "x": 144, "y": 960, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 100
+   },
+   {
+    "filename": "CeilingBell 22.aseprite",
+    "frame": { "x": 288, "y": 960, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 130
+   },
+   {
+    "filename": "CeilingBell 23.aseprite",
+    "frame": { "x": 432, "y": 960, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 140
+   },
+   {
+    "filename": "CeilingBell 24.aseprite",
+    "frame": { "x": 0, "y": 1152, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 180
+   },
+   {
+    "filename": "CeilingBell 25.aseprite",
+    "frame": { "x": 144, "y": 1152, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 70
+   },
+   {
+    "filename": "CeilingBell 26.aseprite",
+    "frame": { "x": 288, "y": 1152, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 90
+   },
+   {
+    "filename": "CeilingBell 27.aseprite",
+    "frame": { "x": 432, "y": 1152, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 110
+   },
+   {
+    "filename": "CeilingBell 28.aseprite",
+    "frame": { "x": 0, "y": 1344, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 150
+   },
+   {
+    "filename": "CeilingBell 29.aseprite",
+    "frame": { "x": 144, "y": 1344, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 120
+   },
+   {
+    "filename": "CeilingBell 30.aseprite",
+    "frame": { "x": 288, "y": 1344, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 150
+   },
+   {
+    "filename": "CeilingBell 31.aseprite",
+    "frame": { "x": 432, "y": 1344, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 180
+   },
+   {
+    "filename": "CeilingBell 32.aseprite",
+    "frame": { "x": 0, "y": 1536, "w": 144, "h": 192 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 144, "h": 192 },
+    "sourceSize": { "w": 144, "h": 192 },
+    "duration": 650
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.5-dev",
+  "image": "atlas.png",
+  "format": "RGBA8888",
+  "size": { "w": 576, "h": 1728 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "idle", "from": 0, "to": 3, "direction": "forward", "color": "#000000ff" },
+   { "name": "anticipate", "from": 4, "to": 7, "direction": "forward", "color": "#000000ff" },
+   { "name": "strike", "from": 8, "to": 11, "direction": "forward", "color": "#000000ff" },
+   { "name": "hold", "from": 12, "to": 15, "direction": "forward", "color": "#000000ff" },
+   { "name": "retract", "from": 16, "to": 19, "direction": "forward", "color": "#000000ff" },
+   { "name": "close", "from": 20, "to": 24, "direction": "forward", "color": "#000000ff" },
+   { "name": "hurt", "from": 25, "to": 28, "direction": "forward", "color": "#000000ff" },
+   { "name": "death", "from": 29, "to": 32, "direction": "forward", "color": "#000000ff" }
+  ],
+  "layers": [
+   { "name": "shared_palette_clusters", "opacity": 255, "blendMode": "normal" },
+   { "name": "local_cluster_cleanup", "opacity": 255, "blendMode": "normal" }
+  ]
+ }
+}

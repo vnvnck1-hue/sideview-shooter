@@ -26,6 +26,9 @@ signal shoot_fired(muzzle_pos: Vector2, target_pos: Vector2)
 signal ammo_changed(ammo: int, mag: int, reloading: bool)
 signal shell_ejected(pos: Vector2, dir: int)
 signal request_front_door()
+signal health_changed(value: float)
+signal incapacitated()
+var health := 100.0
 
 const FRAME_SIZE := 320             # 80² 네이티브 셀 × 4 — NPC 와 같은 규격 (2026-09-23 기준 확정, Docs/SCALE_CHARACTER_BASELINE.md)
 const SPLIT_DIR := "res://assets/character/Split/"
@@ -160,6 +163,9 @@ const RECOIL := {"id": "light", "name": "라이트 (단발 40px)", "desc": "팔 
 	"head": Vector3(1400.0, 75.0, 0.02), "head_imp": 102.0, "head_rad": 0.02, "head_px": 10.0,
 	"body": Vector3(900.0, 60.0, 0.04), "body_imp": 82.0, "body_px": 16.0, "body_squat": 0.03}
 const RELOAD_ARM_DROP := 1.05       # 재장전 중 팔이 내려가는 각도 (rad)
+const SWAP_TIME := 0.2              # 무기 교체 — 팔이 아래로 떨어졌다 새 총을 들고 올라온다 (첫 발은 SWAP 뒤 _fire_cd)
+const PUMP_DELAY := 0.13            # 불독 발사 → 펌프(두 번째 작은 반동 · 탄피 배출)
+const CROUCH_KICKBACK := 0.45       # 앉아 쏠 때 뒤로 밀리는 배율
 const AIM_SMOOTH := 80.0            # 팔 회전 보간 속도 (클수록 즉각적)
 
 # 머리 — 목을 축으로 조준 방향을 바라본다 (팔보다 느리고 각도 제한)
@@ -213,6 +219,15 @@ var _roll_dir := 1
 var _roll_dist := 0.0               # 구르기 누적 이동 거리 (회전은 거리에 비례)
 var _slide_t := 0.0                 # 구르기 뒤 미끄러짐 잔여 시간
 var ammo := MAG_SIZE
+var weapon_id := WeaponCatalog.BULLDOG
+var weapon_room: Node2D
+var _charge := 0.0
+var _charge_sound: AudioStreamPlayer2D
+var _weapon_ammo := {}
+var _pump_t := -1.0                 # 불독 펌프까지 남은 시간 (<0 = 없음)
+var _swap_t := 0.0                  # 무기 교체 몸짓 남은 시간 (팔을 내렸다 올린다)
+var _eject_local := EJECT_LOCAL     # 어깨 기준 탄피 배출구 (무기마다 다르다)
+var _charge_fx: Node2D              # 코일 충전 — 총구에 모이는 전하
 var reloading := false
 var _reload_t := 0.0
 var _heat := 0.0                    # 연사 열 (산탄)
@@ -268,6 +283,8 @@ var _cw_bob := 0.0                  # 이번 프레임 들썩임 (px, 위가 +)
 
 
 func _ready() -> void:
+	add_to_group("readability_actors")
+	set_meta("readability_bounds", Rect2(-90, -280, 180, 285))
 	_load_meta()
 
 	body_pivot = Node2D.new()
@@ -352,16 +369,102 @@ func _ready() -> void:
 	action_visual.visible = false
 	add_child(action_visual)
 
-	# 재장전 합성 — 다리(몸 클립의 허리 아래)를 먼저, 상체(재장전 원화의 허리 위)를 그 위에
-	for i in range(1, ACTION_FRAME_COUNT + 1):
-		var rp := "%sreload/reload_%02d.png" % [ACTION_DIR, i]
-		if ResourceLoader.exists(rp):
-			_reload_frames.append(Lighting.textured(rp))
+	# 재장전 합성 — 다리(몸 클립의 허리 아래)를 먼저, 상체(재장전 원화의 허리 위)를 그 위에.
+	# 재장전 원화(Action/reload)는 **옛 권총**을 들고 있다. 새 무기(불독·코일)는 원화가 없으므로 원화를 읽지 않고
+	# 앉은 자세와 같은 절차 재장전(분리 몸통은 그대로 걷고, 팔+총만 내려 흔든다)을 모든 자세에 쓴다.
+	# 원화가 생기면 여기서 무기별 경로를 읽으면 합성이 그대로 되살아난다.
 	reload_legs = _make_reload_sprite("ReloadLegs")
 	reload_upper = _make_reload_sprite("ReloadUpper")
 	reload_upper.region_rect = Rect2(0, 0, FRAME_SIZE, RELOAD_CUT)
 
+	_charge_fx = Node2D.new()
+	_charge_fx.name = "ChargeFx"
+	_charge_fx.z_index = 1
+	var cmat := CanvasItemMaterial.new()
+	cmat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	cmat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	_charge_fx.material = cmat
+	_charge_fx.draw.connect(_draw_charge)
+	arm_pivot.add_child(_charge_fx)
+
+	for id in [WeaponCatalog.BULLDOG, WeaponCatalog.COIL]:
+		_weapon_ammo[id] = int(WeaponCatalog.data(id).mag)
+	_apply_weapon_visual()
+	ammo = magazine_size()
 	_update_arm(0.0, true)
+
+
+## 무기 원화(컨셉 시트 EQUIPPED 에서 뽑은 총+팔 레이어)를 **기존 팔 자리**에 끼운다.
+## 몸통·머리·전신 클립(걷기·달리기·앉기·구르기·점프·사다리)은 원래 손그림 그대로 두고, 팔 스프라이트만 바꾼다 —
+## 어깨를 축으로 조준하고 반동 스프링(팔→머리→몸통)을 받는 것도 원래 소총과 같다.
+## 원화의 어깨점(json "shoulder")이 팔 스프라이트 원점, "muzzle" 이 총구다. 배율은 gun_scale.
+func _apply_weapon_visual() -> void:
+	var path := "res://assets/weapons/%s.json" % weapon_id
+	var wm = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
+	if typeof(wm) != TYPE_DICTIONARY:
+		return
+	var d := WeaponCatalog.data(weapon_id)
+	var gs := float(d.gun_scale)
+	var sh := Vector2(wm.shoulder[0], wm.shoulder[1])
+	var mz := Vector2(wm.muzzle[0], wm.muzzle[1])
+	arm.texture = Lighting.textured("res://assets/weapons/%s_gun.png" % weapon_id)
+	arm.scale = Vector2(gs, gs)
+	arm.offset = -sh
+	muzzle.position = (mz - sh) * gs
+	_eject_local = Vector2((mz.x - sh.x) * 0.42 * gs, 6.0)
+	var fl := float(d.flash)
+	flash.position = muzzle.position + Vector2(flash.texture.get_width() * 0.5 * fl - 10.0, 0)
+	flash.modulate = Lighting.RED_EMISSIVE_SOFT if weapon_id == WeaponCatalog.BULLDOG else Color(0.55, 1.9, 2.4)
+	muzzle_light.position = muzzle.position
+	muzzle_light.color = Lighting.GUN_LIGHT if weapon_id == WeaponCatalog.BULLDOG else Color(d.color)
+	_charge_fx.position = muzzle.position
+
+
+func magazine_size() -> int:
+	return int(WeaponCatalog.data(weapon_id).mag)
+
+
+func reload_duration() -> float:
+	return float(WeaponCatalog.data(weapon_id).reload)
+
+
+func charge_time() -> float:
+	return maxf(float(WeaponCatalog.data(weapon_id).charge), 0.001)
+
+
+func charge_ratio() -> float:
+	return clampf(_charge / charge_time(), 0.0, 1.0)
+
+
+func cancel_charge() -> void:
+	_charge = 0.0
+	if is_instance_valid(_charge_sound):
+		_charge_sound.queue_free()
+	_charge_sound = null
+
+
+func equip_weapon(id: String) -> void:
+	if id not in [WeaponCatalog.BULLDOG, WeaponCatalog.COIL] or id == weapon_id:
+		return
+	_weapon_ammo[weapon_id] = ammo
+	cancel_charge()
+	reloading = false
+	_reload_t = 0.0
+	weapon_id = id
+	ammo = int(_weapon_ammo[id])
+	_fire_cd = 0.16
+	_pump_t = -1.0
+	_swap_t = SWAP_TIME
+	_apply_weapon_visual()
+	Audio.play_at("cloth", global_position, 0.0)
+	WeaponAudio.play(get_parent(), global_position, "pump", -12.0, 0.8 if id == WeaponCatalog.BULLDOG else 1.35)
+	ammo_changed.emit(ammo, magazine_size(), false)
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if input_enabled and not standby and event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_Q:
+		equip_weapon(WeaponCatalog.COIL if weapon_id == WeaponCatalog.BULLDOG else WeaponCatalog.BULLDOG)
+		get_viewport().set_input_as_handled()
 
 
 func _make_reload_sprite(node_name: String) -> Sprite2D:
@@ -490,7 +593,7 @@ func _sync_reload_visual() -> void:
 		body.visible = not on
 	if not on:
 		return
-	var progress := clampf(_reload_t / RELOAD_TIME, 0.0, 0.999)
+	var progress := clampf(_reload_t / reload_duration(), 0.0, 0.999)
 	var fi := mini(int(progress * _reload_frames.size()), _reload_frames.size() - 1)
 	var tex: Texture2D = _reload_frames[fi]
 	var flip := facing < 0
@@ -572,8 +675,8 @@ func _update_recoil(delta: float) -> void:
 		_pending[i]["t"] -= delta
 		if _pending[i]["t"] <= 0.0:
 			match _pending[i]["part"]:
-				"head": _head_rc.y += float(rp["head_imp"])
-				"body": _body_rc.y += float(rp["body_imp"])
+				"head": _head_rc.y += float(rp["head_imp"]) * float(_pending[i].get("k", 1.0))
+				"body": _body_rc.y += float(rp["body_imp"]) * float(_pending[i].get("k", 1.0))
 			_pending.remove_at(i)
 		else:
 			i += 1
@@ -587,25 +690,34 @@ func _update_reload(delta: float) -> void:
 	if not reloading:
 		return
 	_reload_t += delta
-	if _reload_t >= RELOAD_TIME:
+	if _reload_t >= reload_duration():
 		reloading = false
-		ammo = MAG_SIZE
-		ammo_changed.emit(ammo, MAG_SIZE, false)
+		ammo = magazine_size()
+		ammo_changed.emit(ammo, magazine_size(), false)
 
 
 func start_reload() -> void:
-	if reloading or ammo >= MAG_SIZE:
+	if reloading or ammo >= magazine_size():
 		return
+	cancel_charge()
 	reloading = true
 	_reload_t = 0.0
 	Audio.play_at("cloth", global_position, -3.0)
 	_body_rc.y -= 6.0          # 탄창 빼는 몸짓 — 살짝 앞으로 숙임
-	ammo_changed.emit(ammo, MAG_SIZE, true)
+	ammo_changed.emit(ammo, magazine_size(), true)
 
 
 func _process(delta: float) -> void:
+	_update_obstacle_support()
+	if not input_enabled or state in [State.ROLL, State.CLIMB, State.JUMP] or reloading:
+		cancel_charge()
 	_fire_cd = maxf(_fire_cd - delta, 0.0)
 	_run_lock = maxf(_run_lock - delta, 0.0)
+	_swap_t = maxf(_swap_t - delta, 0.0)
+	if _pump_t >= 0.0:
+		_pump_t -= delta
+		if _pump_t < 0.0:
+			_pump()
 	_update_recoil(delta)
 	_update_reload(delta)
 	if input_enabled and Input.is_action_just_pressed("reload"):
@@ -615,10 +727,15 @@ func _process(delta: float) -> void:
 		if _flash_t <= 0.0:
 			flash.visible = false
 	# 총구 라이트는 화염보다 오래 — MUZZLE_LIGHT_FADE 초에 걸쳐 식으며 주변을 붉게 물들인다
-	if muzzle_light.enabled:
+	if _charge > 0.0 and _muzzle_light_t <= 0.0:
+		# 충전 중: 총구 라이트가 전하만큼 차오른다 (청록) — 쏘기 직전 주변 벽이 먼저 물든다
+		var ck := charge_ratio()
+		muzzle_light.enabled = true
+		muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 4.5) * 0.55 * ck * ck
+	elif muzzle_light.enabled:
 		_muzzle_light_t -= delta
-		var mk := clampf(_muzzle_light_t / MUZZLE_LIGHT_FADE, 0.0, 1.0)
-		muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 4.5) * mk * mk
+		var mk := clampf(_muzzle_light_t / (MUZZLE_LIGHT_FADE * 1.4), 0.0, 1.0)
+		muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 4.5) * float(WeaponCatalog.data(weapon_id).light) * mk * mk
 		if _muzzle_light_t <= 0.0:
 			muzzle_light.enabled = false
 
@@ -688,7 +805,7 @@ func _process(delta: float) -> void:
 	velocity_x = move_toward(velocity_x, target_v, rate * delta)
 	var moving := absf(velocity_x) > WALK_THRESHOLD
 	if absf(velocity_x) > 0.5:
-		position.x = clampf(position.x + velocity_x * delta, min_x, max_x)
+		_move_obstacle_x(velocity_x * delta)
 
 	# 걷기/달리기 포즈를 별도 클립으로 재생한다. 조준 반대 방향은 역재생.
 	if state == State.IDLE or state == State.WALK or state == State.RUN:
@@ -712,7 +829,17 @@ func _process(delta: float) -> void:
 	# 사격 - 누르고 있는 동안 쿨다운마다 한 발 (첫 발 즉발). 탄창이 비면 자동 재장전.
 	# 질주 속도가 남아 있는 동안은 발사되지 않는다 — 위에서 이미 걷기로 감속을 시작했으므로
 	# 브레이크를 밟듯 아주 짧게 늦춰졌다가 나간다.
-	if shoot_pressed and _fire_cd <= 0.0 and not reloading and absf(velocity_x) <= FIRE_MAX_SPEED:
+	var fire_ready := shoot_pressed and _fire_cd <= 0.0 and _swap_t <= 0.0 and not reloading and absf(velocity_x) <= FIRE_MAX_SPEED
+	if float(WeaponCatalog.data(weapon_id).charge) > 0.0 and fire_ready and ammo > 0:
+		# 충전식: 누르고 있으면 charge 초 만에 **저절로** 나간다 (놓으면 취소). 계속 누르면 충전→발사가 반복된다
+		if _charge == 0.0:
+			_charge_sound = WeaponAudio.play(get_parent(), muzzle.global_position, "charge", -8.0)
+		_charge += delta
+		fire_ready = _charge >= charge_time()
+	elif not shoot_pressed or not fire_ready:
+		cancel_charge()
+	_charge_fx.queue_redraw()
+	if fire_ready:
 		if ammo > 0:
 			_fire()
 		else:
@@ -766,7 +893,8 @@ func jump() -> void:
 	state = State.JUMP
 	_jump_phase = 0
 	_jump_t = 0.0
-	_air = 0.0
+	_air = maxf(0.0, _obstacle_floor() - position.y)
+	position.y = _obstacle_floor()
 	_vy = 0.0
 	body.speed_scale = 1.0
 	Audio.play_at("cloth", global_position, -1.0)
@@ -789,10 +917,15 @@ func _process_jump(delta: float, axis: float, running: bool) -> void:
 		1:
 			var target_v := axis * (RUN_SPEED if running else WALK_SPEED)
 			velocity_x = move_toward(velocity_x, target_v, AIR_ACCEL * delta)
+			var old_feet := position.y-_air
 			_vy -= JUMP_GRAVITY * delta
 			_air += _vy * delta
 			frame = 1 if _vy > JUMP_APEX_BAND else 2
-			if _air <= 0.0 and _vy < 0.0:
+			var landing := _obstacle_floor()
+			if is_instance_valid(weapon_room) and weapon_room.has_method("obstacle_landing"):
+				landing = weapon_room.obstacle_landing(position.x, old_feet, position.y-_air)
+			if position.y-_air >= landing and _vy < 0.0:
+				position.y = landing
 				_land()
 				frame = 3
 		2:
@@ -802,7 +935,7 @@ func _process_jump(delta: float, axis: float, running: bool) -> void:
 				_end_air()
 				return
 	if absf(velocity_x) > 0.5:
-		position.x = clampf(position.x + velocity_x * delta, min_x, max_x)
+		_move_obstacle_x(velocity_x * delta)
 	_show_action_clip("jump", frame, false)
 
 
@@ -1008,32 +1141,80 @@ func _update_idle(delta: float) -> void:
 
 
 func _fire() -> void:
-	_fire_cd = FIRE_COOLDOWN
+	var d := WeaponCatalog.data(weapon_id)
+	var k := float(d.recoil)
+	_fire_cd = float(d.cooldown)
 	ammo -= 1
-	_flash_t = FLASH_TIME
-	flash.visible = true
-	muzzle_light.enabled = true
-	muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 4.5)
-	_muzzle_light_t = MUZZLE_LIGHT_FADE
-	flash.rotation = randf_range(-0.3, 0.3)
-	flash.scale = Vector2.ONE * randf_range(0.85, 1.25)
-	# 반동 임펄스: 팔은 즉시 속도 임펄스(뒤로 확 → 앞으로 되튐), 머리·몸통은 지연 뒤 (절차적 연쇄)
-	var rp := recoil_preset()
-	Audio.fire(muzzle.global_position)
-	_arm_rc.y += float(rp["arm_imp"])
-	_pending.append({"t": rp["arm"].z + rp["head"].z, "part": "head"})
-	_pending.append({"t": rp["arm"].z + rp["body"].z, "part": "body"})
-	# 산탄: 조준점을 총구 기준 각도로 흔든다 (열이 오를수록 크게)
-	var to_aim := aim_target - muzzle.global_position
-	var spread := SPREAD_BASE + SPREAD_HEAT * _heat
-	var target := muzzle.global_position + to_aim.rotated(randf_range(-spread, spread) * randf_range(0.4, 1.0))
-	_heat = minf(_heat + HEAT_PER_SHOT, 1.0)
+	cancel_charge()
 	_update_arm(0.0, true)
-	shoot_fired.emit(muzzle.global_position, target)
-	shell_ejected.emit(arm_pivot.to_global(EJECT_LOCAL), facing)
-	ammo_changed.emit(ammo, MAG_SIZE, false)
+	var shot_origin := muzzle.global_position
+	# 총구 화염 + 라이트 — 기존 소총과 같은 스프라이트·라이트를 무기 배율로 키운다
+	_flash_t = FLASH_TIME * (1.8 if weapon_id == WeaponCatalog.BULLDOG else 1.4)
+	flash.visible = true
+	flash.rotation = randf_range(-0.3, 0.3)
+	flash.scale = Vector2.ONE * randf_range(0.85, 1.25) * float(d.flash)
+	muzzle_light.enabled = true
+	muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 4.5) * float(d.light)
+	_muzzle_light_t = MUZZLE_LIGHT_FADE * 1.4
+	# 반동 임펄스: 팔은 즉시 속도 임펄스(뒤로 확 → 앞으로 되튐), 머리·몸통은 지연 뒤 (절차적 연쇄) — 무기 배율 k
+	var rp := recoil_preset()
+	_arm_rc.y += float(rp["arm_imp"]) * k
+	_pending.append({"t": rp["arm"].z + rp["head"].z, "part": "head", "k": k})
+	_pending.append({"t": rp["arm"].z + rp["body"].z, "part": "body", "k": k})
+	# 몸이 뒤로 밀린다 (발이 미끄러진다). 구르기·점프·사다리 중엔 쏘지 않으므로 지상 상태만 온다
+	var kick := float(d.kickback) * (CROUCH_KICKBACK if state == State.CROUCH else 1.0)
+	velocity_x -= float(facing) * kick
+	_slide_t = maxf(_slide_t, 0.08)
+	var target := aim_target
+	_heat = minf(_heat + HEAT_PER_SHOT, 1.0)
+	# 발사음 — 기존 소총 4레이어(보디·두께·어택·저역)를 뼈대로 무기별 층을 얹는다
+	match weapon_id:
+		WeaponCatalog.BULLDOG:
+			Audio.fire(shot_origin, 1.5)
+			Audio.play_at("fire_body", shot_origin, 1.0, 0.74)
+			Audio.play_at("fire_sub", shot_origin, 3.0, 0.8)
+			WeaponAudio.play(get_parent(), shot_origin, "thump", -2.0)
+			_pump_t = PUMP_DELAY
+		WeaponCatalog.COIL:
+			Audio.play_at("fire_attack", shot_origin, 4.0, 1.35)
+			Audio.play_at("fire_sub", shot_origin, 2.0, 1.1)
+			Audio.play_at("turret_crack", shot_origin, 4.0, 0.8)
+			WeaponAudio.play(get_parent(), shot_origin, "coil", -1.0, randf_range(0.96, 1.04))
+	shoot_fired.emit(shot_origin, target)
+	ammo_changed.emit(ammo, magazine_size(), false)
 	if ammo <= 0:
 		start_reload()
+
+
+## 불독 펌프 — 발사 PUMP_DELAY 뒤 총을 한 번 더 짧게 당기며 탄피를 뱉는다 ("쾅 — 척칵")
+func _pump() -> void:
+	if weapon_id != WeaponCatalog.BULLDOG:
+		return
+	_arm_rc.y += float(recoil_preset()["arm_imp"]) * 0.45
+	WeaponAudio.play(get_parent(), muzzle.global_position, "pump", -7.0)
+	shell_ejected.emit(arm_pivot.to_global(_eject_local), facing)
+
+
+## 코일 충전 — 총구 앞으로 사방에서 전하 조각이 빨려 들어가고 가운데 심이 커진다. 다 차면 번쩍.
+## ChargeFx 는 팔 아래(무기 배율이 없는 층)라 월드 px 로 그린다.
+func _draw_charge() -> void:
+	var ck := charge_ratio() if _charge > 0.0 else 0.0
+	if ck <= 0.0:
+		return
+	var c: Color = WeaponCatalog.data(weapon_id).color
+	var t := Time.get_ticks_msec() * 0.001
+	for i in range(10):
+		var a := float(i) * TAU / 10.0 + t * 7.0 + float(i % 3)
+		var r := (1.0 - fposmod(ck * 1.7 + float(i) * 0.13, 1.0)) * 110.0 + 10.0
+		var p := (Vector2.from_angle(a) * r / 4.0).round() * 4.0
+		_charge_fx.draw_rect(Rect2(p - Vector2(2, 2), Vector2(4, 4) * (1.0 + ck)), Color(c.lightened(0.3), 0.4 + 0.6 * ck))
+	var core := roundf((8.0 + ck * 28.0) / 4.0) * 4.0
+	_charge_fx.draw_rect(Rect2(Vector2(-core, -core) * 0.5, Vector2(core, core)), Color(c, 0.5 + 0.5 * ck))
+	_charge_fx.draw_rect(Rect2(Vector2(-core, -core) * 0.25, Vector2(core, core) * 0.5), Color(0.9, 1, 1, ck))
+	if ck > 0.85:
+		var h := 36.0 * (ck - 0.85) / 0.15
+		_charge_fx.draw_line(Vector2(0, -h), Vector2(0, h), Color(0.9, 1, 1, 0.8), 4.0)
+		_charge_fx.draw_line(Vector2(-h * 1.6, 0), Vector2(h * 1.6, 0), Color(c, 0.8), 4.0)
 
 
 func spread_ratio() -> float:
@@ -1066,11 +1247,15 @@ func _update_arm(delta: float, snap := false) -> void:
 	var target_angle := to_target.angle()
 	if reloading:
 		# 재장전: 팔이 아래로 내려가 총을 두 번 흔든다 (빼기·끼우기)
-		var k := clampf(_reload_t / RELOAD_TIME, 0.0, 1.0)
+		var k := clampf(_reload_t / reload_duration(), 0.0, 1.0)
 		var drop := sin(k * PI)                                   # 0 → 1 → 0
 		var jiggle := sin(k * TAU * 2.0) * 0.12 * drop
 		var base := 0.0 if facing > 0 else PI
 		target_angle = base + (RELOAD_ARM_DROP * drop + jiggle) * (1.0 if facing > 0 else -1.0)
+	elif _swap_t > 0.0:
+		# 무기 교체: 총구가 아래로 떨어졌다가 새 총이 조준선으로 튀어 올라온다
+		var sk := sin(_swap_t / SWAP_TIME * PI)
+		target_angle += 0.9 * sk * (1.0 if facing > 0 else -1.0)
 	if snap or delta <= 0.0:
 		_arm_angle = target_angle
 	else:
@@ -1082,9 +1267,15 @@ func _update_arm(delta: float, snap := false) -> void:
 	arm_pivot.scale = Vector2(1, -1) if facing < 0 else Vector2(1, 1)
 	var rp := recoil_preset()
 	var arm_k := _arm_rc.x
-	var kick_angle := float(rp["arm_rad"]) * arm_k * (-1.0 if facing > 0 else 1.0)
+	var climb := float(WeaponCatalog.data(weapon_id).climb)
+	var kick_angle := float(rp["arm_rad"]) * climb * arm_k * (-1.0 if facing > 0 else 1.0)
+	# 충전 중 떨림 — 다 찰수록 총이 부르르 떤다 (1px 단위로 튄다)
+	var tremble := Vector2.ZERO
+	if _charge > 0.0:
+		var ck := charge_ratio()
+		tremble = Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)).round() * (1.0 + 3.0 * ck * ck)
 	arm_pivot.rotation = _arm_angle + kick_angle
-	arm.position = Vector2(-float(rp["arm_px"]) * arm_k, 0)
+	arm.position = Vector2(-float(rp["arm_px"]) * arm_k * 0.8, 0) + tremble
 
 
 func _start_roll(dir: int) -> void:
@@ -1127,7 +1318,7 @@ func _process_roll(delta: float) -> void:
 	var t := clampf(_roll_t / ROLL_TIME, 0.0, 1.0)
 	var step := _roll_speed(t) * delta
 	_roll_dist += step
-	position.x = clampf(position.x + _roll_dir * step, min_x, max_x)
+	_move_obstacle_x(_roll_dir * step)
 	# 회전은 시간이 아니라 이동 거리에 비례 — 빠를 때 빨리 돌고 멈출 때 천천히 돈다
 	body_pivot.rotation = TAU * clampf(_roll_dist / ROLL_DISTANCE, 0.0, 1.0) * _roll_dir
 	if _roll_t >= ROLL_TIME:
@@ -1203,6 +1394,42 @@ func knockback(vx: float) -> void:
 func air_height() -> float:
 	return _air
 
+func _obstacle_floor() -> float:
+	return float(weapon_room.floor_y)+2.0 if is_instance_valid(weapon_room) and weapon_room.has_method("obstacle_support") else position.y
+
+func _move_obstacle_x(amount: float) -> void:
+	var next := clampf(position.x+amount,min_x,max_x)
+	if is_instance_valid(weapon_room) and weapon_room.has_method("obstacle_move_x"):
+		var stopped: float = weapon_room.obstacle_move_x(position.x,next,position.y-_air,120.0 if is_rolling() or is_crouching() else 210.0)
+		if absf(stopped-next)>0.01:
+			velocity_x = 0.0
+		next = stopped
+	position.x = next
+	_update_obstacle_support()
+
+func _update_obstacle_support() -> void:
+	if not is_instance_valid(weapon_room) or not weapon_room.has_method("obstacle_support"):
+		return
+	if state == State.CLIMB or (state == State.JUMP and _jump_phase != 2):
+		return
+	var support: float = weapon_room.obstacle_support(position.x,position.y)
+	if support > position.y+3.0:
+		_air = _obstacle_floor()-position.y
+		position.y = _obstacle_floor()
+		_start_fall()
+
+func receive_explosion_damage(amount: float) -> void:
+	if health <= 0.0:
+		return
+	health = maxf(0.0,health-maxf(amount,0.0))
+	health_changed.emit(health)
+	if health <= 0.0:
+		incapacitated.emit()
+
+func restore_health() -> void:
+	health = 100.0
+	health_changed.emit(health)
+
 
 ## 점프 중이거나 사다리에 매달려 있다
 func is_airborne() -> bool:
@@ -1215,5 +1442,6 @@ func is_climbing() -> bool:
 
 ## 방을 옮기는 등 위치를 바깥에서 새로 잡을 때 — 공중·사다리 상태를 끊고 바닥에 세운다
 func settle() -> void:
+	cancel_charge()
 	if state == State.JUMP or state == State.CLIMB:
 		_end_air()

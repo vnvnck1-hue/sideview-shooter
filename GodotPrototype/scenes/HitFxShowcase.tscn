@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tools/hit_fx_showcase.gd" id="1_hit_fx"]
+
+[node name="HitFxShowcase" type="Node2D"]
+script = ExtResource("1_hit_fx")

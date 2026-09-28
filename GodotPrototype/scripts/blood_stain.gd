@@ -88,7 +88,7 @@ static func splat(room: Node, pos: Vector2, dir: Vector2, amount: int, spread: f
 		var q2 := pos + d * (randf_range(-0.5, 1.5) * spread) + Vector2(-d.y, d.x) * (ma * spread * 1.2)
 		seeds.append({"from": pos, "to": q2, "size": randf_range(2.0, 4.0), "t0": 0.0,
 			"drip": 0.0, "slide": 0.0, "mist": true})
-	return _emit(room, seeds, false, pos)
+	return _emit(room, seeds, false)
 
 
 ## 벽면 분사. pos: 분사 원점, dir: 뿜는 방향, amount: 코어 수, length: 최대 도달 거리, fan: 부채꼴 전체 각(rad)
@@ -112,21 +112,25 @@ static func spray(room: Node, pos: Vector2, dir: Vector2, amount: int, length: f
 		var mdist := length * randf_range(0.25, 1.35)
 		seeds.append({"from": pos, "to": pos + d.rotated(mang) * mdist, "size": randf_range(2.0, 6.0),
 			"t0": (mdist / maxf(length, 1.0)) * randf_range(0.18, 0.30), "drip": 0.0, "slide": 0.0, "mist": true})
-	return _emit(room, seeds, true, pos)
+	return _emit(room, seeds, true)
 
 
 # ----------------------------------------------------------------------------- 착지면 판정 · 조립
 
 ## ① 덩어리 씨앗들을 착지면별로 갈라 자국 노드들을 만든다
-static func _emit(room: Node, seeds: Array, is_spray: bool, origin: Vector2) -> Array:
+static func _emit(room: Node, seeds: Array, is_spray: bool) -> Array:
 	var groups: Dictionary = {}          # key → {"surface", "host", "blobs"}
+	# 방 정보는 씨앗마다 같다 — 한 번만 읽는다 (예전엔 씨앗마다 프랍 목록을 복사해서 사망 한 번에 150번 넘게 복사했다)
+	var floor_y: float = float(room.get("floor_y")) if room != null and room.get("floor_y") != null else FLOOR_Y
+	var props: Array = room.stain_props() if room != null and room.has_method("stain_props") else []
+	var solid = room.get("solid") if room != null else null
 	for s in seeds:
-		var hit := _resolve(room, s["from"], s["to"])
+		var hit := _resolve(floor_y, props, solid, s["from"], s["to"])
 		var host = hit["host"]
 		var key := "%d:%d" % [hit["surface"], host.get_instance_id() if host != null else 0]
 		if not groups.has(key):
 			groups[key] = {"surface": hit["surface"], "host": host, "blobs": []}
-		var b := _make_blob(hit, s, origin)
+		var b := _make_blob(hit, s)
 		if not b.is_empty():
 			groups[key]["blobs"].append(b)
 	var made: Array = []
@@ -146,10 +150,7 @@ static func _emit(room: Node, seeds: Array, is_spray: bool, origin: Vector2) -> 
 ## "처음 만나는 면"을 찾으면 안 된다 — 원점이 프랍 안이나 방 밖이면 모든 덩어리가 한 점으로 뭉친다.
 ## 도착점을 직접 질의하면 부채꼴이 그대로 퍼진 채 면만 갈린다: 프랍 실루엣 안이면 프랍, 바닥 띠면 바닥,
 ## 벽 기하 안이면 그 벽면(선분을 벽까지 당겨서), 그 밖이면 전부 뒷벽.
-static func _resolve(room: Node, from: Vector2, to: Vector2) -> Dictionary:
-	var floor_y: float = float(room.get("floor_y")) if room != null and room.get("floor_y") != null else FLOOR_Y
-	var props: Array = room.stain_props() if room != null and room.has_method("stain_props") else []
-	var solid = room.get("solid") if room != null else null
+static func _resolve(floor_y: float, props: Array, solid, from: Vector2, to: Vector2) -> Dictionary:
 	var out := {"surface": Surface.WALL, "point": to, "host": null, "floor_y": floor_y}
 	# ③ 바닥면 — 벽보다 먼저 본다 (RoomSolid.is_solid 는 바닥 아래도 벽으로 치기 때문에)
 	if to.y >= floor_y - FLOOR_BAND:
@@ -171,7 +172,7 @@ static func _resolve(room: Node, from: Vector2, to: Vector2) -> Dictionary:
 
 
 ## 착지 결과 + 씨앗 → 그릴 덩어리. 프랍 실루엣 밖이면 빈 사전(버린다).
-static func _make_blob(hit: Dictionary, s: Dictionary, origin: Vector2) -> Dictionary:
+static func _make_blob(hit: Dictionary, s: Dictionary) -> Dictionary:
 	var surf: int = hit["surface"]
 	var prof: Dictionary = DEPTH[surf]
 	var p: Vector2 = hit["point"]
@@ -201,10 +202,7 @@ static func _make_blob(hit: Dictionary, s: Dictionary, origin: Vector2) -> Dicti
 		"size": (size / 2.0).ceil() * 2.0,
 		"col": col, "drip": drip, "t0": float(s["t0"]), "slide": float(s["slide"]),
 		"flat": flat, "mist": mist,
-		# ⑤ 실루엣을 깨는 고정 난수 — 네모 한 장이 아니라 겹친 덩이 세 개로 그린다
-		"ar": randf_range(0.50, 0.76),                                   # 가운데 덩이의 가늘기
-		"lobe": Vector2(randf_range(-0.34, 0.34), randf_range(-0.30, 0.30)),   # 곁덩이가 붙는 쪽
-		"near": 1.0 - clampf(p.distance_to(origin) / 400.0, 0.0, 1.0),
+		"variant": randi_range(0, MonsterFx.VARIANTS - 1),
 	}
 
 
@@ -231,9 +229,41 @@ func _setup(surf: int, host, blobs: Array, is_spray: bool) -> void:
 		last = maxf(last, float(b["t0"]))
 	_spray_end = last + SPRAY_DRIP_TIME
 	# ② 젖은 재질. 프랍 자국은 그 프랍의 노멀맵으로 라이팅해 표면 굴곡을 따라 하이라이트가 흐른다.
+	# 재질 값은 착지면 종류와 숙주 프랍만으로 정해지고 만든 뒤 바뀌지 않는다 → 같은 조합끼리 머티리얼을 공유한다.
+	# (자국은 방에 120개까지 쌓이는데, 자국마다 머티리얼 두 개를 새로 만들어 배치가 전부 깨지고 있었다)
+	var shared := _shared_materials(surf, host)
+	material = shared[0]
+	_film = Film.new()
+	_film.host = self
+	_film.z_index = -1                       # 얇은 막이 먼저 (아래 표면을 곱한 뒤 그 위에 코어가 얹힌다)
+	_film.material = shared[1]
+	add_child(_film)
+
+
+static var _surface_mats := {}           # 숙주 없는 착지면 → [fluid, fluid_film]
+
+
+## 착지면·숙주별 공유 머티리얼 [fluid, fluid_film]. 숙주 프랍 것은 그 프랍 메타에 둔다 (프랍과 함께 사라진다).
+static func _shared_materials(surf: int, host) -> Array:
+	var hs := _host_sprite(host)
+	if hs != null and hs.texture != null and _normal_of(hs) != null:
+		# 키에 재질이 읽는 값(노멀맵·텍스처 사각형·뒤집기)을 전부 넣는다 — 숙주 그림이 바뀌면 새로 만든다.
+		var cache: Dictionary = (host as Object).get_meta("_stain_mats", {})
+		var key := [surf, _normal_of(hs), _host_tex_rect(host, hs), hs.flip_h]
+		if not cache.has(key):
+			cache[key] = _build_materials(surf, host)
+			(host as Object).set_meta("_stain_mats", cache)
+		return cache[key]
+	if not _surface_mats.has(surf):
+		_surface_mats[surf] = _build_materials(surf, host)
+	return _surface_mats[surf]
+
+
+static func _build_materials(surf: int, host) -> Array:
+	var prof: Dictionary = DEPTH[surf]
 	var mat := Lighting.shader_material("fluid")
-	mat.set_shader_parameter("spec_strength", 2.6 * float(_prof["spec"]))
-	mat.set_shader_parameter("key_wet", 0.20 * float(_prof["spec"]))
+	mat.set_shader_parameter("spec_strength", 2.6 * float(prof["spec"]))
+	mat.set_shader_parameter("key_wet", 0.20 * float(prof["spec"]))
 	var hs := _host_sprite(host)
 	if hs != null and hs.texture != null:
 		var nrm := _normal_of(hs)
@@ -242,14 +272,9 @@ func _setup(surf: int, host, blobs: Array, is_spray: bool) -> void:
 			mat.set_shader_parameter("host_rect", _host_tex_rect(host, hs))
 			mat.set_shader_parameter("host_flip", 1.0 if hs.flip_h else 0.0)
 			mat.set_shader_parameter("use_host_normal", 1.0)
-	material = mat
-	_film = Film.new()
-	_film.host = self
-	_film.z_index = -1                       # 얇은 막이 먼저 (아래 표면을 곱한 뒤 그 위에 코어가 얹힌다)
 	var fmat := Lighting.shader_material("fluid_film")
-	fmat.set_shader_parameter("density", float(_prof["film"]))
-	_film.material = fmat
-	add_child(_film)
+	fmat.set_shader_parameter("density", float(prof["film"]))
+	return [mat, fmat]
 
 
 ## 숙주가 그림을 그리는 스프라이트 (HitProp 은 자기 자신, 단말기는 자식 TerminalSprite)
@@ -355,52 +380,25 @@ func _draw() -> void:
 		var kk: float = st[2]
 		var col: Color = b["col"]
 		col.a *= a
-		var dark := Color(col.r * 0.42, col.g * 0.42, col.b * 0.46, col.a)
-		var lit := Color(minf(col.r * 2.1 + 0.06, 1.0), minf(col.g * 1.85 + 0.08, 1.0),
-			minf(col.b * 1.9 + 0.05, 1.0), col.a)
 		# 흘러내린 자국 (본체보다 먼저 — 본체가 그 위에 얹힌다)
 		if b["drip"] > 0.0:
-			_draw_drip(p, maxf(2.0, floorf(s.x * 0.3 / 2.0) * 2.0), float(b["drip"]) * kk, dark, col, lit)
-		# ⑤ 어두운 외곽 → 본체 → 젖은 하이라이트. 본체는 겹친 덩이 세 개라 실루엣이 네모로 읽히지 않는다
-		var shapes := _shapes(b, p, s)
-		for r in shapes:
-			draw_rect(r.grow(2.0), dark)
-		for r in shapes:
-			draw_rect(r, col)
-		if s.x >= 8.0 and s.y >= 6.0:
-			# 좁고 밝은 점 — 젖은 표면의 정반사. 크게 칠하면 다시 평평해지므로 2~4px 로 묶는다
-			var hw := clampf(floorf(s.x * 0.22 / 2.0) * 2.0, 2.0, 4.0)
-			var hh := clampf(floorf(s.y * 0.22 / 2.0) * 2.0, 2.0, 4.0)
-			draw_rect(Rect2(p.x - s.x * 0.28, p.y - s.y * 0.30, hw, hh), lit)
+			_draw_drip(p, maxf(2.0, floorf(s.x * 0.3 / 2.0) * 2.0), float(b["drip"]) * kk,
+				col, int(b["variant"]))
+		# 전용 착탄 자국. 생성형 원/사각형 대신 크롤러의 근육·체액 팔레트로 그린 실제 실루엣을 쓴다.
+		var decal_size := Vector2(maxf(14.0, s.x * (3.2 if b["flat"] else 2.65)),
+			maxf(10.0, s.y * (3.0 if b["flat"] else 2.75)))
+		var base_luma := FLUID.get_luminance()
+		var tone := clampf(col.get_luminance() / maxf(base_luma, 0.01), 0.55, 1.25)
+		MonsterFx.draw(self, MonsterFx.ROW_SPLAT, int(b["variant"]),
+			Rect2(p - decal_size * 0.5, decal_size), Color(tone, tone, tone, col.a))
 
 
-## ⑤ 한 덩어리를 이루는 겹친 덩이 세 개 (본체 · 세로로 긴 심 · 한쪽에 붙은 곁덩이).
-## 바닥 웅덩이(flat)는 반대로 가로로 퍼진 덩이를 쓴다 — ③ 면 방향.
-func _shapes(b: Dictionary, p: Vector2, s: Vector2) -> Array:
-	var ar: float = float(b["ar"])
-	var lobe: Vector2 = b["lobe"]
-	var core := Vector2(s.x * ar, s.y * 1.28) if not b["flat"] else Vector2(s.x * 1.26, s.y * ar)
-	core = (core / 2.0).ceil() * 2.0
-	var side := ((s * 0.56) / 2.0).ceil() * 2.0
-	var off := (Vector2(lobe.x * s.x, lobe.y * s.y) / 2.0).round() * 2.0
-	return [
-		Rect2(p - s * 0.5, s),
-		Rect2(p - core * 0.5, core),
-		Rect2(p + off - side * 0.5, side),
-	]
-
-
-## 흘러내린 줄기 + 끝에 맺힌 방울 (3톤)
-func _draw_drip(p: Vector2, w: float, h: float, dark: Color, col: Color, lit: Color) -> void:
+## 흘러내린 줄기 + 끝에 맺힌 방울 (전용 점액 스트랜드 스프라이트)
+func _draw_drip(p: Vector2, w: float, h: float, col: Color, variant: int) -> void:
 	if h <= 0.0:
 		return
-	var narrow := maxf(2.0, w - 2.0)
-	var top := h * 0.55
-	draw_rect(Rect2(p.x - w * 0.5 - 2.0, p.y, w + 4.0, h), dark)
-	draw_rect(Rect2(p.x - w * 0.5, p.y, w, top), col)                       # 위쪽은 굵고
-	draw_rect(Rect2(p.x - narrow * 0.5, p.y + top, narrow, h - top), col)   # 아래로 갈수록 가늘어진다
-	# 젖은 심은 줄기 맨 위 짧게만 — 전체를 칠하면 초록 막대로 읽힌다
-	var wet := Color(lit.r, lit.g, lit.b, lit.a * 0.45)
-	draw_rect(Rect2(p.x - w * 0.5, p.y, 2.0, minf(top, 8.0)), wet)
-	draw_rect(Rect2(p.x - w - 2.0, p.y + h - 2.0, w * 2.0 + 4.0, 5.0), dark)
-	draw_rect(Rect2(p.x - w, p.y + h - 2.0, w * 2.0, 3.0), col)             # 끝에 맺힌 방울
+	var draw_w := maxf(14.0, w * 5.0)
+	var draw_h := maxf(16.0, h + draw_w * 0.55)
+	MonsterFx.draw(self, MonsterFx.ROW_SALIVA, variant,
+		Rect2(Vector2(p.x - draw_w * 0.5, p.y), Vector2(draw_w, draw_h)),
+		Color(1.0, 1.0, 1.0, col.a))

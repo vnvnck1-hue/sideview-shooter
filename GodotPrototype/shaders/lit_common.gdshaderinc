@@ -4,8 +4,17 @@
 //    광원이 없어도 은은한 고정 키(우상단)로 외곽선이 항상 살짝 읽힌다.
 // 3) 피격 열 잔광: 탄착 UV 목록(heat_hits)이 붉게 달아올랐다가 천천히 식는다.
 // 4) 파츠 마스크: 셀 단위로 조각난 프랍 — 깨진 셀은 투명 (lit_surface 는 기본 흰색 = 전부 온전).
+// 5) 암흑 시야 (dark_common): 앰비언트 성분만 가시도만큼 어둡게 하고, 사라진 만큼은 명도를 방 테마의 그림자 팔레트로 옮겨 은은하게 남긴다. light() 는 암흑 전 색(v_base)을 쓰므로
+//    어둠 속에서도 광원을 받은 면·림·스페큘러는 그대로 떠오른다. 캐릭터(dark_actor=1)는 배경과 다른 곡선 —
+//    조금 더 멀리까지 보이고, 어둠 속에서도 고정 키 림과 옅은 바닥 밝기가 남아 실루엣이 배경의 어둠에서 떨어져 읽힌다.
 
 #include "res://shaders/light_falloff.gdshaderinc"
+#include "res://shaders/dark_common.gdshaderinc"
+
+// 역광 수치 (전역 — Lighting.set_backlight). lit_light 의 L.z < 0 분기에서만 쓴다
+global uniform float backlight_body;     // 역광일 때 몸 정면이 받는 디퓨즈 비율
+global uniform float backlight_dip;      // 광원을 등졌을 때 몸 안쪽이 가라앉는 정도 (앰비언트 대비)
+global uniform float backlight_rim;      // 역광 윤곽 배율
 
 uniform float rim_strength : hint_range(0.0, 6.0) = 1.15;
 uniform float rim_width_px : hint_range(0.5, 120.0) = 2.0;      // 림이 실루엣 안쪽으로 번지는 폭 (스프라이트 안쪽으로만 — 알파 밖은 그리지 않는다)
@@ -29,6 +38,15 @@ uniform float rim_key_surface : hint_range(0.0, 1.0) = 1.0;   // 고정 키 림�
 uniform float normal_response : hint_range(0.5, 4.0) = 1.9;
 uniform float specular_strength : hint_range(0.0, 3.0) = 0.85;
 uniform float specular_power : hint_range(2.0, 64.0) = 16.0;
+// Actor-only fill: scale shadow colours together, retaining hue and black outlines.
+// No new lights, no alpha expansion, and no extra gain on bright hit flashes.
+uniform float actor_fill : hint_range(0.0, 1.0) = 0.0;
+
+// 암흑 시야에서의 역할: 0 = 배경(완전히 가라앉음) · 1 = 캐릭터(실루엣이 남음). Lighting.character_material 이 1 로 둔다.
+uniform float dark_actor : hint_range(0.0, 1.0) = 0.0;
+const float DARK_ACTOR_REACH = 1.15;      // 캐릭터 가시 반경 배율
+const float DARK_ACTOR_FLOOR = 0.12;      // 어둠 속 캐릭터 몸의 바닥 밝기 (앰비언트 대비)
+const float DARK_ACTOR_KEY = 0.7;         // 어둠 속 캐릭터 고정 키 림 유지율
 
 uniform int heat_count = 0;
 uniform vec4 heat_hits[12];                 // (u, v, 세기, 경과 시간)
@@ -36,12 +54,19 @@ uniform float heat_radius_px = 18.0;
 uniform float heat_cool : hint_range(0.5, 10.0) = 1.7;
 
 uniform sampler2D mask : filter_nearest, repeat_disable, hint_default_white;   // 파츠 마스크 (r=1 온전)
+// 마스크를 실제로 쓰는 머티리얼(HitProp)만 켠다. 꺼져 있으면 마스크는 기본 흰색이라 step(0.5, 1) = 1 — 곱해도 그대로이므로
+// 텍스처를 읽지 않는다. 실루엣 링 24점 × 2회 읽기 중 절반이 이 흰 마스크였다 (타일·캐릭터 전부).
+uniform bool mask_on = false;
 
 varying float v_edge;        // 실루엣 경계 세기 (fragment 에서 계산 → light 에서 읽음)
 varying vec2 v_edge_dir;     // 경계 바깥 방향 (화면 공간)
+varying vec3 v_base;         // 암흑 적용 전 표면색 — light() 의 기준색 (fragment 가 채운다)
 
 float surf_alpha(sampler2D tex, vec2 uv) {
-	return texture(tex, uv).a * step(0.5, texture(mask, uv).r);
+	if (mask_on) {
+		return texture(tex, uv).a * step(0.5, texture(mask, uv).r);
+	}
+	return texture(tex, uv).a;
 }
 
 // 실루엣 경계: 폭 w 안에서 8방향×3링으로 알파 커버리지를 재서 부드러운 경계 세기를 만든다.
@@ -92,10 +117,28 @@ vec3 heat_emission(vec2 uv, vec2 px) {
 	return hot * h;
 }
 
-// 공용 fragment 본체: 색 + 림 앰비언트 + 열. 경계 정보는 out 으로 돌려주고 호출측 fragment() 가 varying 에 넣는다
-// (varying 은 fragment() 본문에서만 대입 가능).
-vec4 lit_fragment(sampler2D tex, vec2 uv, vec2 px, vec4 c, out float edge, out vec2 edge_dir) {
+// 암흑 시야 그림자 (dark_common.dv_surface): xyz = 그림자 팔레트 색, w = 디더된 가시도. frag = FRAGCOORD.xy, t = TIME
+vec4 dark_shadow(vec2 frag, float t) {
+	return dv_surface(frag, t, mix(1.0, DARK_ACTOR_REACH, dark_actor));
+}
+
+// 어둠 속 몸 색: 배경은 명도만 그림자 팔레트로 옮겨 은은하게, 캐릭터는 바닥 밝기를 더 남기고 팔레트 색도 조금 밝게 받는다
+vec3 dark_body(vec3 col, vec4 sh) {
+	vec3 c = dv_shade(col, sh, DARK_ACTOR_FLOOR * dark_actor);
+	return c + sh.rgb * (1.0 - sh.w) * dark_actor * 0.5;
+}
+
+// (유리·램프처럼 lit_fragment 를 안 쓰는 셰이더용) 어둠 속 표면색
+vec3 dark_surface(vec3 col, vec2 frag, float t) {
+	return dark_body(col, dark_shadow(frag, t));
+}
+
+// 공용 fragment 본체: 색 + 림 앰비언트 + 열 + 암흑. 경계 정보와 암흑 전 색(base)은 out 으로 돌려주고
+// 호출측 fragment() 가 varying 에 넣는다 (varying 은 fragment() 본문에서만 대입 가능).
+vec4 lit_fragment(sampler2D tex, vec2 uv, vec2 px, vec4 c, vec2 frag, float t, out float edge, out vec2 edge_dir, out vec3 base) {
 	vec3 col = c.rgb;
+	float value = max(c.r, max(c.g, c.b));
+	col *= 1.0 + actor_fill * (1.0 - smoothstep(0.15, 0.85, value));
 	vec3 e = silhouette_edge(tex, uv, px, rim_width_px);
 	vec2 sdir = uv_dir_to_screen(e.yz, uv);
 	edge = e.x * c.a;
@@ -103,9 +146,12 @@ vec4 lit_fragment(sampler2D tex, vec2 uv, vec2 px, vec4 c, out float edge, out v
 	// 고정 키 림 (우상단에서 오는 차가운 빛) — 어둠 속에서도 외곽선이 읽힌다
 	float key = 0.45 + 0.55 * max(dot(sdir, normalize(vec2(0.55, -0.83))), 0.0);
 	vec3 key_col = mix(rim_ambient, rim_ambient * c.rgb * 2.0, rim_key_surface);
-	col += key_col * rim_ambient_strength * rim_key_mul * edge * key;
-	col += heat_emission(uv, px);
-	return vec4(col, c.a);
+	vec3 key_rim = key_col * rim_ambient_strength * rim_key_mul * edge * key;
+	vec3 heat = heat_emission(uv, px);
+	base = col + key_rim + heat;
+	vec4 sh = dark_shadow(frag, t);
+	float key_keep = mix(DARK_ACTOR_KEY * dark_actor, 1.0, sh.w);
+	return vec4(dark_body(col, sh) + key_rim * key_keep + heat, c.a);
 }
 
 float max3(vec3 v) { return max(v.r, max(v.g, v.b)); }
@@ -136,18 +182,30 @@ vec3 rim_blend(vec3 base, vec3 rim_lc, float rim) {
 // 림·프레넬은 rim_atten(rim_reach) 으로 따로 감쇠시켜 광원 밝기는 그대로 두고 림만 훨씬 멀리 닿게 한다.
 // 감쇠를 rgb 에 직접 곱했으므로 알파는 1 로 돌려준다 (그림자·텍스처 밖 클립은 엔진이 알파에 곱한다).
 vec4 lit_light(vec3 N, vec3 L, vec4 light_color, float energy, vec3 base) {
-	float ndl = max(dot(N, L), 0.0);
+	// 역광: 광원이 인물 **뒤**에 있다 (LightMirror.backlit → 라이트 height 음수 → L.z < 0). 순광이면 back = 0 이고 아래 식은 예전 그대로다.
+	float back = L.z < 0.0 ? 1.0 : 0.0;
+	vec3 Lf = vec3(L.xy, abs(L.z));                // 노멀 반응의 기준 방향 (역광이어도 몸의 굴곡은 같은 곡선으로 읽는다)
+	float ndl = max(dot(N, Lf), 0.0);
 	float diff = pow(ndl, normal_response) * (1.0 + 0.4 * (normal_response - 1.0));
-	vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
+	vec3 H = normalize(Lf + vec3(0.0, 0.0, 1.0));
 	float spec = pow(max(dot(N, H), 0.0), specular_power) * specular_strength;
-	// 광원을 향한 실루엣 외곽선
+	// 광원을 향한 실루엣 외곽선. 역광이면 광원 반대쪽까지 조금 더 감싸고(뒤에서 새어 나오는 빛) backlight_rim 배로 세진다
 	float facing = max(dot(v_edge_dir, normalize(L.xy + vec2(1e-5))), 0.0);
-	float rim = v_edge * (0.2 + 0.8 * facing) * rim_strength;
+	float wrap_rim = mix(0.2 + 0.8 * facing, 0.45 + 0.55 * facing, back);
+	float rim = v_edge * wrap_rim * rim_strength * mix(1.0, backlight_rim, back);
 	// 노멀이 기울어진 면(베벨·경사) 프레넬
 	float fres = pow(1.0 - clamp(N.z, 0.0, 1.0), 2.2) * ndl * 0.9 * rim_strength;
 	vec3 lc = light_color.rgb * energy * diffuse_atten(light_color.a);
 	vec3 rim_col = mix(base, vec3(1.0), rim_white_mix);
 	vec3 rim_lc = light_color.rgb * energy * rim_atten(light_color.a, rim_reach);
+	// 역광의 몸: 정면 디퓨즈·스페큘러는 backlight_body 배만 남고, 광원 쪽 옆을 향한 노멀(실제 N·L > 0)만 빛을 그대로 받는다
+	float body = mix(1.0, backlight_body, back);
+	float side = back * pow(max(dot(N, L), 0.0), normal_response);
+	// 노출 딥: 밝은 광원을 등지면 몸 안쪽이 앰비언트보다 살짝 가라앉는다 (LIGHT 는 덧셈이라 음수로 뺀다).
+	// 앰비언트가 이미 곱해진 표면색 기준으로 backlight_dip 만큼 — 0.45 는 방 앰비언트(Lighting.AMBIENT) 평균 밝기 근사. 윤곽(v_edge)은 빼지 않는다
+	float llum = clamp(dot(lc, vec3(0.30, 0.59, 0.11)), 0.0, 1.0);
+	vec3 dip = base * (0.45 * backlight_dip * back * llum * (1.0 - v_edge));
 	// 프레넬(벽돌·베벨의 기울어진 노멀)은 디퓨즈 감쇠를 따른다 — 넓어지는 것은 실루엣 림만. 안 그러면 벽 전체가 뿌옇게 밝아진다
-	return vec4(lc * (base * diff + spec * (0.35 + 0.65 * base) + fres * rim_col) + rim_blend(base, rim_lc, rim), 1.0);
+	vec3 lit = lc * (base * (diff * body + side) + spec * body * (0.35 + 0.65 * base) + fres * rim_col);
+	return vec4(lit - dip + rim_blend(base, rim_lc, rim), 1.0);
 }

@@ -120,16 +120,22 @@ func open_span_at(x: float, y: float) -> Vector2:
 
 ## 자유 물체를 방 안에 가둔다. 벽에 닿으면 되밀고 그 축의 속도를 튕긴다. → [위치, 속도]
 ## (바닥은 각자 floor_y 로 이미 처리하므로 좌우 벽과 천장만 본다)
+##
+## 좌우는 open_span_at 과 같은 결과를 O(1) 로 낸다. WALL_BAND(56) < CELL(128) 이라 구간 끝이 점을 되밀 수 있는 건
+## **바로 옆 열이 막혀 있을 때뿐**이다 — 옆 열이 열려 있으면 구간 끝은 이웃 열 안쪽(≤ (c-1)·CELL + WALL_BAND < c·CELL ≤ x)이라
+## 닿지 않는다. 예전엔 불꽃·체액·탄피·파편 알갱이마다 매 프레임 구간 끝까지 열을 한 칸씩 걸어서 (넓은 방은 150열)
+## 전투 중 알갱이 수 × 열 수만큼 돌았다.
 func confine(pos: Vector2, vel: Vector2, restitution := 0.4) -> Array:
-	var span := open_span_at(pos.x, pos.y)
-	if pos.x < span.x:
-		pos.x = span.x
-		if vel.x < 0.0:
-			vel.x = -vel.x * restitution
-	elif pos.x > span.y:
-		pos.x = span.y
-		if vel.x > 0.0:
-			vel.x = -vel.x * restitution
+	var c := _col(pos.x)
+	if pos.y >= _open_top[c]:                     # 이미 벽 안이면 가로로는 건드리지 않는다 (open_span_at 과 같다)
+		if _blocked(c - 1, pos.y) and pos.x < float(c) * CELL + WALL_BAND:
+			pos.x = float(c) * CELL + WALL_BAND
+			if vel.x < 0.0:
+				vel.x = -vel.x * restitution
+		elif _blocked(c + 1, pos.y) and pos.x > float(c + 1) * CELL - WALL_BAND:
+			pos.x = float(c + 1) * CELL - WALL_BAND
+			if vel.x > 0.0:
+				vel.x = -vel.x * restitution
 	var top := open_top_at(pos.x)
 	if pos.y < top:
 		pos.y = top

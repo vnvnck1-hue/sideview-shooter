@@ -13,6 +13,9 @@ const GalleryPlaytest := preload("res://scripts/service_gallery_playtest.gd")
 
 ## 몬스터의 독액이 플레이어에 맞음 (Main 이 카메라 흔들림·밀림 처리)
 signal player_hit(point: Vector2, dir: float)
+signal obstacle_exploded(point: Vector2)
+## 부서지는 장애물이 무너진 순간 (Main 이 히트스톱·카메라 흔들림을 건다). shake = 흔들림 세기, stop = 히트스톱 초
+signal obstacle_broken(point: Vector2, shake: float, stop: float)
 ## power: 운 개체의 덩치 배율 (일반 1.0 · 거대종 Crawler.GIANT_SIZE)
 signal monster_roared(pos: Vector2, power: float)
 ## 거대종이 바닥을 내려찍었다 (Main 이 카메라를 크게 울린다)
@@ -30,7 +33,11 @@ var right_door_open := false
 var left_target := ""
 var right_target := ""
 var lamps: Array = []         # LampLight
+var light_sources: Array = [] # 비상등·전선 불꽃·불 등 light_info() 를 가진 광원 (암흑 시야도 읽는다)
 var props_hit: Array = []     # HitProp
+var obstacles: Array = []
+static var obstacle_history: Dictionary = {}
+var obstacle_state: Dictionary = {}
 var windows: Array = []       # GlassWindow (현재 타일맵 방에는 창문 타일이 없어 비어 있다)
 var beacons: Array = []       # EmergencyLight
 var wires: Array = []         # BrokenWire
@@ -38,7 +45,9 @@ var leaks: Array = []         # WaterLeak
 var fires: Array = []         # FireSource
 var water: WaterPool          # 고인 물 (fx "water", 방마다 최대 하나)
 var foreground: ForegroundLayer   # 근경 실루엣 층 (z7)
+var fog_layers: Array = []        # 바닥 안개 두 겹 (GroundFog — 뒤 z4 · 앞 z6)
 var monsters: Array = []      # Crawler
+var bugbot_battle: Node       # 임시 자동 사냥 연출; 방을 떠나면 함께 해제된다.
 var sentries: Array = []
 var walkers: Array = []          # 사족보행 기체(WalkerUnit). 센트리건과 같은 규칙으로 산다      # SentryTurret (바닥 격납형 센트리건 — Main 이 조종을 잡는다)
 var terminals: Array = []     # AccessTerminal (플레이어가 W/↑ 로 접속하는 대형 단말기)
@@ -65,6 +74,7 @@ var _wave_t := 0.0            # 다음 웨이브까지 남은 초
 var _wave_left := 0           # 이번 웨이브에서 아직 안 나온 마리
 var _wave_gap := 0.0
 var _lights: Node2D
+var _front_lamps: Node2D                   # 앞쪽 램프 층 (z7, 있을 때만 — _front_lamp_layer)
 var _doors: Array = []        # [{sprite, rect, heat}]
 
 const MONSTER_MARGIN := 150.0
@@ -123,8 +133,13 @@ func build(id: String) -> void:
 	_lights = lights
 
 	# 1b. 천장 펜던트 램프(깨지는 램프) + 장식 조명 기구
+	# 램프 항목은 x 숫자, 또는 {"x", "depth": "front"} — 앞쪽 램프는 인물 앞 층(_front_lamps, z7)에 매달린다
 	for lx in data.get("lamps", []):
-		_add_pendant_lamp(lights, float(lx))
+		if lx is Dictionary:
+			var is_front: bool = String(lx.get("depth", "back")) == "front"
+			_add_pendant_lamp(_front_lamp_layer() if is_front else lights, float(lx["x"]), lights, is_front)
+		else:
+			_add_pendant_lamp(lights, float(lx))
 	_build_fixtures(lights, data)
 
 	# 2. 뒷벽 정면문
@@ -187,10 +202,10 @@ func build(id: String) -> void:
 	air.z_index = 4
 	add_child(air)
 	for lamp in lamps:
-		lamp.attach_cone(air, floor_y)
+		lamp.attach_cone(_front_lamps if lamp.front else air, floor_y)
 
 	var room_rect := RoomData.room_rect(id)            # 층고가 높은 방은 천장이 0 위로 올라간다
-	var sources: Array = []
+	var sources: Array = light_sources
 	for fx in data.get("fx", []):
 		var pos := _fx_pos(fx)
 		match fx["type"]:
@@ -255,7 +270,11 @@ func build(id: String) -> void:
 	_monster_layer.z_index = 5
 	add_child(_monster_layer)
 	for m in data.get("monsters", []):
-		_add_crawler(float(m["x"]), int(m.get("facing", -1)), String(m.get("type", "crawler")) == "giant")
+		var kind := String(m.get("type", "crawler"))
+		if CreatureEnemy.IDS.has(kind):
+			_add_creature(kind, float(m["x"]), int(m.get("facing", -1)))
+		else:
+			_add_crawler(float(m["x"]), int(m.get("facing", -1)), kind == "giant")
 	_spawn_cfg = data.get("spawn", SPAWN_DEFAULT)
 	_spawn_t = _next_spawn_delay() * 0.5
 	# 첫 웨이브는 들어오자마자 덮치지 않는다 — 방을 한 번 둘러볼 틈(기본: 간격의 절반)을 준다
@@ -270,8 +289,22 @@ func build(id: String) -> void:
 	dust.z_index = -1
 	air.add_child(dust)
 
+	# 바닥 안개 — 뒤 겹은 공기층(z4, 인물 뒤), 앞 겹은 인물 층 위(z6)에서 발목을 덮는다. 프리셋은 F2.
+	for is_front in [false, true]:
+		var fog := GroundFog.new()
+		fog.name = "GroundFogFront" if is_front else "GroundFogBack"
+		if is_front:
+			fog.z_index = DepthLayers.Z_ACTOR_MAX
+			add_child(fog)
+		else:
+			air.add_child(fog)
+		fog.setup(float(width), floor_y, lamps, sources, _ambient, is_front)
+		fog_layers.append(fog)
+
 	# 7. 근경 실루엣 층 (z7) — 조명 제외, 카메라 1.12배 패럴랙스. 램프·정면문 자리는 기둥·케이블이 피한다.
 	var avoid: Array = []
+	for obstacle in obstacles:
+		avoid.append(obstacle.position.x)
 	for lamp in lamps:
 		avoid.append(lamp.position.x)
 	for fd in front_doors:
@@ -344,7 +377,18 @@ func _fx_pos(d: Dictionary) -> Vector2:
 
 
 ## 천장 펜던트 램프 — 스프라이트(발광·글리치)·라이트·전구 커버. 그 열의 천장 띠 아랫선에 매단다.
-func _add_pendant_lamp(parent: Node2D, x: float) -> void:
+## 앞쪽 램프(갓·줄·빛 기둥)를 그리는 층 — 인물(z5~6) 앞, 근경 실루엣과 같은 z7. 처음 부를 때 만든다.
+func _front_lamp_layer() -> Node2D:
+	if _front_lamps == null:
+		_front_lamps = Node2D.new()
+		_front_lamps.name = "FrontLamps"
+		_front_lamps.z_index = DepthLayers.Z_FOREGROUND
+		add_child(_front_lamps)
+	return _front_lamps
+
+
+## parent = 갓·줄·커버를 그릴 층, light_parent = 라이트 노드를 둘 곳(없으면 parent). 앞쪽 램프는 둘이 다르다.
+func _add_pendant_lamp(parent: Node2D, x: float, light_parent: Node2D = null, is_front := false) -> void:
 	var tex: Texture2D = load(PENDANT_TEX)
 	var meta := _pendant_meta()
 	var bulb: Array = meta.get("bulb", [40, 96, 24, 12])
@@ -352,8 +396,9 @@ func _add_pendant_lamp(parent: Node2D, x: float) -> void:
 	var origin := Vector2(round(x - size.x * 0.5), ceiling_at(x) + RoomTiles.CEILING_BAND - 2.0)
 	var bulb_local := Rect2(float(bulb[0]), float(bulb[1]), float(bulb[2]), float(bulb[3]))
 	var lamp := LampLight.new()
+	lamp.front = is_front
 	lamp.position = origin + bulb_local.get_center()
-	parent.add_child(lamp)
+	(light_parent if light_parent else parent).add_child(lamp)
 	lamp.attach_cover(parent, Rect2(origin + bulb_local.position, bulb_local.size))
 	lamp.attach_sprite(parent, tex, origin, Rect2(Vector2.ZERO, size), bulb_local)
 	# 천장 마운트에 줄로 매단다. 층고가 낮은 방에서는 프랍에 닿지 않게 늘어뜨림을 줄인다.
@@ -464,6 +509,15 @@ static func _ground_margin(path: String) -> int:
 func _add_special_prop(parent: Node2D, prop: Dictionary) -> void:
 	var x := float(prop["x"])
 	match prop.get("type", ""):
+		"obstacle":
+			if not obstacle_history.has(room_id):
+				obstacle_history[room_id] = {}
+			obstacle_state = obstacle_history[room_id]
+			var obstacle := ObstacleProp.new()
+			obstacle.setup(self, prop, floor_y)
+			parent.add_child(obstacle)
+			obstacles.append(obstacle)
+			props_hit.append(obstacle)
 		"cabinet":
 			var cabinet := PowerRelayProp.new()
 			cabinet.setup(x, floor_y)
@@ -546,6 +600,12 @@ func apply_mood(i: int) -> void:
 	# 무드 광원이 갈아 끼워졌으니 그림자도 새 광원 목록으로 다시 잡는다
 	if prop_shadows:
 		prop_shadows.build(_lights, PropShadow.index)
+
+
+## 바닥 안개 프리셋 적용 (F2 순환 — GroundFog.PRESETS)
+func apply_fog(i: int) -> void:
+	for fog in fog_layers:
+		fog.apply(i)
 
 
 ## 기본 그림자 프리셋 적용 (F6 순환 — PropShadow.BASE_PRESETS)
@@ -662,6 +722,22 @@ func _monster_bounds(giant: bool, x: float) -> Vector2:
 	return best
 
 
+func _add_creature(kind: String, x: float, facing: int) -> CreatureEnemy:
+	var c := CreatureEnemy.new()
+	c.name = CreatureEnemy.IDS[kind]
+	var y := floor_y + 2.0
+	if kind == "ceiling_bell":
+		y = ceiling_at(x) + 4.0
+	elif kind == "seam_ambusher":
+		y = floor_y - 230.0
+	c.setup(self, kind, Vector2(x, y), facing, section_of(x))
+	c.died.connect(monster_died.emit)
+	c.impacted.connect(func(at: Vector2, power: float): monster_roared.emit(at, power * 0.3))
+	_monster_layer.add_child(c)
+	monsters.append(c)
+	return c
+
+
 func _add_crawler(x: float, facing: int, giant := false) -> Crawler:
 	var c := Crawler.new()
 	c.name = "GiantCrawler" if giant else "Crawler"
@@ -704,6 +780,8 @@ func alive_in_section(x: float) -> int:
 
 ## 지속 스폰: 살아 있는 수가 max 미만이면 interval 마다 한 마리. 플레이어에서 먼 자리를 고른다(8회 시도, 없으면 먼 쪽 끝)
 func _tick_spawner(delta: float) -> void:
+	if is_instance_valid(bugbot_battle):
+		return
 	var cap := spawn_cap()
 	if cap <= 0 or player == null:
 		return
@@ -866,14 +944,26 @@ func _trim_stains() -> void:
 ## 사격 선분을 벽면까지 자른다 — 벽 너머(어둠·옆방)로는 탄이 나가지 않는다.
 ## 총구가 벽 띠 안이어도(벽에 붙어 쏠 때) 벽을 빠져나온 뒤부터 본다.
 func clip_shot(from: Vector2, to: Vector2) -> Vector2:
-	if solid == null:
-		return to
-	return solid.clip_ray(from, to)
+	var end := solid.clip_ray(from, to) if solid != null else to
+	var best := 1.0
+	for obstacle in obstacles:
+		# 총구가 이미 장애물 상자 안이면(붙어 서서 긴 총신이 상자에 파묻힐 때 · 위에 올라서서 아래로 쏠 때)
+		# 그 장애물은 막지 않는다. 막으면 t=0 — 탄이 총구에서 바로 "가장 가까운 물체"에 박혀 버린다.
+		if obstacle.destroyed or obstacle.rect.has_point(from):
+			continue
+		var t := WeaponProjectile._rect_t(from, end, obstacle.rect)
+		if t >= 0.0 and t < best:
+			best = t
+	# A fraction inside the surface makes Rect2.has_point stable at right edges.
+	return from.lerp(end, best) + (end-from).normalized()*0.5 if best < 1.0 else end
 
 
 ## 탄착점이 무엇을 맞췃는지. {"kind": "monster"|"lamp"|"beacon"|"glass"|"prop"|"wall"|"none", "node": ...}
 ## 몬스터가 맨 앞이라 먼저 본다. 죽은 몬스터·프랍의 부서진 구멍은 통과해 뒤의 벽이 맞는다.
 func hit_at(point: Vector2) -> Dictionary:
+	for obstacle in obstacles:
+		if obstacle.is_solid_at(point):
+			return {"kind": "prop", "node": obstacle}
 	for m in monsters:
 		if is_instance_valid(m) and m.is_hit(point):
 			return {"kind": "monster", "node": m}
@@ -904,6 +994,71 @@ func notify_shot(from: Vector2, to: Vector2) -> void:
 		w.apply_shot(from, to)
 	for lamp in lamps:                      # 스치기만 해도 매달린 램프가 흔들린다
 		lamp.apply_shot(from, to)
+
+
+## Swept horizontal body box, shared by walking, rolling and airborne motion.
+func obstacle_move_x(from_x: float, to_x: float, feet_y: float, body_height := 210.0, half_width := 28.0) -> float:
+	var result := to_x
+	for obstacle in obstacles:
+		if obstacle.destroyed:
+			continue
+		var box: Rect2 = obstacle.rect
+		if feet_y <= box.position.y + 2.0 or feet_y-body_height >= box.end.y:
+			continue
+		if to_x > from_x and from_x + half_width <= box.position.x + 1.0:
+			result = minf(result, box.position.x-half_width)
+		elif to_x < from_x and from_x-half_width >= box.end.x-1.0:
+			result = maxf(result, box.end.x+half_width)
+	return result
+
+## First support crossed by falling feet; allows landing on top then jumping off.
+func obstacle_landing(x: float, old_feet: float, new_feet: float) -> float:
+	var landing := floor_y+2.0
+	for obstacle in obstacles:
+		if obstacle.destroyed:
+			continue
+		var box: Rect2 = obstacle.rect
+		if x+24.0 > box.position.x and x-24.0 < box.end.x and old_feet <= box.position.y+2.0 and new_feet >= box.position.y:
+			landing = minf(landing, box.position.y)
+	return landing
+
+func obstacle_support(x: float, feet_y: float) -> float:
+	return obstacle_landing(x, feet_y-3.0, feet_y+3.0)
+
+func obstacle_blast(center: Vector2, radius: float, source: Node) -> void:
+	obstacle_exploded.emit(center)
+	# 폭압에 매달린 램프·끊긴 전선이 크게 흔들린다 (중심에서 대상으로 그은 선을 "탄" 으로 넘긴다)
+	for lamp in lamps:
+		if is_instance_valid(lamp) and lamp.global_position.distance_to(center) < radius * 1.8:
+			lamp.apply_shot(center, lamp.global_position + (lamp.global_position - center).normalized() * 200.0)
+	for w in wires:
+		if is_instance_valid(w) and w.global_position.distance_to(center) < radius * 1.8:
+			w.apply_shot(center, w.global_position)
+	# Wall visibility only: destructible props can chain, masonry walls cannot.
+	for monster in monsters.duplicate():
+		if not is_instance_valid(monster) or monster.is_dead():
+			continue
+		var point: Vector2 = monster.hit_center()
+		var distance := center.distance_to(point)
+		if distance < radius and (solid == null or solid.clip_ray(center,point).distance_to(point) < 3.0):
+			var fall := 1.0-distance/radius
+			monster.hit(point, signf(point.x-center.x), 1.2+fall*2.5, maxi(1,int(ceil(fall*8))))
+	for prop in props_hit.duplicate():
+		if not is_instance_valid(prop) or prop == source or (prop is ObstacleProp and prop.destroyed):
+			continue
+		var point: Vector2 = prop.rect.get_center()
+		var distance := center.distance_to(point)
+		if distance < radius and (solid == null or solid.clip_ray(center,point).distance_to(point) < 3.0):
+			prop.hit(signf(point.x-center.x), point.y, point, 12.0*(1.0-distance/radius))
+	if is_instance_valid(player):
+		var point := player.position - Vector2(0, player.air_height()+100.0)
+		var distance := center.distance_to(point)
+		if distance < radius and (solid == null or solid.clip_ray(center,point).distance_to(point) < 3.0):
+			if player.has_method("receive_explosion_damage"):
+				player.receive_explosion_damage(ceilf(60.0*(1.0-distance/radius)))
+			player_hit.emit(point, signf(point.x-center.x))
+			if player.has_method("knockback"):
+				player.knockback(signf(point.x-center.x) * lerpf(700.0, 1300.0, 1.0-distance/radius))   # 독액보다 훨씬 세게 날린다
 
 
 func _add_side_door(parent: Node2D, center_x: float, is_open: bool, flip: bool) -> void:

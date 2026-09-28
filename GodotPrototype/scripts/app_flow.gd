@@ -13,6 +13,7 @@ const FACE_LAB_SCENE := "res://scenes/FaceLab.tscn"
 const SPACE_LAB_SCENE := "res://scenes/SpaceLab.tscn"
 const SCALE_LAB_SCENE := "res://scenes/ScaleLab.tscn"
 const DEPTH_LAB_SCENE := "res://scenes/DepthLab.tscn"
+const BACKLIGHT_LAB_SCENE := "res://scenes/BacklightLab.tscn"
 const GalleryPlaytest := preload("res://scripts/service_gallery_playtest.gd")
 
 ## 디자인 캔버스 = 창 기본 크기 = 스트레치 기준 (project.godot display/window/size 와 반드시 같은 값).
@@ -66,6 +67,7 @@ static func go_lobby(tree: SceneTree) -> void:
 ## 메인 게임: 에어록(RoomData.START_ROOM)에서 시작, 전체 맵을 탐색한다
 static func start_main_game(tree: SceneTree) -> void:
 	visited = {}
+	Room.obstacle_history.clear()
 	start_room = RoomData.START_ROOM
 	tree.change_scene_to_file(MAIN_GAME_SCENE)
 
@@ -74,6 +76,7 @@ static func start_main_game(tree: SceneTree) -> void:
 ## spawn_x >= 0 이면 그 위치에 선다 (특정 연출 바로 앞에서 시작 — tools/ 스크린샷 도구가 쓴다).
 static func start_test(tree: SceneTree, room := "", spawn_x := -1.0, facing := 1) -> void:
 	visited = {}
+	Room.obstacle_history.clear()
 	if RoomData.ROOMS.has(room):
 		start_room = room
 		resume_x = spawn_x
@@ -130,6 +133,12 @@ static func start_depth_lab(tree: SceneTree) -> void:
 	visited = {}
 	resume_x = -1.0
 	tree.change_scene_to_file(DEPTH_LAB_SCENE)
+
+
+static func start_backlight_lab(tree: SceneTree) -> void:
+	visited = {}
+	resume_x = -1.0
+	tree.change_scene_to_file(BACKLIGHT_LAB_SCENE)
 
 
 ## Gallery tile playtest runs through the ordinary Main scene and play loop.

@@ -6,6 +6,7 @@ shader_type canvas_item;
 // CanvasModulate(앰비언트 ≈0.35)가 결과에 다시 곱해지므로 rim_strength 로 보정한다.
 
 uniform vec4 ink : source_color = vec4(0.07, 0.07, 0.10, 1.0);
+uniform float occlusion_alpha : hint_range(0.0, 1.0) = 1.0;
 uniform float rim_strength : hint_range(0.0, 8.0) = 0.8;   // 2.6 은 너무 강했다 → 30%
 uniform float rim_falloff : hint_range(0.5, 4.0) = 1.4;     // 법선·광원 방향 코사인의 지수 (클수록 정면 변에만)
 uniform float rim_reach : hint_range(0.1, 1.0) = 0.55;      // 광원 감쇠를 pow 로 펴서 멀리서도 윤곽이 살짝 물든다
@@ -54,6 +55,7 @@ float room_factor(vec2 p, vec2 n) {
 
 void fragment() {
 	COLOR = ink;
+	COLOR.a *= occlusion_alpha;
 }
 
 void light() {

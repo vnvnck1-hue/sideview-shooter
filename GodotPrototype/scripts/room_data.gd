@@ -37,7 +37,7 @@ extends RefCounted
 ##                            선택 "band": px — 플레이어에서 이 거리 안에서만 나온다 (아주 긴 방용).
 ##                            선택 "wave": {"interval": 초, "size": [최소, 최대], "gap": 마리 사이 초, "first": 첫 웨이브까지 초}
 ##                            — 한 마리씩 흘리지 않고 interval 마다 한 무리씩 몰아서 내보낸다. 자리가 없으면 그 웨이브는 건너뛴다.
-##                            "giant" 은 크롤러를 5배로 키운 변종이다(Crawler.make_giant). 폭 1050 · 높이 890 px 라
+##                            "giant" 은 상세 프레임을 쓰는 1.75배 변종이다(Crawler.make_giant). 최대 내용 영역 약 371 × 310px.
 ##                            천장이 낮은 방·열에는 **들어가지 못한다** — Room 이 설 수 있는 구간만 골라 가두고,
 ##                            그런 구간이 없는 방의 지속 스폰은 조용히 일반종으로 되돌린다.
 ##                            어느 방이 받는지는 tools/validate_giant.gd 가 출력한다 (현재 27개 중 6개).
@@ -124,7 +124,7 @@ const ROOMS := {
 			{"type": "wire", "x": 1560, "cy": 44, "length": 220.0},
 			{"type": "fire", "x": 1950, "size": Vector2(150.0, 190.0)},
 		],
-		"monsters": [{"type": "crawler", "x": 1500, "facing": -1}],
+		"monsters": [{"type": "ceiling_bell", "x": 1100, "facing": -1}, {"type": "ring_spine", "x": 1650, "facing": -1}],
 		"spawn": {"max": 3, "interval": [3.0, 5.0]},
 	},
 	"workshop": {
@@ -163,6 +163,11 @@ const ROOMS := {
 		"left_door": {"open": true, "target": "workshop"}, "right_door": {"open": true, "target": "corr_mid"},
 		"front_doors": [{"x": 2250, "target": "power_relay", "target_door": 0}],
 		"props": [
+			{"type": "obstacle", "kind": "barricade", "x": 550},
+			{"type": "obstacle", "kind": "cable_reel", "x": 1070},
+			{"type": "obstacle", "kind": "supply_crate", "x": 1710},
+			{"type": "obstacle", "kind": "rubble_block", "x": 2110},
+			{"type": "obstacle", "kind": "gas_cylinder", "x": 2640},
 			{"tex": "workshop_locker_game_scale", "x": 330},
 			{"tex": "workshop_workbench_game_scale", "x": 900},
 			{"type": "walker", "id": "walker_hall", "name": "중앙 홀 보행 기체", "x": 1240},
@@ -258,6 +263,9 @@ const ROOMS := {
 		"left_door": {"open": true, "target": "hangar"}, "right_door": {"open": false},
 		"front_doors": [{"x": 300, "target": "hydro_lock", "target_door": 0}],
 		"props": [
+			{"type": "obstacle", "kind": "supply_crate", "x": 720},
+			{"type": "obstacle", "kind": "gas_cylinder", "x": 980},
+			{"type": "obstacle", "kind": "gas_cylinder", "x": 1200},
 			{"tex": "workshop_workbench_game_scale", "x": 900},
 			{"type": "terminal", "id": "survey_storage", "x": 900, "fy": 330},
 			{"tex": "workshop_locker_game_scale", "x": 1345},
@@ -302,7 +310,7 @@ const ROOMS := {
 			{"type": "power_cable", "x": 1600, "cy": 54, "length": 160.0},
 			{"type": "beacon", "x": 1100, "cy": 100},
 		],
-		"monsters": [{"type": "crawler", "x": 1400, "facing": -1}],
+		"monsters": [{"type": "seam_ambusher", "x": 1500, "facing": -1}, {"type": "crawler", "x": 1100, "facing": -1}],
 		"spawn": {"max": 3, "interval": [3.0, 5.0]},
 	},
 	"power_relay": {

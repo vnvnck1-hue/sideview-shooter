@@ -1,0 +1,16 @@
+Generator: built-in image_gen
+Purpose: 10 background decoration concepts; static review sheet, not game-ready animation sprites.
+
+Use case: stylized-concept. Create ONE polished concept art contact sheet showing exactly TEN distinct simple decorative background props for a 2D side-view pixel-art science-fiction horror shooter, an abandoned research facility attacked by alien organisms. This is a visual concept proposal sheet, not a finished sprite atlas.
+Layout: landscape 5 columns x 2 rows, ten equally sized cells, generous empty space, every prop fully visible, dark desaturated blue-gray flat background, faint separators. Number cells 01 through 10, numbers only, no other typography. Crisp chunky pixel art with carefully controlled pixel clusters, restrained detail and dark outlines, muted steel blue, worn gray, muted ivory lab coats, rust, dried crimson blood, small teal or amber indicator accents. Clear silhouettes at small gameplay scale. Orthographic side-scroller elevation, NOT isometric, no photorealism, no smooth digital painting, no 3D rendering. Props designed to sit behind the player, modest contrast and very limited light glow. Each cell an isolated object or compact decal grouping, not an entire room.
+01: dead adult researcher slumped sitting against a wall, head drooping, off-white lab coat, dark trousers, fallen ID badge, small dark blood stain, intact body, no exposed anatomy.
+02: dead adult researcher lying face down horizontally, one outstretched arm and broken glasses, torn white lab coat, small muted blood pool; intact body, no exposed anatomy.
+03: compact wall blood decal with a single dragged handprint and three downward smears; crimson dried blood, readable simple shapes.
+04: horizontal floor blood trail, a few irregular drops ending in a small puddle and two faint shoe marks; use side-view floor-friendly proportions.
+05: working wall ventilation fan, square industrial steel housing, circular four-blade fan behind coarse safety mesh, green operation light, subtle pixel motion arcs suggesting rotation.
+06: L-shaped wall-mounted pipe assembly with two pipe diameters, red shutoff valve, rusty elbow joint, one small coolant leak and droplet, simple modular shape.
+07: damaged rectangular air vent with a bent grille and two dangling screws, dark interior with a trace of alien slime.
+08: broken compact wall computer terminal, cracked dim teal CRT, one hanging cable, small amber warning indicator, simple silhouette.
+09: small broken cylindrical specimen canister on a low base, cracked glass, cloudy green residue, a small alien tendril resting inside, a few glass shards at base.
+10: abandoned small two-wheel laboratory utility cart, one tilted tray, two sample bottles and a draped stained white cloth, compact readable silhouette.
+Ensure exactly 10 items, one distinct numbered concept per cell in the described order. Avoid guns, pickups, large machinery, elaborate scenes, dramatic spotlighting, heavy gore, dismemberment, exposed organs, captions and watermarks.

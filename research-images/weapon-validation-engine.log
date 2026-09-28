@@ -1,0 +1,116 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   GDScript backtrace (most recent call first):
+       [0] shader_material (res://scripts/lighting.gd:344)
+       [1] character_material (res://scripts/lighting.gd:162)
+       [2] _ready (res://scripts/player.gd:294)
+       [3] _ready (res://scripts/main.gd:187)
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   GDScript backtrace (most recent call first):
+       [0] shader_material (res://scripts/lighting.gd:344)
+       [1] character_material (res://scripts/lighting.gd:162)
+       [2] _ready (res://scripts/player.gd:294)
+       [3] _ready (res://scripts/main.gd:187)
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   GDScript backtrace (most recent call first):
+       [0] shader_material (res://scripts/lighting.gd:344)
+       [1] _build_fixtures (res://scripts/room.gd:426)
+       [2] build (res://scripts/room.gd:141)
+       [3] _load_room (res://scripts/main.gd:465)
+       [4] _ready (res://scripts/main.gd:210)
+ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
+   at: _dump_node_code (servers/rendering/shader_compiler.cpp:1329)
+   GDScript backtrace (most recent call first):
+       [0] shader_material (res://scripts/lighting.gd:344)
+       [1] _build_fixtures (res://scripts/room.gd:426)
+       [2] build (res://scripts/room.gd:141)
+       [3] _load_room (res://scripts/main.gd:465)
+       [4] _ready (res://scripts/main.gd:210)
+PASS default Bulldog and six shells
+PASS Q switches actual input to Coil Lance
+PASS charge delays shot rather than instant damage
+PASS release cancels partial charge without spending ammo
+PASS full charge emits exactly one shot and consumes one cell
+PASS Bulldog reload fills correct magazine
+PASS switching preserves each weapon ammunition
+PASS reload cancels charge
+PASS Coil reload uses its own magazine
+PASS legacy rifle and body hidden
+PASS approved gun and hands layer used
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/bulldog_equipped.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:95)
+       [1] frames (res://tools/validate_weapons.gd:32)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/bulldog_body.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:98)
+       [1] frames (res://tools/validate_weapons.gd:32)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/bulldog_gun.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:98)
+       [1] frames (res://tools/validate_weapons.gd:32)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/bulldog_leg_back.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:98)
+       [1] frames (res://tools/validate_weapons.gd:32)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/bulldog_leg_front.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:98)
+       [1] frames (res://tools/validate_weapons.gd:32)
+PASS bulldog layers reconstruct the approved extraction pixel-for-pixel
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/coil_equipped.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:95)
+       [1] frames (res://tools/validate_weapons.gd:32)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/coil_body.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:98)
+       [1] frames (res://tools/validate_weapons.gd:32)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/coil_gun.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:98)
+       [1] frames (res://tools/validate_weapons.gd:32)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/coil_leg_back.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:98)
+       [1] frames (res://tools/validate_weapons.gd:32)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/weapons/coil_leg_front.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+   at: load_from_file (core/io/image.cpp:2780)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tools/validate_weapons.gd:98)
+       [1] frames (res://tools/validate_weapons.gd:32)
+PASS coil layers reconstruct the approved extraction pixel-for-pixel
+PASS no damage before projectile travels
+PASS swept piercing damages three crossed targets exactly once
+PASS piercing does not hit same target twice
+PASS solid wall blocks piercing after earlier targets
+PASS Bulldog emits seven separate pellets
+PASS point blank shotgun capped at three damage per target
+PASS pellet fan has opposite angular spread
+PASS arc arrival slows primary and chained enemy
+PASS chain cannot cross a solid wall
+PASS support orb deals one damage to each link
+PASS combat light pool stays at four regardless of pellet count
+PASS projectile light targets background separately
+PASS all combat lights expire
+PASS F10 support bot equips Arc Weaver
+PASS squad retains two fire support gunners
+PASS Arc Weaver hides original cannon
+PASS real Crawler receives three damage and dies through projectile collision
+PASS room transition cleans weapon squad
+WEAPONS RESULT: 0 failures

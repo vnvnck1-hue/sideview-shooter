@@ -275,6 +275,7 @@ func _ready() -> void:
 func _surface_material() -> ShaderMaterial:
 	var m := Lighting.shader_material("prop_surface")
 	m.set_shader_parameter("rim_width_px", float(Lighting.rim_preset()["width"]) / SCALE)
+	m.set_shader_parameter("dark_actor", 1.0)   # 조종하는 기체 — 암흑 시야에서 캐릭터처럼 실루엣이 남는다
 	return m
 
 
@@ -399,6 +400,10 @@ func activate() -> void:
 			set_controlled(true)
 		_:
 			pass
+
+
+func vision_origin() -> Vector2:
+	return _head_pivot.global_position
 
 
 func set_controlled(active: bool) -> void:

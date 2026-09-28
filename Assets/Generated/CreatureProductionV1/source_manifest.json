@@ -1,0 +1,49 @@
+﻿{
+    "selectedConcepts":  [
+                             {
+                                 "sha256":  "209e184c55c1cd1769652e41857b4b77ae29ecea6765090e9dacc304722e594a",
+                                 "file":  "Deliverables/괴생명체_컨셉_5종/01_ceiling_bell.png",
+                                 "authorization":  "User selected concepts 1, 4, 5 and requested production assets and clips."
+                             },
+                             {
+                                 "sha256":  "5fdcfc916c5feb1060abc52dffabe9bde2abef646fab74eafb4036d889a03e5f",
+                                 "file":  "Deliverables/괴생명체_컨셉_5종/04_ring_spine.png",
+                                 "authorization":  "User selected concepts 1, 4, 5 and requested production assets and clips."
+                             },
+                             {
+                                 "sha256":  "1ef4630190bb707da8eac5b6587588a78c86f8ddc624c5eb66039123f7f6536f",
+                                 "file":  "Deliverables/괴생명체_컨셉_5종/05_seam_ambusher.png",
+                                 "authorization":  "User selected concepts 1, 4, 5 and requested production assets and clips."
+                             }
+                         ],
+    "generatedSourceCount":  6,
+    "pixelResultApproval":  "pending user review",
+    "sourceSheets":  [
+                         {
+                             "sha256":  "d9c24be063be777a1494df2f1d94376652f6a71d2bcfd58db64c59d1ad1ebd3e",
+                             "file":  "sources/CeilingBell_A.png"
+                         },
+                         {
+                             "sha256":  "bdf675f4a0a85211204ddf179d1ab6900712af1bd5932592ddb3176db9264055",
+                             "file":  "sources/CeilingBell_B.png"
+                         },
+                         {
+                             "sha256":  "b6320a5c13b4028f930f2ed9045b6e05931bd038bb3f3b3615e760a3eb098327",
+                             "file":  "sources/RingSpine_A.png"
+                         },
+                         {
+                             "sha256":  "20be99667219ee0961432e4ade80be88307a0b6ac35e8267648faa28cf7f0e73",
+                             "file":  "sources/RingSpine_B.png"
+                         },
+                         {
+                             "sha256":  "490eecb8df08a5fa92692d3465f7e4648f06d3ee2f70f42ef0baa716d8b718a0",
+                             "file":  "sources/SeamAmbusher_A.png"
+                         },
+                         {
+                             "sha256":  "b86923b5429f05d84ba88e13d7611721a7225172f92d8d6167f52088286d41cd",
+                             "file":  "sources/SeamAmbusher_B.png"
+                         }
+                     ],
+    "gameImported":  false,
+    "generator":  "built-in image_gen"
+}

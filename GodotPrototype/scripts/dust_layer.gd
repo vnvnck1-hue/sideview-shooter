@@ -29,17 +29,23 @@ func _process(_delta: float) -> void:
 
 
 func _upload() -> void:
+	upload_lights(_mat, _lamps, _sources)
+
+
+## 램프·light_info() 광원을 셰이더 배열(lights · light_color · light_radius · light_count)로 올린다.
+## 바닥 안개(GroundFog)도 같은 목록·같은 규격을 쓴다.
+static func upload_lights(mat: ShaderMaterial, lamps: Array, sources: Array) -> void:
 	var pos := PackedVector2Array()
 	var col := PackedColorArray()
 	var rad := PackedFloat32Array()
-	for lamp in _lamps:
+	for lamp in lamps:
 		if pos.size() >= MAX_LIGHTS:
 			break
 		var c: Color = lamp.COLOR * lamp.energy_ratio
 		pos.append(lamp.position)
 		col.append(Color(c.r, c.g, c.b, 1.0))          # a=1: 램프 원뿔
 		rad.append(420.0)
-	for src in _sources:
+	for src in sources:
 		if pos.size() >= MAX_LIGHTS:
 			break
 		if not is_instance_valid(src):
@@ -56,7 +62,7 @@ func _upload() -> void:
 		pos.append(Vector2(-99999, -99999))
 		col.append(Color(0, 0, 0, 0))
 		rad.append(1.0)
-	_mat.set_shader_parameter("light_count", n)
-	_mat.set_shader_parameter("lights", pos)
-	_mat.set_shader_parameter("light_color", col)
-	_mat.set_shader_parameter("light_radius", rad)
+	mat.set_shader_parameter("light_count", n)
+	mat.set_shader_parameter("lights", pos)
+	mat.set_shader_parameter("light_color", col)
+	mat.set_shader_parameter("light_radius", rad)

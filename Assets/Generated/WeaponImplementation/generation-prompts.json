@@ -1,0 +1,17 @@
+[
+  {
+    "id": "bulldog_equipped",
+    "file": "P02_bulldog.png",
+    "prompt": "Use case: precise-object-edit / background-extraction. Extract ONLY the complete red hooded mechanic HOLDING THE GUN from the upper-right EQUIPPED panel in the provided concept sheet. Output ONE isolated full-body character on a genuinely transparent background, generous 8% clear margin. Preserve the EXACT equipped illustration, pose, two hand placements, hood shape, head size, boots, stance, all weapon proportions, oversized ivory gun with red twin muzzle, colors, pixel clusters, outline, texture and details. User explicitly wants EXACTLY this appearance in game. Do NOT use the larger standalone gun to redesign the held gun. Do NOT make a new pose. Scale up uniformly if needed, keep original aspect ratio. No floor, no shadow, no labels, no frame, no projectile. Face right. All fingers/hands and full boots included."
+  },
+  {
+    "id": "coil_equipped",
+    "file": "P03_coil_lance.png",
+    "prompt": "Use case: precise-object-edit / background-extraction. Extract ONLY the complete red hooded mechanic HOLDING THE GUN from the upper-right EQUIPPED panel in the provided concept sheet. Output ONE isolated full-body character on a genuinely transparent background, generous 8% clear margin. Preserve EXACT equipped illustration, pose, two hand placements, hood shape, head size, boots, stance, all weapon proportions, three cyan coils and forked muzzle, colors, pixel clusters, outline, texture and details. User explicitly wants EXACTLY this appearance in game. Do NOT use the larger standalone gun to redesign held gun. Do NOT make a new pose. Scale uniformly if needed, keep aspect ratio. No floor, no shadow, no labels, no frame, no projectile. Face right. Full boots and both hands included."
+  },
+  {
+    "id": "arc_weaver_turret",
+    "file": "B04_arc_weaver.png",
+    "prompt": "Use case: precise-object-edit / background-extraction. Extract ONLY the large standalone upper-left ARC WEAVER weapon turret from this sheet, including its entire low round mounting pedestal. Output one isolated right-facing turret on genuinely transparent background, 8% margin. Preserve EXACT original design, shape, cyan capacitor, ivory U-shaped prongs, orange cables, olive receiver, dark base, black outline, stepped pixel clusters, material and all proportions. Not the small robot inset. Remove background completely also inside open U gap. No robot body or legs, no text, no floor shadow, no other panel, no effects. This is the approved concept being preserved for game import, not a redesign."
+  }
+]

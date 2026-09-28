@@ -1,0 +1,38 @@
+[
+	{
+		"actor_fill_materials": 0,
+		"actor_materials": 8,
+		"background_materials": 0,
+		"capture_error": 0,
+		"crt": 2,
+		"foreground_nodes": 1,
+		"scene": "Main"
+	},
+	{
+		"actor_fill_materials": 0,
+		"actor_materials": 16,
+		"background_materials": 0,
+		"capture_error": 0,
+		"crt": 2,
+		"foreground_nodes": 1,
+		"scene": "SpaceLab"
+	},
+	{
+		"actor_fill_materials": 0,
+		"actor_materials": 3,
+		"background_materials": 0,
+		"capture_error": 0,
+		"crt": 2,
+		"foreground_nodes": 0,
+		"scene": "CrawlerDeathLab"
+	},
+	{
+		"actor_fill_materials": 0,
+		"actor_materials": 0,
+		"background_materials": 0,
+		"capture_error": 0,
+		"crt": 2,
+		"foreground_nodes": 0,
+		"scene": "WalkerLab"
+	}
+]

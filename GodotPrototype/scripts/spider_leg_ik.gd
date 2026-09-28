@@ -11,6 +11,7 @@ const EPS := 0.001
 const COMFORT_MARGIN := 6.0
 const COMFORT_WEIGHT := 0.04
 const POINT_NAMES := ["mount", "hip", "knee", "ankle", "toe"]
+const MARGIN_MEMO_MAX := 192     # 다리 하나가 기억하는 margin 질문 수. 넘치면 통째로 비운다 (최근 몇 프레임 분량)
 
 
 static func swing_ease(t: float) -> float:
@@ -84,74 +85,134 @@ static func _signed_margin(distance: float, upper: float, lower: float) -> float
 	return minf(distance - absf(upper - lower) - EPS, upper + lower - EPS - distance)
 
 
-static func _candidate(mount: Vector3, ankle: Vector3, length: float, yaw: float,
-		pitch: float, preferred_yaw: float, rest_pitch: float, upper: float, lower: float) -> Dictionary:
-	var hip := mount + _spherical(length, yaw, pitch)
+## ## 할당 없는 탐색 (2026-09-28 최적화)
+## margin() 한 번이 피치 후보 최대 28개 × 요 후보 ~12개를 평가한다. 예전에는 후보마다 Dictionary 를 만들고
+## (hip 벡터·비용·여유) 배열 리터럴을 돌았는데, 보행 판정이 서브스텝마다 margin 을 수십 번 불러
+## 버그봇 한 대가 프레임당 ~5ms 를 썼다 (버그봇 전투 렉의 65%). 지금은 같은 식을 **같은 순서**로 계산하되
+## 최선 후보를 스칼라로만 들고 다니고, hip 벡터는 마지막에 한 번만 만든다. 결과는 비트 단위로 같다
+## (tools/trace_determinism.gd 로 전후 궤적을 비교).
+static var _c_margin := 0.0
+static var _h_yaw := 0.0
+static var _h_margin := 0.0
+static var _b_yaw := 0.0
+static var _b_pitch := 0.0
+static var _b_margin := 0.0
+static var _b_cost := 0.0
+static var _yaw_buf := _make_yaw_buf()     # 요 후보 버퍼 (최대 4 + 4×2 = 12)
+
+
+static func _make_yaw_buf() -> PackedFloat64Array:
+	var b := PackedFloat64Array()
+	b.resize(12)
+	return b
+
+
+## 한 후보의 비용. 여유(clearance)는 _c_margin 으로 돌려준다.
+## d* = ankle - mount (float32 Vector3 성분 그대로), base = |d|² + length².
+static func _cost(dx: float, dy: float, dz: float, base: float, length: float, yaw: float,
+		sin_p: float, cos_p: float, preferred_yaw: float, pitch_cost: float, upper: float, lower: float,
+		reserve: float) -> float:
 	# Godot Vector3는 float32다. 거의 같은 후보의 비용은 float64 스칼라로 비교해야
 	# 완전 신전 부근의 반올림 오차가 후보 순서를 뒤집지 않는다.
-	var offset := ankle - mount
-	var dx: float = offset.x
-	var dy: float = offset.y
-	var dz: float = offset.z
-	var dot := dy * sin(pitch) + cos(pitch) * (dx * cos(yaw) + dz * sin(yaw))
-	var distance := sqrt(maxf(dx * dx + dy * dy + dz * dz + length * length - 2.0 * length * dot, 0.0))
+	var dot := dy * sin_p + cos_p * (dx * cos(yaw) + dz * sin(yaw))
+	var distance := sqrt(maxf(base - 2.0 * length * dot, 0.0))
 	var clearance := _signed_margin(distance, upper, lower)
-	var angular_cost := pow(wrapf(yaw - preferred_yaw, -PI, PI), 2.0) + pow(pitch - rest_pitch, 2.0) * 1.5
+	var angular_cost := pow(wrapf(yaw - preferred_yaw, -PI, PI), 2.0) + pitch_cost
+	_c_margin = clearance
 	# 닿는 해를 우선하고 그 안에서 원래 관절 방향에 가장 가까운 해를 선택한다.
 	# 여유가 있을 때 완전 신전/접힘에 붙지 않아 무릎의 sqrt 특이점을 예방한다.
-	var reserve := minf(COMFORT_MARGIN, minf(upper, lower) * 0.5)
-	var cost := angular_cost + pow(maxf(-clearance, 0.0), 2.0) * 100.0 + pow(maxf(reserve - clearance, 0.0), 2.0) * COMFORT_WEIGHT
-	return {"hip": hip, "yaw": yaw, "pitch": pitch, "margin": clearance, "cost": cost}
+	return angular_cost + pow(maxf(-clearance, 0.0), 2.0) * 100.0 + pow(maxf(reserve - clearance, 0.0), 2.0) * COMFORT_WEIGHT
 
 
-static func _hip_at_pitch(mount: Vector3, ankle: Vector3, length: float, pitch: float,
-		rest_yaw: float, preferred_yaw: float, rest_pitch: float, upper: float, lower: float,
-		yaw_limit: float = YAW_LIMIT) -> Dictionary:
+## 한 피치에서 가장 좋은 요를 찾는다. 반환값 = 비용, 요·여유는 _h_yaw · _h_margin.
+## 후보 평가 순서(선호 요 → 하한 → 상한 → 목표 → 구면 교점 → 연속 최솟값)와 엄격한 < 비교는 예전 그대로다.
+static func _hip_at_pitch_cost(dx: float, dy: float, dz: float, base: float, horizontal: float,
+		target_yaw: float, length: float, pitch: float, rest_yaw: float, preferred_yaw: float,
+		rest_pitch: float, upper: float, lower: float, yaw_limit: float) -> float:
 	var yaw_min := rest_yaw - yaw_limit
 	var yaw_max := rest_yaw + yaw_limit
-	var best := _candidate(mount, ankle, length, preferred_yaw, pitch, preferred_yaw, rest_pitch, upper, lower)
-	var offset := ankle - mount
-	var target_yaw := rest_yaw + wrapf(atan2(offset.z, offset.x) - rest_yaw, -PI, PI)
-	var horizontal := Vector2(offset.x, offset.z).length()
-	var radius := length * cos(pitch)
-	var vertical := offset.y - length * sin(pitch)
-	var yaw_candidates := [yaw_min, yaw_max, clampf(target_yaw, yaw_min, yaw_max)]
+	var sin_p := sin(pitch)
+	var cos_p := cos(pitch)
+	var pitch_cost := pow(pitch - rest_pitch, 2.0) * 1.5
+	var reserve := minf(COMFORT_MARGIN, minf(upper, lower) * 0.5)
+	var radius := length * cos_p
+	var vertical := dy - length * sin_p
+	# 요 후보를 평가 순서대로 모은다: 선호 요 → 하한 → 상한 → 목표 → 구면 교점.
+	# (배열은 정적 버퍼를 다시 쓴다 — 후보마다 배열·사전을 만들지 않는다)
+	_yaw_buf[0] = preferred_yaw
+	_yaw_buf[1] = yaw_min
+	_yaw_buf[2] = yaw_max
+	_yaw_buf[3] = clampf(target_yaw, yaw_min, yaw_max)
+	var n := 4
 	if horizontal * radius > EPS:
 		# 두 마디의 최소/최대 도달 구면과 coxa 원의 교점. 0.02 여유로 특이점을 피한다.
-		var reserve := minf(COMFORT_MARGIN, minf(upper, lower) * 0.5)
-		for reach in [absf(upper - lower) + 0.02, upper + lower - 0.02,
-			absf(upper - lower) + reserve + EPS, upper + lower - reserve - EPS]:
+		for ri in 4:
+			var reach: float
+			match ri:
+				0: reach = absf(upper - lower) + 0.02
+				1: reach = upper + lower - 0.02
+				2: reach = absf(upper - lower) + reserve + EPS
+				_: reach = upper + lower - reserve - EPS
 			var cosine: float = (horizontal * horizontal + radius * radius + vertical * vertical - reach * reach) / (2.0 * horizontal * radius)
 			if cosine < -1.0 or cosine > 1.0:
 				continue
 			var spread := acos(clampf(cosine, -1.0, 1.0))
-			for sign_value in [-1.0, 1.0]:
-				var yaw := rest_yaw + wrapf(target_yaw + spread * sign_value - rest_yaw, -PI, PI)
-				yaw_candidates.append(clampf(yaw, yaw_min, yaw_max))
-	for yaw in yaw_candidates:
-		var candidate := _candidate(mount, ankle, length, float(yaw), pitch, preferred_yaw, rest_pitch, upper, lower)
-		if float(candidate["cost"]) < float(best["cost"]):
-			best = candidate
+			_yaw_buf[n] = clampf(rest_yaw + wrapf(target_yaw + spread * -1.0 - rest_yaw, -PI, PI), yaw_min, yaw_max)
+			_yaw_buf[n + 1] = clampf(rest_yaw + wrapf(target_yaw + spread * 1.0 - rest_yaw, -PI, PI), yaw_min, yaw_max)
+			n += 2
+	var best_cost := INF
+	var best_yaw := 0.0
+	var best_margin := 0.0
+	var two_length := 2.0 * length
+	for i in n:
+		var yaw: float = _yaw_buf[i]
+		# ── 후보 비용 (예전 _candidate 와 같은 식, 같은 순서) ──
+		# Godot Vector3는 float32다. 거의 같은 후보의 비용은 float64 스칼라로 비교해야
+		# 완전 신전 부근의 반올림 오차가 후보 순서를 뒤집지 않는다.
+		var dot := dy * sin_p + cos_p * (dx * cos(yaw) + dz * sin(yaw))
+		var distance := sqrt(maxf(base - two_length * dot, 0.0))
+		var clearance := minf(distance - absf(upper - lower) - EPS, upper + lower - EPS - distance)
+		# 닿는 해를 우선하고 그 안에서 원래 관절 방향에 가장 가까운 해를 선택한다.
+		# 여유가 있을 때 완전 신전/접힘에 붙지 않아 무릎의 sqrt 특이점을 예방한다.
+		var cost := pow(wrapf(yaw - preferred_yaw, -PI, PI), 2.0) + pitch_cost + pow(maxf(-clearance, 0.0), 2.0) * 100.0 + pow(maxf(reserve - clearance, 0.0), 2.0) * COMFORT_WEIGHT
+		# i == 0 은 예전의 "best 초기값" 이다 (그다음부터 엄격한 < 로만 바뀐다)
+		if i == 0 or cost < best_cost:
+			best_cost = cost
+			best_yaw = yaw
+			best_margin = clearance
 	# 구면 교점과 선호 방향 사이에도 더 좋은 해가 있다. 이 연속 최솟값을 놓치면
 	# 도달 경계에서 두 이산 후보가 교대하며 coxa가 작은 입력에도 갑자기 뛴다.
-	var low := minf(float(best["yaw"]), preferred_yaw)
-	var high := maxf(float(best["yaw"]), preferred_yaw)
+	var low := minf(best_yaw, preferred_yaw)
+	var high := maxf(best_yaw, preferred_yaw)
 	if high - low > 0.00001:
 		var minimum := absf(upper - lower) + EPS
 		var maximum := upper + lower - EPS
 		var product := horizontal * radius
 		var constant := horizontal * horizontal + radius * radius + vertical * vertical
 		if _yaw_derivative(low, preferred_yaw, target_yaw, product, constant, minimum, maximum) <= 0.0 and _yaw_derivative(high, preferred_yaw, target_yaw, product, constant, minimum, maximum) >= 0.0:
+			# _yaw_derivative 를 풀어 쓴 이분 탐색 (식·순서 동일)
+			var two_product := 2.0 * product
+			var d_reserve := minf(COMFORT_MARGIN, (maximum - minimum) * 0.25)
+			var comfort_lo := minimum + d_reserve
+			var comfort_hi := maximum - d_reserve
 			for _iteration in range(14):
 				var middle := (low + high) * 0.5
-				if _yaw_derivative(middle, preferred_yaw, target_yaw, product, constant, minimum, maximum) < 0.0:
+				var dd := sqrt(maxf(constant - two_product * cos(middle - target_yaw), EPS * EPS))
+				var outside := dd - clampf(dd, minimum, maximum)
+				var comfort := dd - clampf(dd, comfort_lo, comfort_hi)
+				if 2.0 * (middle - preferred_yaw) + (200.0 * outside + 2.0 * COMFORT_WEIGHT * comfort) * product * sin(middle - target_yaw) / dd < 0.0:
 					low = middle
 				else:
 					high = middle
-			var candidate := _candidate(mount, ankle, length, (low + high) * 0.5, pitch, preferred_yaw, rest_pitch, upper, lower)
-			if float(candidate["cost"]) < float(best["cost"]):
-				best = candidate
-	return best
+			var mid_yaw := (low + high) * 0.5
+			var c := _cost(dx, dy, dz, base, length, mid_yaw, sin_p, cos_p, preferred_yaw, pitch_cost, upper, lower, reserve)
+			if c < best_cost:
+				best_cost = c
+				best_yaw = mid_yaw
+				best_margin = _c_margin
+	_h_yaw = best_yaw
+	_h_margin = best_margin
+	return best_cost
 
 
 static func _yaw_derivative(yaw: float, preferred: float, target: float, product: float,
@@ -163,8 +224,12 @@ static func _yaw_derivative(yaw: float, preferred: float, target: float, product
 	return 2.0 * (yaw - preferred) + (200.0 * outside + 2.0 * COMFORT_WEIGHT * comfort) * product * sin(yaw - target) / distance
 
 
-static func _choose_hip(state: Dictionary, mount: Vector3, rest_hip: Vector3, ankle: Vector3) -> Dictionary:
+## 최선의 coxa 자세를 스칼라로 찾는다 → _b_yaw · _b_pitch · _b_margin · _b_cost. 반환값 = rest_yaw.
+static func _choose_hip_scalar(state: Dictionary, mount: Vector3, rest_hip: Vector3, ankle: Vector3) -> float:
 	var lengths: Array = state["lengths"]
+	var length: float = lengths[0]
+	var upper: float = lengths[1]
+	var lower: float = lengths[2]
 	var original := rest_hip - mount
 	var rest_yaw := atan2(original.z, original.x)
 	var rest_pitch := atan2(original.y, Vector2(original.x, original.z).length())
@@ -179,29 +244,68 @@ static func _choose_hip(state: Dictionary, mount: Vector3, rest_hip: Vector3, an
 	var target_yaw := atan2(toward.z, toward.x)
 	# Coxa가 보폭의 앞뒤 방향을 먼저 따라간다. 닿지 않을 때만 별도 후보가 이 방향을 보정한다.
 	var preferred_yaw := rest_yaw + clampf(wrapf(target_yaw - rest_yaw, -PI, PI) * 0.72 + yaw_bias, -yaw_limit, yaw_limit)
-	var best := _hip_at_pitch(mount, ankle, lengths[0], preferred_pitch, rest_yaw, preferred_yaw, preferred_pitch, lengths[1], lengths[2], yaw_limit)
-	if float(best["margin"]) >= minf(COMFORT_MARGIN, minf(float(lengths[1]), float(lengths[2])) * 0.5) and absf(float(best["yaw"]) - preferred_yaw) < 0.0001:
-		best["yaw_delta"] = float(best["yaw"]) - rest_yaw
-		return best
+	# 피치와 무관한 값은 한 번만 계산한다 — 예전엔 후보마다 다시 뺐지만 입력이 같아 값도 같다.
+	var dx: float = toward.x
+	var dy: float = toward.y
+	var dz: float = toward.z
+	var base := dx * dx + dy * dy + dz * dz + length * length
+	var horizontal := Vector2(toward.x, toward.z).length()
+	var hip_target_yaw := rest_yaw + wrapf(atan2(toward.z, toward.x) - rest_yaw, -PI, PI)
+	var best_cost := _hip_at_pitch_cost(dx, dy, dz, base, horizontal, hip_target_yaw, length, preferred_pitch,
+		rest_yaw, preferred_yaw, preferred_pitch, upper, lower, yaw_limit)
+	var best_yaw := _h_yaw
+	var best_pitch := preferred_pitch
+	var best_margin := _h_margin
+	if best_margin >= minf(COMFORT_MARGIN, minf(upper, lower) * 0.5) and absf(best_yaw - preferred_yaw) < 0.0001:
+		_b_yaw = best_yaw
+		_b_pitch = best_pitch
+		_b_margin = best_margin
+		_b_cost = best_cost
+		return rest_yaw
 	# 13 + 7 회면 최종 정밀도가 관절 범위의 1/1536 (60도 범위에서 0.04도) 이다.
 	# 17 + 11 회는 그림에 드러나지도 않는 자릿수를 위해 IK 를 40회 가까이 돌렸다.
+	# 가지치기: 한 피치의 어떤 후보도 비용이 그 피치 항(1.5·(pitch−rest)²)보다 작을 수 없다 — 나머지 항은 모두 0 이상이고
+	# 0 이상끼리의 부동소수 덧셈은 줄어들지 않는다. 그 항만으로 이미 최선 이상이면 엄격한 < 비교를 절대 통과하지 못하므로
+	# 그 피치는 풀지 않고 건너뛴다. (결과는 전부 풀었을 때와 같다)
 	for i in range(13):
 		var pitch := lerpf(pitch_min, pitch_max, float(i) / 12.0)
-		var candidate := _hip_at_pitch(mount, ankle, lengths[0], pitch, rest_yaw, preferred_yaw, preferred_pitch, lengths[1], lengths[2], yaw_limit)
-		if float(candidate["cost"]) < float(best["cost"]):
-			best = candidate
+		if pow(pitch - preferred_pitch, 2.0) * 1.5 >= best_cost:
+			continue
+		var c := _hip_at_pitch_cost(dx, dy, dz, base, horizontal, hip_target_yaw, length, pitch,
+			rest_yaw, preferred_yaw, preferred_pitch, upper, lower, yaw_limit)
+		if c < best_cost:
+			best_cost = c
+			best_yaw = _h_yaw
+			best_pitch = pitch
+			best_margin = _h_margin
 	# 피치 후보 사이를 더 잘게 탐색하여 후보 전환에 따른 각도 차이를 줄인다.
 	var radius := (pitch_max - pitch_min) / 12.0
 	for _pass in range(7):
-		var center: float = best["pitch"]
-		for direction in [-1.0, 1.0]:
-			var pitch := clampf(center + radius * direction, pitch_min, pitch_max)
-			var candidate := _hip_at_pitch(mount, ankle, lengths[0], pitch, rest_yaw, preferred_yaw, preferred_pitch, lengths[1], lengths[2], yaw_limit)
-			if float(candidate["cost"]) < float(best["cost"]):
-				best = candidate
+		var center := best_pitch
+		for di in 2:
+			var pitch := clampf(center + radius * (-1.0 if di == 0 else 1.0), pitch_min, pitch_max)
+			if pow(pitch - preferred_pitch, 2.0) * 1.5 >= best_cost:
+				continue
+			var c := _hip_at_pitch_cost(dx, dy, dz, base, horizontal, hip_target_yaw, length, pitch,
+				rest_yaw, preferred_yaw, preferred_pitch, upper, lower, yaw_limit)
+			if c < best_cost:
+				best_cost = c
+				best_yaw = _h_yaw
+				best_pitch = pitch
+				best_margin = _h_margin
 		radius *= 0.5
-	best["yaw_delta"] = float(best["yaw"]) - rest_yaw
-	return best
+	_b_yaw = best_yaw
+	_b_pitch = best_pitch
+	_b_margin = best_margin
+	_b_cost = best_cost
+	return rest_yaw
+
+
+static func _choose_hip(state: Dictionary, mount: Vector3, rest_hip: Vector3, ankle: Vector3) -> Dictionary:
+	var rest_yaw := _choose_hip_scalar(state, mount, rest_hip, ankle)
+	var length: float = (state["lengths"] as Array)[0]
+	return {"hip": mount + _spherical(length, _b_yaw, _b_pitch), "yaw": _b_yaw, "pitch": _b_pitch,
+		"margin": _b_margin, "cost": _b_cost, "yaw_delta": _b_yaw - rest_yaw}
 
 
 static func _config_angle(state: Dictionary, key: String, fallback: float, minimum: float, maximum: float) -> float:
@@ -232,7 +336,30 @@ static func _configuration(state: Dictionary, body_pos: Vector2, body_angle: flo
 static func margin(state: Dictionary, body_pos: Vector2, body_angle: float, contact: Vector2) -> float:
 	if not bool(state.get("valid", false)):
 		return -INF
-	return float(_configuration(state, body_pos, body_angle, contact, 0.0)["margin"])
+	# 같은 입력의 질문이 한 프레임 안팎에서 자주 되풀이된다 (지지 판정의 "이전 몸" = 직전 서브스텝의 "지금 몸",
+	# 반동 이분 탐색, 착지 확인 — 실측 호출의 ~40%). margin 은 입력만의 순수 함수이므로 입력 전부(관절 설정 각 포함)를
+	# 키로 기억해 둔다. 값이 바뀔 여지가 없으니 결과는 그대로다.
+	var config: Dictionary = state.get("config", {})
+	var key := [body_pos, body_angle, contact, config.get("yaw_limit"), config.get("pitch_limit"),
+		config.get("coxa_yaw_bias"), config.get("coxa_pitch_bias")]
+	var memo: Dictionary = state.get("_margin_memo", {})
+	if memo.is_empty():
+		state["_margin_memo"] = memo
+	var hit = memo.get(key)
+	if hit != null:
+		return hit
+	if memo.size() >= MARGIN_MEMO_MAX:
+		memo.clear()
+	# _configuration(swing 0) 과 같은 입력으로 스칼라 탐색만 — 사전·hip 벡터를 만들지 않는다.
+	var rest: Array = state["rest3d"]
+	var translation := Vector3(body_pos.x, body_pos.y, 0.0)
+	var mount := _pitch(rest[0], body_angle) + translation
+	var rest_hip := _pitch(rest[1], body_angle) + translation
+	var foot: Vector3 = state["foot_vector"]
+	var ankle := inverse(contact, float(state["rest_z"])) - foot
+	_choose_hip_scalar(state, mount, rest_hip, ankle)
+	memo[key] = _b_margin
+	return _b_margin
 
 
 static func solve(state: Dictionary, body_pos: Vector2, body_angle: float, contact: Vector2, swing: float = 0.0) -> Dictionary:

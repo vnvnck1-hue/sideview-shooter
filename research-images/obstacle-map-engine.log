@@ -1,0 +1,264 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SCRIPT ERROR: Compile Error: Identifier not found: Audio
+   at: GDScript::reload (res://scripts/crawler.gd:736)
+SCRIPT ERROR: Compile Error: Identifier not found: Audio
+   at: GDScript::reload (res://scripts/obstacle_prop.gd:107)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/room.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://tools/validate_map.gd:0)
+ERROR: Failed to load script "res://tools/validate_map.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+=== 방 27개 ===
+
+[airlock] 정비 구역 › 에어록 (Airlock)  theme=workshop  7×5셀 (896×640 px)  천장 -104  몬스터 안전(max 0)
+┌─────┐
+│·····│
+│·····│
+│·····│
+└─────┘
+
+[corr_west] 정비 구역 › 서쪽 정비 통로 (West Passage)  theme=corridor  18×4셀 (2304×512 px)  천장 24  몬스터 적음(max 3)
+┌────────────────┐
+│················│
+│················│
+└────────────────┘
+
+[workshop] 정비 구역 › 작업실 (Workshop)  theme=workshop  14×7셀 (1792×896 px)  천장 -360  몬스터 적음(max 4)
+   ┌──────┐   
+   │······│   
+┌──┘······└──┐
+│············│
+│············│
+│············│
+└────────────┘
+
+[hall] 정비 구역 › 대형 정비 홀 (Assembly Hall)  theme=workshop  24×8셀 (3072×1024 px)  천장 -488  몬스터 위험(max 10)
+     ┌────────────┐     
+     │············│     
+     │············│     
+┌────┘············└────┐
+│······················│
+│······················│
+│······················│
+└──────────────────────┘
+
+[corr_mid] 정비 구역 › 짧은 연결 통로 (Short Link)  theme=corridor  5×4셀 (640×512 px)  천장 24  몬스터 안전(max 0)
+┌───┐
+│···│
+│···│
+└───┘
+
+[hangar] 정비 구역 › 격납고 (Hangar)  theme=workshop  32×9셀 (4096×1152 px)  천장 -616  몬스터 위험(max 14)
+┌────┐                          
+│····└─────┐                    
+│··········└───────┐            
+│··················└─────┐      
+│························└─────┐
+│······························│
+│······························│
+│······························│
+└──────────────────────────────┘
+
+[storage] 정비 구역 › 창고 (Storage)  theme=workshop  13×9셀 (1664×1152 px)  천장 -616  몬스터 적음(max 3)
+         ┌──┐
+         │··│
+         │··│
+         │··│
+         │··│
+┌────────┘··│
+│···········│
+│···········│
+└───────────┘
+
+[cable_run] 전력 구역 › 케이블 덕트 (Cable Run)  theme=power_relay  16×4셀 (2048×512 px)  천장 24  몬스터 적음(max 3)
+┌──────────────┐
+│··············│
+│··············│
+└──────────────┘
+
+[power_relay] 전력 구역 › 전력 릴레이·축전실 (Power Relay Room)  theme=power_relay  14×8셀 (1792×1024 px)  천장 -488  몬스터 적음(max 5)
+┌────────────┐
+│············│
+│············│
+│············│
+│············│
+│············│
+│············│
+└────────────┘
+
+[capacitor_vault] 전력 구역 › 축전기 저장고 (Capacitor Vault)  theme=power_relay  14×9셀 (1792×1152 px)  천장 -616  몬스터 위험(max 9)
+┌────┐        
+│····│        
+│····│        
+│····│        
+│····└───────┐
+│············│
+│············│
+│············│
+└────────────┘
+
+[generator] 전력 구역 › 비상 발전실 (Emergency Generator)  theme=power_relay  9×5셀 (1152×640 px)  천장 -104  몬스터 안전(max 0)
+┌───────┐
+│·······│
+│·······│
+│·······│
+└───────┘
+
+[quarters_corr] 승무원 구역 › 숙소 복도 (Quarters Corridor)  theme=corridor  14×4셀 (1792×512 px)  천장 24  몬스터 적음(max 3)
+┌────────────┐
+│············│
+│············│
+└────────────┘
+
+[bunk_a] 승무원 구역 › 침실 A (Bunk Room A)  theme=crewquarters  9×5셀 (1152×640 px)  천장 -104  몬스터 안전(max 0)
+┌───────┐
+│·······│
+│·······│
+│·······│
+└───────┘
+
+[bunk_b] 승무원 구역 › 침실 B (Bunk Room B)  theme=crewquarters  14×6셀 (1792×768 px)  천장 -232  몬스터 적음(max 3)
+┌──┐      ┌──┐
+│··│      │··│
+│··└──────┘··│
+│············│
+│············│
+└────────────┘
+
+[mess_hall] 승무원 구역 › 식당·휴게실 (Mess Hall)  theme=crewquarters  18×7셀 (2304×896 px)  천장 -360  몬스터 위험(max 10)
+    ┌────────┐    
+    │········│    
+┌───┘········└───┐
+│················│
+│················│
+│················│
+└────────────────┘
+
+[wash_room] 승무원 구역 › 세면실 (Wash Room)  theme=crewquarters  7×4셀 (896×512 px)  천장 24  몬스터 적음(max 2)
+┌─────┐
+│·····│
+│·····│
+└─────┘
+
+[hydro_lock] 수경재배 구역 › 재배실 전실 (Hydroponics Vestibule)  theme=hydroponics  7×5셀 (896×640 px)  천장 -104  몬스터 안전(max 0)
+┌─────┐
+│·····│
+│·····│
+│·····│
+└─────┘
+
+[greenhouse] 수경재배 구역 › 대형 재배실 (Greenhouse)  theme=hydroponics  30×9셀 (3840×1152 px)  천장 -616  몬스터 위험(max 12)
+            ┌────┐            
+            │····│            
+        ┌───┘····└───┐        
+    ┌───┘············└───┐    
+┌───┘····················└───┐
+│····························│
+│····························│
+│····························│
+└────────────────────────────┘
+
+[pump_corr] 수경재배 구역 › 급수 통로 (Pump Corridor)  theme=corridor  15×6셀 (1920×768 px)  천장 -232  몬스터 적음(max 3)
+     ┌──┐      
+     │··│      
+┌────┘··└─────┐
+│·············│
+│·············│
+└─────────────┘
+
+[tank_room] 수경재배 구역 › 저수조실 (Reservoir)  theme=hydroponics  12×6셀 (1536×768 px)  천장 -232  몬스터 적음(max 3)
+┌──────────┐
+│··········│
+│··········│
+│··········│
+│··········│
+└──────────┘
+
+[nursery] 수경재배 구역 › 육묘실 (Nursery)  theme=hydroponics  9×5셀 (1152×640 px)  천장 -104  몬스터 안전(max 0)
+┌───────┐
+│·······│
+│·······│
+│·······│
+└───────┘
+
+[decon_lock] 연구 구역 › 멸균 전실 (Decon Vestibule)  theme=research_isolation  11×5셀 (1408×640 px)  천장 -104  몬스터 안전(max 0)
+┌─────────┐
+│·········│
+│·········│
+│·········│
+└─────────┘
+
+[isolation_ward] 연구 구역 › 격리 병동 (Isolation Ward)  theme=research_isolation  16×7셀 (2048×896 px)  천장 -360  몬스터 적음(max 5)
+    ┌──────┐    
+    │······│    
+┌───┘······└───┐
+│··············│
+│··············│
+│··············│
+└──────────────┘
+
+[research_corr] 연구 구역 › 연구 통로 (Research Passage)  theme=corridor  16×4셀 (2048×512 px)  천장 24  몬스터 적음(max 3)
+┌──────────────┐
+│··············│
+│··············│
+└──────────────┘
+
+[analysis_lab] 연구 구역 › 검체 분석실 (Specimen Analysis)  theme=research_analysis  22×8셀 (2816×1024 px)  천장 -488  몬스터 위험(max 11)
+     ┌──────────┐     
+     │··········│     
+     │··········│     
+┌────┘··········└────┐
+│····················│
+│····················│
+│····················│
+└────────────────────┘
+
+[cold_vault] 연구 구역 › 검체 저온고 (Cold Vault)  theme=research_analysis  12×9셀 (1536×1152 px)  천장 -616  몬스터 위험(max 8)
+┌───┐       
+│···│       
+│···│       
+│···│       
+│···└──────┐
+│··········│
+│··········│
+│··········│
+└──────────┘
+
+[diagnostics] 연구 구역 › 진단 관제실 (Diagnostics Control)  theme=research_diagnostics  15×6셀 (1920×768 px)  천장 -232  몬스터 위험(max 6)
+┌─────────────┐
+│·············│
+│·············│
+│·············│
+│·············│
+└─────────────┘
+
+연결: airlock 에서 27/27 방 도달
+
+지도: 방 27개 · 5줄 · 가로 116셀
+
+대사: 인물 5명, 배치 6명, 플래그 11개
+
+=== 요약 ===
+테마별 방 수: { "workshop": 5, "corridor": 5, "power_relay": 4, "crewquarters": 4, "hydroponics": 4, "research_isolation": 2, "research_analysis": 2, "research_diagnostics": 1 }
+몬스터 밀도: { "안전": 7, "적음": 12, "위험": 8 }
+경고: airlock: 프랍 workshop_locker_game_scale 가 닫힌 왼쪽 측벽문 위에 있다
+경고: airlock: 바닥 프랍 workshop_armchair_game_scale x=610 와 workshop_locker_game_scale 가 겹친다
+경고: workshop: 바닥 프랍 workshop_armchair_game_scale x=1500 와 sentry 가 겹친다
+경고: hall: 바닥 프랍 workshop_locker_game_scale x=330 와 obstacle:barricade 가 겹친다
+경고: hall: 바닥 프랍 workshop_workbench_game_scale x=900 와 obstacle:cable_reel 가 겹친다
+경고: hall: 바닥 프랍 walker x=1240 와 obstacle:cable_reel 가 겹친다
+경고: hall: 바닥 프랍 workshop_armchair_game_scale x=1500 와 obstacle:supply_crate 가 겹친다
+경고: hall: 바닥 프랍 workshop_workbench_game_scale x=1900 와 obstacle:supply_crate 가 겹친다
+경고: hall: 바닥 프랍 workshop_workbench_game_scale x=1900 와 obstacle:rubble_block 가 겹친다
+경고: hall: 바닥 프랍 workshop_locker_game_scale x=2800 와 obstacle:gas_cylinder 가 겹친다
+경고: hangar: 바닥 프랍 sentry x=3495 와 workshop_workbench_game_scale 가 겹친다
+경고: hangar: 바닥 프랍 workshop_locker_game_scale x=3800 와 sentry 가 겹친다
+경고: storage: 바닥 프랍 workshop_workbench_game_scale x=900 와 obstacle:supply_crate 가 겹친다
+경고: storage: 바닥 프랍 workshop_workbench_game_scale x=900 와 obstacle:gas_cylinder 가 겹친다
+경고: storage: 바닥 프랍 workshop_locker_game_scale x=1345 와 obstacle:gas_cylinder 가 겹친다
+경고: storage: 프랍 workshop_locker_game_scale 가 닫힌 오른쪽 측벽문 위에 있다
+오류 0 · 경고 16
+ERROR: Failed to read the root certificate store.
+   at: get_system_ca_certificates (platform/windows/os_windows.cpp:2582)

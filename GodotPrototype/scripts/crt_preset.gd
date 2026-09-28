@@ -38,9 +38,9 @@ const PRESETS := [
 		"desc": "약한 굽힘 · 둥근 모서리 · 선명한 주사선 · 애퍼처 그릴(트리니트론) · 밝은 곳 헐레이션 — 업소용 캐비닛 모니터",
 		"params": {
 			"curvature": 0.03, "corner_radius": 0.03, "vignette": 0.24,
-			"scanline_strength": 0.36, "scanline_count": 450.0, "scanline_sharpness": 1.6,
-			"mask_type": 1, "mask_strength": 0.22, "mask_px": 3.0,
-			"aberration": 0.6, "halation": 0.14,
+			"scanline_strength": 0.22, "scanline_count": 450.0, "scanline_sharpness": 1.6,
+			"mask_type": 1, "mask_strength": 0.10, "mask_px": 3.0,
+			"aberration": 0.2, "halation": 0.10,
 			"brightness": 1.18, "contrast": 1.06, "saturation": 1.08,
 		},
 	},

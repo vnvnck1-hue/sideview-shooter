@@ -101,6 +101,15 @@ var power := 1.0
 ## 궤적·심·탄두 두께 배율 — 위력과 따로 둔다 (센트리건은 탄은 굵게, 파편·넉백은 위력만큼만).
 var width_scale := 1.0
 var impact_kind: Impact = Impact.WALL
+## 새 무기용 색 (알파 0 = 기존 붉은 소총 팔레트 그대로). 궤적·탄두·섬광·링·라이트·불꽃·잔상이 이 색으로 간다.
+var tint := Color(0, 0, 0, 0)
+## 탄착 라이트를 켤지. 산탄 7발이 전부 켜면 한 아이템에 라이트가 15개를 넘어 순서가 뒤섞인다 — 몇 발만 켠다.
+var light_enabled := true
+## 탄착 소리를 낼지 (산탄은 한 번만)
+var impact_sound := true
+var _res_hot := RESIDUE_COLOR_HOT
+var _res_mid := RESIDUE_COLOR_MID
+var _res_cold := RESIDUE_COLOR_COLD
 var start := Vector2.ZERO
 var target := Vector2.ZERO
 var floor_y := 100000.0        # 파편이 튕기는 바닥 (Main 이 넣어준다)
@@ -124,6 +133,15 @@ var _smoke_life := 1.0
 var _smoke_delay := 0.0
 var _smoke_t := 0.0
 static var _smoke_shader: Shader     # 공유
+static var _trail_grad: Gradient     # 궤적 그라데이션 (값이 고정이라 모든 탄이 공유 — 예전엔 탄마다 새로 만들었다)
+
+
+static func _trail_gradient() -> Gradient:
+	if _trail_grad == null:
+		_trail_grad = Gradient.new()
+		_trail_grad.set_color(0, Color(Lighting.TRACER, 0.0))
+		_trail_grad.set_color(1, Color(1.0, 0.5, 0.35, 1.0))
+	return _trail_grad
 
 
 func setup(from: Vector2, to: Vector2) -> void:
@@ -140,12 +158,18 @@ func _ready() -> void:
 	_trail.default_color = Lighting.TRACER
 	_trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	_trail.end_cap_mode = Line2D.LINE_CAP_ROUND
-	var grad := Gradient.new()
-	grad.set_color(0, Color(Lighting.TRACER, 0.0))
-	grad.set_color(1, Color(1.0, 0.5, 0.35, 1.0))
-	_trail.gradient = grad
+	_trail.gradient = _trail_gradient()
 	_trail.modulate = Lighting.RED_EMISSIVE_SOFT      # 붉은 발광 → 글로우
 	add_child(_trail)
+	if tint.a > 0.0:
+		var g := Gradient.new()
+		g.set_color(0, Color(tint, 0.0))
+		g.set_color(1, tint.lightened(0.35))
+		_trail.gradient = g
+		_trail.modulate = Color(1.6, 1.6, 1.6)
+		_res_hot = tint.lightened(0.45)
+		_res_mid = tint
+		_res_cold = tint.darkened(0.6)
 
 	_core = Line2D.new()
 	_core.width = 2.5 * width_scale
@@ -153,6 +177,9 @@ func _ready() -> void:
 	_core.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	_core.end_cap_mode = Line2D.LINE_CAP_ROUND
 	_core.modulate = Lighting.RED_EMISSIVE
+	if tint.a > 0.0:
+		_core.default_color = tint.lightened(0.75)
+		_core.modulate = Color(2.0, 2.0, 2.0)
 	add_child(_core)
 
 	_head = ColorRect.new()
@@ -160,6 +187,9 @@ func _ready() -> void:
 	_head.size = Vector2(12, 12) * width_scale
 	_head.pivot_offset = _head.size * 0.5
 	_head.modulate = Lighting.RED_EMISSIVE
+	if tint.a > 0.0:
+		_head.color = tint.lightened(0.8)
+		_head.modulate = Color(2.2, 2.2, 2.2)
 	add_child(_head)
 
 	_update_trail(start)
@@ -191,9 +221,13 @@ func _process_impact(delta: float) -> void:
 
 	# 궤적 즉시 페이드
 	var f := 1.0 - clampf(_impact_t / TRAIL_FADE, 0.0, 1.0)
-	_trail.modulate.a = f
-	_core.modulate.a = f * f
-	_trail.width = TRAIL_W * width_scale * (0.4 + 0.6 * f)
+	if _trail.visible:
+		_trail.modulate.a = f
+		_core.modulate.a = f * f
+		_trail.width = TRAIL_W * width_scale * (0.4 + 0.6 * f)
+		# 완전히 투명해진 뒤에는 그리지도 갱신하지도 않는다 (알파 0 이라 보이는 것은 같다)
+		_trail.visible = f > 0.0
+		_core.visible = f > 0.0
 
 	# 플래시: 크게 시작해 빠르게 수축
 	var fk := clampf(_impact_t / FLASH_TIME, 0.0, 1.0)
@@ -208,14 +242,22 @@ func _process_impact(delta: float) -> void:
 	_ring.modulate.a = 1.0 - rk
 	_ring.visible = rk < 1.0
 
-	# 라이트
+	# 라이트 (꺼진 라이트를 일찍 지우지 않는다 — 지우면 엔진 내부 라이트 순서가 바뀌어, 한 아이템에 15개가 넘게
+	# 겹치는 자리에서 빠지는 라이트가 달라지고 화면이 미세하게 바뀐다. 꺼진 라이트는 그리기 비용이 없다)
 	if _light:
 		_light.energy = _light_e0 * maxf(0.0, 1.0 - _impact_t / LIGHT_TIME)
 		_light.enabled = _light.energy > 0.01
 
-	# 파편
+	# 파편 — 수명이 다한 조각은 알파가 0 이므로 바로 뺀다 (보이는 것은 같고 노드만 일찍 정리된다)
+	var di := _debris.size() - 1
+	while di >= 0:
+		var dd: Dictionary = _debris[di]
+		if _impact_t >= float(dd["life"]):
+			(dd["node"] as Node).queue_free()
+			_debris.remove_at(di)
+		di -= 1
 	for d in _debris:
-		var n: ColorRect = d["node"]
+		var n: Control = d["node"]
 		d["vel"].y += d["gravity"] * delta
 		n.position += d["vel"] * delta
 		n.rotation += d["spin"] * delta
@@ -329,7 +371,7 @@ func _spawn_residue() -> void:
 		var n := ColorRect.new()
 		n.size = Vector2(len0, px)
 		n.rotation = _dir.angle()                         # 발사 방향으로 누운 선분
-		n.color = RESIDUE_COLOR_HOT
+		n.color = _res_hot
 		n.modulate = RESIDUE_GLOW_HOT
 		if _residue_add_mat == null:
 			_residue_add_mat = CanvasItemMaterial.new()
@@ -358,7 +400,7 @@ func _spawn_residue() -> void:
 			var n := ColorRect.new()
 			n.size = Vector2(px, px)
 			n.rotation = _dir.angle()
-			n.color = RESIDUE_COLOR_HOT
+			n.color = _res_hot
 			n.modulate = RESIDUE_GLOW_HOT
 			if _residue_add_mat == null:
 				_residue_add_mat = CanvasItemMaterial.new()
@@ -425,7 +467,8 @@ func _process_residue(delta: float) -> void:
 
 func _impact() -> void:
 	_impacting = true
-	Audio.impact(IMPACT_SFX.get(impact_kind, "none"), target, power)
+	if impact_sound:
+		Audio.impact(IMPACT_SFX.get(impact_kind, "none"), target, power)
 	_head.visible = false
 	_spawn_residue()
 	_spawn_smoke()
@@ -438,6 +481,9 @@ func _impact() -> void:
 	_flash.position = target - _flash.size * 0.5
 	_flash.rotation = randf_range(0.0, TAU)
 	_flash.modulate = Color(Lighting.EMISSIVE_SOFT * IMPACT_GLOW * 2.0, 1.0)   # ≈ 앰비언트를 상쇄할 만큼만 — 흰색으로 타지 않는다
+	if impact_kind == Impact.FLESH:
+		_flash.color = Color(0.66, 0.76, 0.36)
+		_flash.modulate = Color(1.45, 1.55, 1.15, 0.9)
 	if impact_kind == Impact.WATER:
 		# 착수: 붉은 섬광 대신 청백 물보라 플래시, 링은 수면에 납작하게
 		_flash.color = Color(0.85, 0.95, 1.0)
@@ -446,6 +492,9 @@ func _impact() -> void:
 		_flash.pivot_offset = _flash.size * 0.5
 		_flash.position = target - _flash.size * 0.5
 		_flash.rotation = 0.0
+	if tint.a > 0.0 and impact_kind != Impact.FLESH and impact_kind != Impact.WATER:
+		_flash.color = tint.lightened(0.6)
+		_flash.modulate = Color(1.8, 1.8, 1.8, 1.0)
 	add_child(_flash)
 
 	# 충격 링 (얇은 사각 테두리 4개)
@@ -459,7 +508,12 @@ func _impact() -> void:
 	var half := 17.0 * power
 	for side in range(4):
 		var r := ColorRect.new()
-		r.color = Color(1.0, 0.46, 0.12, 0.9) if impact_kind != Impact.WATER else Color(1.0, 0.45, 0.32, 0.9)
+		if impact_kind == Impact.FLESH:
+			r.color = Color(0.40, 0.57, 0.16, 0.78)
+		else:
+			r.color = Color(1.0, 0.46, 0.12, 0.9) if impact_kind != Impact.WATER else Color(1.0, 0.45, 0.32, 0.9)
+			if tint.a > 0.0 and impact_kind != Impact.WATER:
+				r.color = Color(tint, 0.9)
 		if side < 2:
 			r.size = Vector2(half * 2.0, 3.0 * power)
 			r.position = Vector2(-half, (-half if side == 0 else half) - 1.5)
@@ -469,6 +523,9 @@ func _impact() -> void:
 		_ring.add_child(r)
 
 	# 탄착 라이트
+	if not light_enabled:
+		_spawn_debris()
+		return
 	_light = PointLight2D.new()
 	_light.texture = Lighting.radial_texture()
 	var imp_e := LightTuning.value("impact", "energy", 2.2)
@@ -478,11 +535,18 @@ func _impact() -> void:
 	_light_e0 = _light.energy if impact_kind != Impact.WATER else 2.2    # 착수는 예전 곡선 그대로
 	_light.height = LightTuning.value("impact", "height", Lighting.FLASH_HEIGHT)   # 주변 노멀맵이 섬광에 반응
 	_light.position = target
+	if tint.a > 0.0 and impact_kind != Impact.WATER:
+		_light.color = tint
+		_light.energy *= 2.2
+		_light_e0 = _light.energy
 	add_child(_light)
 	# "ambient" 인 이유: 탄착 섬광은 천천히 꺼져(0.68→0.02, 십여 프레임) 총구 화염의 짧은 펄스를 뭉갠다.
 	# 오클루더 차폐에는 그대로 쓰이지만, 투영 그림자(쐐기·벽)는 총구만 보게 해 한 발 한 발이 또렷하게 읽히게 한다.
 	Lighting.register_dynamic(_light, 1.2, "ambient")
+	_spawn_debris()
 
+
+func _spawn_debris() -> void:
 	var back := -_dir
 	var spark_n := int(SPARK_COUNT * power)
 	var chip_n := int(CHIP_COUNT * power)
@@ -505,6 +569,8 @@ func _impact() -> void:
 		s.size = Vector2(len, 4.0 * power)
 		s.pivot_offset = s.size * 0.5
 		s.color = Color(1.0, randf_range(0.30, 0.58), randf_range(0.12, 0.30))
+		if tint.a > 0.0:
+			s.color = tint.lightened(randf_range(0.1, 0.6))
 		var v := back.rotated(randf_range(-1.1, 1.1)) * randf_range(560.0, 1150.0) * power
 		s.position = target - s.size * 0.5
 		s.rotation = v.angle()
@@ -515,7 +581,16 @@ func _impact() -> void:
 
 	# 파편: 벽=회색 조각 / 유리=밝은 청백색 얇은 조각(아래로 쏟아짐) / 프랍=나무·금속색 소량 / 살=어두운 살점
 	for i in range(chip_n):
-		var c := ColorRect.new()
+		var c: Control
+		if impact_kind == Impact.FLESH:
+			var flesh := TextureRect.new()
+			flesh.texture = MonsterFx.texture(MonsterFx.ROW_FLESH, randi_range(0, MonsterFx.VARIANTS - 1))
+			flesh.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			flesh.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			flesh.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			c = flesh
+		else:
+			c = ColorRect.new()
 		var sz := randf_range(7.0, 14.0) * (0.6 + 0.4 * power)
 		c.size = Vector2(sz, sz * randf_range(0.5, 1.0))
 		c.pivot_offset = c.size * 0.5
@@ -523,19 +598,17 @@ func _impact() -> void:
 		match impact_kind:
 			Impact.GLASS:
 				var gl := randf_range(0.75, 1.0)
-				c.color = Color(gl * 0.85, gl * 0.95, gl, 0.95)
+				(c as ColorRect).color = Color(gl * 0.85, gl * 0.95, gl, 0.95)
 				c.size = Vector2(sz * 1.3, sz * randf_range(0.25, 0.5))
 				v = Vector2(randf_range(-260.0, 260.0), randf_range(-120.0, 220.0)) * power   # 사방으로 흩어지며 낙하
 			Impact.PROP:
 				var w := randf_range(0.35, 0.55)
-				c.color = Color(w * 1.25, w * 0.95, w * 0.7)
+				(c as ColorRect).color = Color(w * 1.25, w * 0.95, w * 0.7)
 			Impact.FLESH:
-				var m := randf_range(0.3, 0.5)
-				c.color = Color(m * 1.4, m * 0.25, m * 0.2)
-				c.size = Vector2(sz * 0.8, sz * 0.6)
+				c.size = Vector2(sz * 1.8, sz * 1.8)
 			_:
 				var g := randf_range(0.42, 0.62)
-				c.color = Color(g * 0.9, g * 0.95, g * 1.15)
+				(c as ColorRect).color = Color(g * 0.9, g * 0.95, g * 1.15)
 		c.position = target - c.size * 0.5
 		c.rotation = randf_range(0.0, TAU)
 		add_child(c)

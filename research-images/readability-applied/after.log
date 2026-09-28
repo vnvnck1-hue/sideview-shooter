@@ -1,0 +1,21 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.3.280 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3060
+
+READABILITY_SCENE {"actor_fill_materials":8,"actor_materials":8,"background_materials":2,"capture_error":0,"crt":2,"foreground_nodes":1,"scene":"Main"}
+READABILITY_SCENE {"actor_fill_materials":8,"actor_materials":8,"background_materials":2,"capture_error":0,"crt":2,"foreground_nodes":1,"scene":"MainGame"}
+READABILITY_SCENE {"actor_fill_materials":109,"actor_materials":109,"background_materials":2,"capture_error":0,"crt":2,"foreground_nodes":1,"scene":"SpaceLab"}
+READABILITY_SCENE {"actor_fill_materials":42,"actor_materials":42,"background_materials":2,"capture_error":0,"crt":2,"foreground_nodes":1,"scene":"DepthLab"}
+READABILITY_SCENE {"actor_fill_materials":8,"actor_materials":8,"background_materials":2,"capture_error":0,"crt":2,"foreground_nodes":1,"scene":"FaceLab"}
+READABILITY_SCENE {"actor_fill_materials":6,"actor_materials":6,"background_materials":2,"capture_error":0,"crt":2,"foreground_nodes":1,"scene":"ScaleLab"}
+READABILITY_SCENE {"actor_fill_materials":7,"actor_materials":7,"background_materials":2,"capture_error":0,"crt":2,"foreground_nodes":1,"scene":"DialogueLab"}
+READABILITY_SCENE {"actor_fill_materials":3,"actor_materials":3,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"CrawlerDeathLab"}
+READABILITY_SCENE {"actor_fill_materials":8,"actor_materials":8,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"HitFxShowcase"}
+READABILITY_SCENE {"actor_fill_materials":31,"actor_materials":31,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"WalkerLab"}
+READABILITY_SCENE {"actor_fill_materials":23,"actor_materials":23,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"WalkerLegacyLab"}
+READABILITY_SCENE {"actor_fill_materials":0,"actor_materials":0,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"WalkerAuthoringLab"}
+READABILITY_SCENE {"actor_fill_materials":0,"actor_materials":0,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"ServiceGalleryPreview"}
+READABILITY_SCENE {"actor_fill_materials":0,"actor_materials":0,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"ServiceGalleryPack"}
+READABILITY_SCENE {"actor_fill_materials":0,"actor_materials":0,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"ServiceGalleryLightProp"}
+READABILITY_SCENE {"actor_fill_materials":0,"actor_materials":0,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"CoolantPumpRoomAssetPreview"}
+READABILITY_SCENE {"actor_fill_materials":2,"actor_materials":2,"background_materials":2,"capture_error":0,"crt":2,"foreground_nodes":1,"scene":"MapViewer"}
+READABILITY_SCENE {"actor_fill_materials":0,"actor_materials":0,"background_materials":0,"capture_error":0,"crt":2,"foreground_nodes":0,"scene":"Lobby"}

@@ -2,7 +2,7 @@ class_name AcidGlob
 extends Node2D
 ## 크롤러가 뱉는 독액 덩어리. 입에서 플레이어 몸 중심을 향해 포물선으로 날아가
 ## 플레이어에 닿으면(구르기 중이면 회피) Room.player_hit 를 알리고, 바닥에 닿으면 튀며 작은 독 웅덩이를 남긴다.
-## 한 노드가 덩어리·꼬리 방울·웅덩이를 _draw 로 그린다. 위치는 월드 좌표 그대로.
+## 덩어리·꼬리 방울·웅덩이는 MonsterFx 전용 아틀라스를 쓴다. 위치는 월드 좌표 그대로.
 
 const GRAVITY := 1900.0
 const FLIGHT_TIME := 0.55
@@ -38,6 +38,8 @@ func setup(from: Vector2, player: Node2D, floor_line: float, room_node: Node2D,
 	size = size_mul
 	_p = from
 	var aim := player.position + Vector2(0, -PLAYER_HEIGHT * 0.45)
+	if player.has_method("receive_monster_hit"):
+		aim = player.hit_rect().get_center()
 	# 플레이어가 움직이는 쪽을 조금 예측
 	var pv: float = player.get("velocity_x") if player.get("velocity_x") != null else 0.0
 	aim.x += pv * FLIGHT_TIME * 0.5
@@ -77,6 +79,8 @@ func _process(delta: float) -> void:
 			var air: float = target.air_height() if target.has_method("air_height") else 0.0   # 점프·사다리
 			var rect := Rect2(target.position.x - PLAYER_HALF_W, target.position.y - air - PLAYER_HEIGHT,
 				PLAYER_HALF_W * 2.0, PLAYER_HEIGHT)
+			if target.has_method("receive_monster_hit"):
+				rect = target.hit_rect()
 			if not rolling and rect.has_point(_p):
 				_splat(true)
 				return
@@ -110,9 +114,11 @@ func _splat(on_player: bool, puddle := true) -> void:
 	sparks.z_index = 1
 	var dir := Vector2(-signf(_v.x) * 0.3, -1.0)
 	sparks.burst(_p, int((14 if on_player else 10) * size), dir, 1.0, Vector2(120, 380), CORE, DARK,
-		Vector2(0.3, 0.7), 2000.0, 4.0 * size, false)
+		Vector2(0.3, 0.7), 2000.0, 4.0 * size, false, 0.7, MonsterFx.ROW_FLUID)
 	if on_player:
-		if room and room.has_signal("player_hit"):
+		if is_instance_valid(target) and target.has_method("receive_monster_hit"):
+			target.receive_monster_hit(_p, signf(_v.x), 14.0 * size)
+		elif room and room.has_signal("player_hit"):
 			room.player_hit.emit(_p, signf(_v.x))
 		_t = PUDDLE_LIFE - 0.3          # 플레이어에 튄 독액은 곧 사라진다 (웅덩이 없음)
 	queue_redraw()
@@ -120,27 +126,24 @@ func _splat(on_player: bool, puddle := true) -> void:
 
 func _draw() -> void:
 	if _flying:
-		# 꼬리 방울 (뒤로 갈수록 작고 어둡게)
+		# 꼬리 방울 (뒤로 갈수록 작고 옅게). 사각형 대신 전용 비대칭 체액 실루엣.
 		for i in range(_trail.size()):
 			var k := float(i) / maxf(1.0, float(_trail.size() - 1))
-			var sz := lerpf(14.0, 5.0, k) * size
-			var col := BODY.lerp(DARK, k)
-			col = Color(col.r * 2.2, col.g * 2.2, col.b * 2.2, 1.0 - k * 0.6)
-			draw_rect(Rect2(_trail[i] - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), col)
-		# 본체: 진행 방향으로 늘어진 덩어리 + 밝은 심 (발광 → 글로우)
-		var dirn := _v.normalized()
-		var body_col := Color(BODY.r * 2.6, BODY.g * 2.6, BODY.b * 2.6, 1.0)
-		draw_rect(Rect2(_p - Vector2(13, 13) * size, Vector2(26, 26) * size), body_col)
-		draw_rect(Rect2(_p - dirn * 12.0 * size - Vector2(9, 9) * size, Vector2(18, 18) * size), body_col)
-		draw_rect(Rect2(_p - Vector2(6, 6) * size, Vector2(12, 12) * size),
-			Color(CORE.r * 4.0, CORE.g * 4.0, CORE.b * 4.0, 1.0))
+			var sz := lerpf(24.0, 8.0, k) * size
+			MonsterFx.draw(self, MonsterFx.ROW_FLUID, i,
+				Rect2((_trail[i] as Vector2) - Vector2.ONE * sz * 0.5, Vector2.ONE * sz),
+				Color(1.6, 1.6, 1.45, 1.0 - k * 0.65))
+		# 본체: 진행 방향으로 늘어진 전용 점액 덩어리.
+		var body_size := Vector2(42.0, 56.0) * size
+		draw_set_transform(_p, _v.angle() - PI * 0.5, Vector2.ONE)
+		MonsterFx.draw(self, MonsterFx.ROW_FLUID, 1, Rect2(-body_size * 0.5, body_size),
+			Color(1.85, 1.85, 1.55, 1.0))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	elif _puddle_w > 0.0:
-		# 바닥 독 웅덩이: 얇은 타원형 픽셀 덩어리, 시간이 지나며 옅어진다
+		# 바닥 독 웅덩이: 전용 비정형 착지 자국.
 		var k := clampf(_t / PUDDLE_LIFE, 0.0, 1.0)
 		var a := 1.0 - smoothstep(0.55, 1.0, k)
 		var w := _puddle_w * (0.6 + 0.4 * minf(1.0, _t / 0.15))
-		var col := Color(BODY.r * 1.1, BODY.g * 1.1, BODY.b * 1.1, 0.85 * a)     # 바닥 웅덩이는 덜 빛난다
-		draw_rect(Rect2(_p.x - w * 0.5, _p.y - 5.0 * size, w, 5.0 * size), col)
-		draw_rect(Rect2(_p.x - w * 0.3, _p.y - 9.0 * size, w * 0.6, 4.0 * size), col)
-		draw_rect(Rect2(_p.x - w * 0.12, _p.y - 12.0 * size, w * 0.24, 3.0 * size),
-			Color(CORE.r * 1.2, CORE.g * 1.2, CORE.b * 1.2, 0.8 * a))
+		MonsterFx.draw(self, MonsterFx.ROW_SPLAT, 2,
+			Rect2(Vector2(_p.x - w * 0.5, _p.y - 0.32 * w * size), Vector2(w, 0.42 * w * size)),
+			Color(1.05, 1.05, 0.94, 0.9 * a))
