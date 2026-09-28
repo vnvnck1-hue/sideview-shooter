@@ -18,7 +18,7 @@
 
 ## 문서별 책임
 
-**빠른 착수 필요:** [`SCALE_STANDARDIZATION_PLAN.md`](SCALE_STANDARDIZATION_PLAN.md) — 캐릭터·카메라를 기준으로 그레이박스에서 배경 타일·프랍 치수를 검증하는 계획. 우선순위 높음, 착수 대기이며 새로운 규격 수치는 아직 미확정이다.
+**빠른 착수 필요:** [`SCALE_STANDARDIZATION_PLAN.md`](SCALE_STANDARDIZATION_PLAN.md) — 캐릭터·카메라를 기준으로 그레이박스에서 배경 타일·프랍 치수를 검증하는 계획. 우선순위 높음, 진행 중이며 배경 규격 수치는 아직 미확정이다. 1단계에서 인물 규격을 기존 NPC 기준(셀 80×80, 키 약 260)으로 확정했다. 치수 기준은 [`SCALE_CHARACTER_BASELINE.md`](SCALE_CHARACTER_BASELINE.md)다. 2단계 그레이박스 테스트 씬은 [`SCALE_TEST_SCENE.md`](SCALE_TEST_SCENE.md)(로비 → ▤ 규격 테스트)이며, 후보 치수와 실측 결과가 들어 있다(아직 확정값 아님). 배경 레이어의 패럴렉스 속도·명도 계단은 별도의 [`DEPTH_TEST_SCENE.md`](DEPTH_TEST_SCENE.md)(로비 우상단 → ▥ 공간감 테스트)에서 비교한다.
 
 | 등급 | 문서 | 책임 | 다른 문서와 중복될 때 |
 |---|---|---|---|

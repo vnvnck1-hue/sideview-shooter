@@ -11,6 +11,8 @@ const WALKER_LAB_SCENE := "res://scenes/WalkerLab.tscn"
 const WALKER_AUTHORING_LAB_SCENE := "res://scenes/WalkerAuthoringLab.tscn"
 const FACE_LAB_SCENE := "res://scenes/FaceLab.tscn"
 const SPACE_LAB_SCENE := "res://scenes/SpaceLab.tscn"
+const SCALE_LAB_SCENE := "res://scenes/ScaleLab.tscn"
+const DEPTH_LAB_SCENE := "res://scenes/DepthLab.tscn"
 const GalleryPlaytest := preload("res://scripts/service_gallery_playtest.gd")
 
 ## 디자인 캔버스 = 창 기본 크기 = 스트레치 기준 (project.godot display/window/size 와 반드시 같은 값).
@@ -18,9 +20,29 @@ const GalleryPlaytest := preload("res://scripts/service_gallery_playtest.gd")
 ## 2026-09-19: 1600×900 → 2240×900. 세로는 그대로 두고 가로만 넓혔다 — 방(최대 4096 월드 px)이 화면보다 넓어
 ## 좌우가 잘렸는데, 창을 키워도 스트레치 기준이 1600 이라 보이는 범위가 늘지 않았다. 세로까지 같이 넓히면
 ## 방(높이 512~1152)이 검은 여백에 떠서 오히려 작아 보인다.
-## scale_mode 는 integer 로 둔다 — 픽셀 규칙(아트 1px = 화면 정수 px)이 창 배율에서도 깨지지 않게.
-## 대신 2240×900 보다 작은 창/모니터에서는 배율이 1 로 묶여 화면이 잘린다. 그때는 이 값을 낮춰야 한다.
-const VIEW_SIZE := Vector2i(2240, 900)
+## 픽셀 규칙(아트 1px = 화면 정수 px)은 autoload ViewFit 이 정수 배율을 직접 골라 지킨다 — project.godot 의
+## scale_mode 는 fractional 이다(엔진 integer 모드는 전체화면에서 출력을 2/3 로 줄였다. ViewFit 주석).
+## 2026-09-25: 2240×900 · aspect=keep 은 2.49:1 띠라 16:9·3:2 모니터에서 위아래가 통째로 비었다
+## (2400×1600 에서 화면 높이의 56% 만 썼다). 이제 **aspect=expand** — 이 값은 "최소 보장 캔버스" 이고,
+## 창 비율이 다르면 캔버스가 그만큼 가로·세로로 늘어난다(2400×1600 창 → 캔버스 2400×1600, 배율 1).
+## 창은 최대화(window/size/mode=2)로 시작한다. 실제 캔버스 크기는 view_size() — 레이아웃은 앵커로 잡을 것.
+const VIEW_SIZE := Vector2i(1600, 900)
+
+
+## 화면 모드 전환 (F11). 자동 로드 ViewFit 을 이름으로 부르지 않고 노드로 찾는다 — --script 도구에서도 컴파일되게.
+## ViewFit 이 없으면(도구 등) 창 모드만 직접 뒤집는다. 로비 드롭다운·저장값과 늘 같은 상태가 된다.
+static func toggle_fullscreen(tree: SceneTree) -> void:
+	var vf := tree.root.get_node_or_null("ViewFit")
+	if vf != null:
+		vf.call("toggle_fullscreen")
+		return
+	var w := tree.root
+	w.mode = Window.MODE_MAXIMIZED if w.mode == Window.MODE_FULLSCREEN else Window.MODE_FULLSCREEN
+
+
+## 지금 캔버스 크기 (창 px). VIEW_SIZE 이상이며 창 비율을 따른다.
+static func view_size(node: Node) -> Vector2:
+	return node.get_viewport().get_visible_rect().size
 
 ## Main 이 처음 로드할 방 id (RoomData.ROOMS 키)
 static var start_room := RoomData.START_ROOM
@@ -94,6 +116,20 @@ static func start_space_lab(tree: SceneTree) -> void:
 	visited = {}
 	resume_x = -1.0
 	tree.change_scene_to_file(SPACE_LAB_SCENE)
+
+
+## 규격 비교 테스트 (그레이박스) — Docs/SCALE_TEST_SCENE.md
+static func start_scale_lab(tree: SceneTree) -> void:
+	visited = {}
+	resume_x = -1.0
+	tree.change_scene_to_file(SCALE_LAB_SCENE)
+
+
+## 공간감 테스트 (그레이박스 패럴렉스 · 이어진 다섯 공간) — Docs/DEPTH_TEST_SCENE.md. 본편 루프(main.gd) 위에서 돈다.
+static func start_depth_lab(tree: SceneTree) -> void:
+	visited = {}
+	resume_x = -1.0
+	tree.change_scene_to_file(DEPTH_LAB_SCENE)
 
 
 ## Gallery tile playtest runs through the ordinary Main scene and play loop.

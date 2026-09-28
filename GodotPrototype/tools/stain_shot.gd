@@ -26,9 +26,6 @@ var steps := [
 	[7.60, "shot:c_floor"],
 	[9.40, "shot:c_floor_late"],
 	[9.50, "reset"],
-	[9.60, "fire:front"],
-	[10.4, "shot:d_front"],
-	[11.8, "shot:d_front_late"],
 	[12.0, "quit"],
 ]
 
@@ -112,12 +109,6 @@ func _do(cmd: String) -> bool:
 					_focus = a2
 					r3.add_spray(o2, Vector2(-1, -0.1), 30, 460.0, 1.1)
 					r3.add_stain(a2 + Vector2(-20, 0), Vector2(1, -0.15), 22, 110.0)
-				"front":
-					# ⑥ 근경 방울 — 확률(FRONT_CHANCE)에 기대지 않고 직접 불러 확인한다
-					_focus = Vector2(a2.x + 240.0, a2.y - 40.0)
-					for i in range(4):
-						r3.add_spray(Vector2(a2.x + 520.0, a2.y - 30.0), Vector2(-1, -0.1), 10, 320.0, 1.2)
-						BloodStain._front_drops(r3.foreground, Vector2(a2.x + 380.0, a2.y - 40.0), Vector2(-1, -0.1), 320.0)
 				"floor":
 					# 바닥 가까이 — 바닥면에 떨어진 것도 지금은 벽처럼 서 있다
 					var o3 := Vector2(a2.x + 300.0, r3.floor_y - 110.0)

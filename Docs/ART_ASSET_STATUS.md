@@ -57,6 +57,10 @@ v3의 01–04는 기존 오프닝, 05는 기존 희생 엔딩이다. 다섯 번�
 
 후속 피드백: 사용자가 전산실 v1을 “너무 오래된 스타일”로 판단하고 현대식 재설계를 요청했다. 따라서 v1은 현 요청의 채택본이 아니라 비교 기록으로 보존한다. 첫 생성 시도는 사용량 한도로 실패했지만, 2026-09-23 재시도에서 [현대식 v2](../Assets/Generated/ParallaxConcepts/computer-equipment-room-modern-v2/README.md) 원화 한 장을 생성했다. 이는 **사용자 검토 후보**이며 승인·레이어 분리·픽셀화·게임 반입은 미실행이다.
 
+### 냉각 펌프 정비실 모듈 팩 — 2026-09-24
+
+사용자가 다시 지정한 첫 원화 `coolant_pump_maintenance_bay_concept_v1.png`(SHA256 `332F6BBE6D14897DE5F4643AE6743CCAFC1AE5C82C8612ADF471E7C95656EC04`)를 [반복 배경·독립 프랍 팩](../Assets/Generated/CoolantPumpRoom/modular_v1/README.md)의 기준으로 사용했다. 128×128 셀로 자른 256×768 가로 반복 배경, 벽 채움 셀, 투명 프랍 6종과 재조합 미리보기를 생성했다. 원본은 유지했고 가려진 벽·프랍의 뒤쪽은 시안으로 추정 복원했다. 좌우 반복 이음새와 PNG 조립은 검사했지만 **새 배경·분리 결과의 최종 아트 승인, 실제 게임 배율·조명·충돌 검수는 아직 없다.** Godot 예시 씬과 PNG 복사본은 준비했으나 이 환경에서 엔진을 실행해 렌더링하지 못했다.
+
 ## 원본·검사·재현 근거
 
 - 세 프랍: [결과 README](../Assets/Generated/ApprovedPropPixelTrial/crisp-final-r1/README.md), [검사 스냅샷](../Assets/Generated/ApprovedPropPixelTrial/crisp-final-r1/verification.json). 위 90%는 사용자의 시각적 표현이지 측정값이나 신규 자산 보증이 아니다.

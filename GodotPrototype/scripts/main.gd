@@ -21,13 +21,17 @@ const VIEW_SCALE := 1
 const ART_CELL := 4.0                   # 아트 1px 이 차지하는 월드 px (베이크 규칙)
 
 ## px = 아트 1px 이 화면에서 차지하는 px. zoom = px / ART_CELL.
-##   ×2 : 확대 전 원래 값. 가시 폭 4480 월드 px — 가장 넓은 격납고(4096)까지 방 전체가 한 화면에 들어온다.
-##   ×3 : 기본. 가시 폭 2987 — 방 21개 중 18개가 통째로 들어오고 인물이 또렷하다.
-##   ×4 : 가시 폭 2240 — 인물·소품을 크게 보는 용도. 넓은 방은 좌우가 잘린다.
+## 2026-09-25: 캔버스가 창 비율을 따라 늘어나게(stretch aspect=expand) 바뀌면서 **표준 배율은 캔버스 높이로 정한다.**
+## 고정 ×3 이면 세로가 긴 화면(예: 2400×1600)에서 보이는 월드가 2133px 로 늘어나 방이 검은 여백에 뜬다.
+## 그래서 보이는 월드 높이가 VISIBLE_H_TARGET 에 가장 가까운 정수 배율을 고르고(최소 ×3), 프리셋은 표준에서 몇 단계인지로 적는다.
+##   900 높이 → ×3 (보이는 월드 1200) · 1080 → ×3 (1440) · 1600 → ×4 (1600)
+##   넓게 = 표준 −1 · 가깝게 = 표준 +1
+const VISIBLE_H_TARGET := 1500.0
+const STANDARD_PX_MIN := 3
 const ZOOM_PRESETS := [
-	{"id": "wide", "name": "넓게", "px": 2},
-	{"id": "standard", "name": "표준", "px": 3},
-	{"id": "close", "name": "가깝게", "px": 4},
+	{"id": "wide", "name": "넓게", "step": -1},
+	{"id": "standard", "name": "표준", "step": 0},
+	{"id": "close", "name": "가깝게", "step": 1},
 ]
 const ZOOM_DEFAULT := 1
 
@@ -196,7 +200,23 @@ func _zoom_of(px: int) -> float:
 
 
 func _base_px() -> int:
-	return int(ZOOM_PRESETS[zoom_index]["px"])
+	return _preset_px(zoom_index)
+
+
+## 지금 캔버스에서 표준 프리셋의 화면 배율 (위 VISIBLE_H_TARGET 주석)
+func _standard_px() -> int:
+	return maxi(STANDARD_PX_MIN, roundi(_view_px().y * ART_CELL / VISIBLE_H_TARGET))
+
+
+func _preset_px(i: int) -> int:
+	return maxi(1, _standard_px() + int(ZOOM_PRESETS[i]["step"]))
+
+
+## 월드가 그려지는 캔버스 크기 (창 px). 창 비율에 따라 늘어나므로 VIEW_SIZE(최소 보장 크기)가 아니라 이것을 쓴다.
+func _view_px() -> Vector2:
+	if world_vp != null:
+		return Vector2(world_vp.size)
+	return get_viewport().get_visible_rect().size
 
 
 ## 기본 줌. 기체에 접속한 동안에는 _link_zoom 이 곱해져 화면이 조금 물러나 있다
@@ -223,14 +243,14 @@ func _update_zoom_label() -> void:
 	if zoom_label == null:
 		return
 	var p: Dictionary = ZOOM_PRESETS[zoom_index]
-	zoom_label.text = "줌 (F3)  %s ×%d  ·  아트 1px = 화면 %dpx" % [p["name"], int(p["px"]), int(p["px"])]
+	var px := _base_px()
+	zoom_label.text = "줌 (F3)  %s ×%d  ·  아트 1px = 화면 %dpx" % [p["name"], px, px]
 
 
 ## F3: 다음 프리셋. 방·대화·단말기 상태와 무관하게 기준 줌만 갈아 끼우고, 지금 카메라에 바로 반영한다.
 func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("toggle_fullscreen"):
-		var w := get_window()
-		w.mode = Window.MODE_WINDOWED if w.mode == Window.MODE_FULLSCREEN else Window.MODE_FULLSCREEN
+		AppFlow.toggle_fullscreen(get_tree())
 
 	# F1: 로비로
 	if Input.is_action_just_pressed("to_lobby") and not transitioning:
@@ -371,6 +391,14 @@ func _process(_delta: float) -> void:
 		prompt_label.visible = true
 		prompt_label.text = terminal.prompt_text()
 		return
+	if player.is_climbing():
+		prompt_label.visible = true
+		prompt_label.text = "W / ↑  오르기   ·   S / ↓  내리기   ·   A / D  손 놓기"
+		return
+	if current_room.ladder_near(player.position.x) != null:
+		prompt_label.visible = true
+		prompt_label.text = "▲  W / ↑  —  사다리 오르기"
+		return
 	var fd := current_room.front_door_near(player.position.x)
 	prompt_label.visible = not fd.is_empty()
 	if not fd.is_empty():
@@ -395,6 +423,7 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	current_room.player_hit.connect(_on_player_hit)
 	current_room.monster_roared.connect(_on_monster_roared)
 	current_room.monster_slammed.connect(_on_monster_slammed)
+	current_room.monster_died.connect(_on_monster_died)
 	world.add_child(current_room)
 	world.move_child(current_room, 0)
 	Audio.set_room_ambience(id)
@@ -420,6 +449,7 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 	# 이동 한계: 닫힌 쪽은 벽 앞에서 멈추고, 열린 쪽은 문을 지나갈 수 있게 조금 더 허용
 	var left_limit := -DOOR_PASS_MARGIN if current_room.left_door_open else WALL_MARGIN
 	var right_limit := current_room.width + DOOR_PASS_MARGIN if current_room.right_door_open else current_room.width - WALL_MARGIN
+	player.settle()
 	player.position = Vector2(spawn_x, current_room.floor_y + 2)
 	player.set_bounds(left_limit, right_limit)
 	player.face(face_dir)
@@ -430,8 +460,11 @@ func _load_room(id: String, spawn_x: float, face_dir: int) -> void:
 
 
 func _apply_camera_limits() -> void:
-	# 세로 중심은 방의 실제 세로 범위(천장~560) 가운데 — 층고가 높은 방은 위로 올라간다
-	camera.base_y = RoomData.room_rect(current_room.room_id).get_center().y
+	# 세로는 바닥선 프레이밍(GameCamera.set_floor) — 바닥이 늘 화면 2/3 높이쯤에 선다.
+	# base_y(방 세로 중심)는 바닥선 프레이밍을 끈 씬을 위한 예비값으로만 남긴다.
+	var rect := RoomData.room_rect(current_room.room_id)
+	camera.base_y = rect.get_center().y
+	camera.set_floor(float(current_room.floor_y), rect.position.y)
 	camera.set_room(float(current_room.width), SIDE_PAD)
 
 
@@ -445,6 +478,10 @@ func _go_to_room(target: String, enter_side: String) -> void:
 
 func _on_front_door_requested() -> void:
 	if transitioning or current_room == null:
+		return
+	# 공중(점프 중)에서는 사다리 잡기만 받는다 — 문·단말기는 땅에 서서 쓴다
+	if player.is_airborne():
+		_grab_ladder()
 		return
 	# 같은 키(W/↑)로 센트리건·보행 기체를 먼저 잡는다 — 옆에 서 있으면 전개·기동·조종
 	var turret := current_room.sentry_near(player.position.x)
@@ -477,12 +514,25 @@ func _on_front_door_requested() -> void:
 	if terminal != null:
 		terminal.activate()
 		return
+	if _grab_ladder():
+		return
 	var fd := current_room.front_door_near(player.position.x)
 	if fd.is_empty():
+		# 같은 키의 마지막 순위 — 옆에 쓸 것이 아무것도 없으면 제자리 점프
+		player.jump()
 		return
 	var target: String = fd["target"]
 	var spawn_x := RoomData.front_door_center(target, int(fd["target_door"]))
 	_transition(target, spawn_x, player.facing)
+
+
+## 옆에 사다리가 있으면 잡는다 (잡았으면 true)
+func _grab_ladder() -> bool:
+	var ladder := current_room.ladder_near(player.position.x)
+	if ladder == null:
+		return false
+	player.start_climb(ladder.position.x, ladder.climb_height())
+	return player.is_climbing()
 
 
 func _transition(target: String, spawn_x: float, face_dir: int) -> void:
@@ -797,7 +847,7 @@ func _switch_to_remote(entry: Dictionary) -> void:
 	player.velocity_x = 0.0
 	player.position.x = turret.position.x
 	camera.zoom = Vector2(_base_zoom(), _base_zoom())
-	camera.focus_at(Vector2(turret.position.x, RoomData.room_rect(current_room.room_id).get_center().y))
+	camera.focus_at(Vector2(turret.position.x, _released_y()))   # 평소와 같은 바닥선 높이로 포탑을 잡는다
 	camera.snap()
 	turret.activate()                               # 격납 상태면 전개하고, 끝나면 스스로 조종으로 넘어온다
 	crosshair.visible = true
@@ -882,7 +932,7 @@ func _on_dialogue_speaker(who: String) -> void:
 ## 블록이 들쭉날쭉한 게 그대로 보인다. 내림이라 두 사람이 프레임 밖으로 밀리지 않는다.
 func _talk_zoom() -> float:
 	var gap := absf(talking_npc.position.x - player.position.x)
-	var want := float(VIEW_SIZE.x) / (gap + DIALOGUE_FRAME)
+	var want := _view_px().x / (gap + DIALOGUE_FRAME)
 	var px := int(floor(want * ART_CELL))
 	return _zoom_of(clampi(px, _base_px() + DIALOGUE_ZOOM_STEP.x, _base_px() + DIALOGUE_ZOOM_STEP.y))
 
@@ -897,7 +947,7 @@ func _talk_focus(who: String) -> Vector2:
 	# 화면보다 좁은 방에서는 두 사람이 어차피 다 보인다. 그런데도 화자 쪽으로 밀면
 	# 방 밖 어둠만 더 드러나므로, 여유가 없는 만큼 방 가운데로 되돌린다.
 	var room_w := float(current_room.width)
-	var visible_w := float(VIEW_SIZE.x) / _talk_zoom()
+	var visible_w := _view_px().x / _talk_zoom()
 	var slack := maxf((room_w + SIDE_PAD * 2.0 - visible_w) * 0.5, 0.0)
 	var center := room_w * 0.5
 	focus.x = clampf(focus.x, center - slack, center + slack)
@@ -951,7 +1001,7 @@ func _on_dialogue_finished() -> void:
 
 ## 카메라를 한 지점으로 밀어 넣는다 (줌 + 중심 이동을 같은 곡선으로)
 func _push_camera(to: Vector2, zoom: float, time: float) -> void:
-	var from := Vector2(camera.focus_x if is_finite(camera.focus_x) else player.position.x, camera.base_y)
+	var from := Vector2(camera.focus_x if is_finite(camera.focus_x) else player.position.x, camera.framed_y())
 	var tw := create_tween().set_parallel(true)
 	tw.tween_method(func(p: Vector2): camera.focus_at(p), from, to, time) 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tw.tween_property(camera, "zoom", Vector2(zoom, zoom), time) 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -960,12 +1010,22 @@ func _push_camera(to: Vector2, zoom: float, time: float) -> void:
 ## 밀어 넣었던 카메라를 플레이어에게 돌려준다
 func _release_camera(time: float) -> void:
 	var room_center_y := RoomData.room_rect(current_room.room_id).get_center().y
-	var from := Vector2(camera.focus_x if is_finite(camera.focus_x) else player.position.x, camera.base_y)
-	var to := Vector2(player.position.x, room_center_y)
+	var from := Vector2(camera.focus_x if is_finite(camera.focus_x) else player.position.x, camera.framed_y())
+	var to := Vector2(player.position.x, _released_y())
 	var tw := create_tween().set_parallel(true)
 	tw.tween_method(func(p: Vector2): camera.focus_at(p), from, to, time) 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_property(camera, "zoom", Vector2(_base_zoom(), _base_zoom()), time) 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	tw.chain().tween_callback(func(): camera.clear_focus(room_center_y))
+
+
+## 초점을 풀었을 때 카메라가 설 세로 위치 (기본 줌에서의 바닥선 프레이밍).
+## 돌아오는 트윈이 여기로 도착해야 초점이 풀리는 순간 화면이 튀지 않는다.
+func _released_y() -> float:
+	var keep := camera.focus_x
+	camera.focus_x = NAN
+	var y := camera.framed_y(_base_zoom())
+	camera.focus_x = keep
+	return y
 
 
 ## 월드 HUD 표시/숨김 — 단말기 화면이 시야를 채우는 동안은 방 이름·탄창·힌트가 남아 있으면 안 된다.
@@ -999,6 +1059,11 @@ func _on_monster_roared(pos: Vector2, power := 1.0) -> void:
 
 ## 거대종 내려찍기: 바닥을 때린 충격이 방 전체로 퍼진다. 플레이어 피격(7)보다 크게 잡되,
 ## 충격파에 실제로 맞았다면 _on_player_hit 의 7 이 여기에 더해져 add_shake 의 상한(10)에 붙는다.
+## 체액 비산(GoreBurst)에 맞춘 짧은 흔들림 — 피격 흔들림(1.2×위력)에 살짝 얹는 정도
+func _on_monster_died(_pos: Vector2, power := 1.0) -> void:
+	camera.add_shake(1.3 * clampf(power, 1.0, 2.0))
+
+
 func _on_monster_slammed(pos: Vector2) -> void:
 	var d := absf(pos.x - player.position.x)
 	var reach := Crawler.SLAM_SHOCK_RANGE * 3.0      # 맞지 않아도 발밑이 울리는 범위
@@ -1088,7 +1153,9 @@ func _on_turret_shell(pos: Vector2, dir: int) -> void:
 	bullets.add_child(sc)
 
 
-## 월드 뷰포트. SubViewportContainer(VIEW_SIZE) 안의 SubViewport(VIEW_SIZE, ×1) — 글로우 환경·후처리를 월드에만 걸기 위해 분리한다.
+## 월드 뷰포트. 창을 꽉 채우는 SubViewportContainer 안의 SubViewport(×1) — 글로우 환경·후처리를 월드에만 걸기 위해 분리한다.
+## 컨테이너는 창(루트 캔버스) 크기를 그대로 따라가고(stretch) SubViewport 크기가 그 뒤를 따른다.
+## 부모가 Node2D 라 앵커가 먹지 않으므로 크기를 직접 넣는다 (_fit_view). 창 크기가 바뀌면 _on_view_resized.
 ## 컨테이너가 마우스 이벤트를 그대로 넘겨주므로 world 안의 노드는 get_global_mouse_position() 을 그대로 쓴다.
 func _setup_view() -> void:
 	var container := SubViewportContainer.new()
@@ -1096,13 +1163,14 @@ func _setup_view() -> void:
 	container.stretch = true
 	container.stretch_shrink = VIEW_SCALE
 	container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	container.size = Vector2(VIEW_SIZE * VIEW_SCALE)
 	container.position = Vector2.ZERO
+	container.size = get_viewport().get_visible_rect().size
 	add_child(container)
+	get_viewport().size_changed.connect(_fit_view)
 
 	world_vp = SubViewport.new()
 	world_vp.name = "World"
-	world_vp.size = VIEW_SIZE
+	world_vp.size = Vector2i(get_viewport().get_visible_rect().size) / VIEW_SCALE
 	world_vp.disable_3d = true
 	world_vp.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 	world_vp.snap_2d_transforms_to_pixel = false                     # 이동·조명은 부드럽게 (그림만 픽셀)
@@ -1113,6 +1181,26 @@ func _setup_view() -> void:
 	world = Node2D.new()
 	world.name = "Stage"
 	world_vp.add_child(world)
+	world_vp.size_changed.connect(_on_view_resized)
+
+
+func _fit_view() -> void:
+	var container := get_node_or_null("View") as SubViewportContainer
+	if container != null:
+		container.size = get_viewport().get_visible_rect().size
+
+
+## 창 크기가 바뀌었다 (F11 · 창 끌기). 표준 배율이 캔버스 높이에 매여 있으므로 기본 줌을 다시 고른다.
+## 대화·단말기처럼 카메라를 밀어 넣은 동안은 건드리지 않는다 — 그 연출이 끝나며 새 기본 줌으로 돌아온다.
+func _on_view_resized() -> void:
+	if camera == null:
+		return
+	_update_zoom_label()
+	if (dialogue != null and dialogue.active) or (terminal_screen != null and terminal_screen.is_open()):
+		return
+	var z := _base_zoom()
+	camera.zoom = Vector2(z, z)
+	camera.snap()
 
 
 ## 월드 좌표 → 창(루트 뷰포트) 좌표. AutoTest 의 마우스 워프 등에 쓴다.
@@ -1176,8 +1264,8 @@ func _setup_ui() -> void:
 	layer.add_child(title_label)
 
 	hint_label = Label.new()
-	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 정면문 진입 · 말 걸기    대화 중 Space/E 넘기기 · ↑/↓ 선택    R 재장전    F3 줌    F4 CRT 모니터    F5 아이들 모션    F6·F8 그림자    F11 전체화면"
-	hint_label.position = Vector2(24, 860)
+	hint_label.text = "F1 로비    A/D ←/→ 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기(+A/D 앉아 걷기)    W/↑ 정면문 · 말 걸기 · 사다리 · 없으면 점프    대화 중 Space/E 넘기기 · ↑/↓ 선택    R 재장전    F3 줌    F4 CRT 모니터    F5 아이들 모션    F6·F8 그림자    F11 전체화면"
+	_pin(hint_label, Vector2(0, 1), Vector2(24, -40), Vector2.ZERO)
 	hint_label.add_theme_font_override("font", font)
 	hint_label.add_theme_font_size_override("font_size", 20)
 	hint_label.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
@@ -1185,8 +1273,7 @@ func _setup_ui() -> void:
 
 	# 줌 프리셋 표시 — 우상단 맨 위. 공간감 라벨이 있던 자리(y18)로 올렸다.
 	zoom_label = Label.new()
-	zoom_label.position = Vector2(VIEW_SIZE.x - 24 - 700, 18)
-	zoom_label.size = Vector2(700, 30)
+	_pin(zoom_label, Vector2(1, 0), Vector2(-24 - 700, 18), Vector2(700, 30))
 	zoom_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	zoom_label.add_theme_font_override("font", font)
 	zoom_label.add_theme_font_size_override("font_size", 20)
@@ -1196,8 +1283,7 @@ func _setup_ui() -> void:
 
 	# 프랍 그림자 프리셋 표시 — 줌 라벨 바로 아래 (F6 으로 비교하는 동안만 쓰는 개발용 표시)
 	shadow_label = Label.new()
-	shadow_label.position = Vector2(VIEW_SIZE.x - 24 - 900, 52)
-	shadow_label.size = Vector2(900, 30)
+	_pin(shadow_label, Vector2(1, 0), Vector2(-24 - 900, 52), Vector2(900, 30))
 	shadow_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	shadow_label.add_theme_font_override("font", font)
 	shadow_label.add_theme_font_size_override("font_size", 20)
@@ -1206,8 +1292,7 @@ func _setup_ui() -> void:
 
 	# 동적 광원 그림자 — 그 아래 한 줄 더
 	dyn_shadow_label = Label.new()
-	dyn_shadow_label.position = Vector2(VIEW_SIZE.x - 24 - 900, 78)
-	dyn_shadow_label.size = Vector2(900, 30)
+	_pin(dyn_shadow_label, Vector2(1, 0), Vector2(-24 - 900, 78), Vector2(900, 30))
 	dyn_shadow_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	dyn_shadow_label.add_theme_font_override("font", font)
 	dyn_shadow_label.add_theme_font_size_override("font_size", 20)
@@ -1217,8 +1302,7 @@ func _setup_ui() -> void:
 
 	# 아이들 모션 프리셋 — 그 아래 한 줄 더 (F5 로 비교하는 동안 쓰는 개발용 표시)
 	idle_label = Label.new()
-	idle_label.position = Vector2(VIEW_SIZE.x - 24 - 1100, 104)
-	idle_label.size = Vector2(1100, 30)
+	_pin(idle_label, Vector2(1, 0), Vector2(-24 - 1100, 104), Vector2(1100, 30))
 	idle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	idle_label.add_theme_font_override("font", font)
 	idle_label.add_theme_font_size_override("font_size", 20)
@@ -1227,8 +1311,7 @@ func _setup_ui() -> void:
 	_update_idle_label()
 
 	mark_label = Label.new()
-	mark_label.position = Vector2(VIEW_SIZE.x - 24 - 1100, 132)
-	mark_label.size = Vector2(1100, 30)
+	_pin(mark_label, Vector2(1, 0), Vector2(-24 - 1100, 132), Vector2(1100, 30))
 	mark_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	mark_label.add_theme_font_override("font", font)
 	mark_label.add_theme_font_size_override("font_size", 20)
@@ -1244,8 +1327,11 @@ func _setup_ui() -> void:
 	layer.add_child(walker_link)
 
 	prompt_label = Label.new()
-	prompt_label.position = Vector2(0, 800)
-	prompt_label.size = Vector2(VIEW_SIZE.x, 40)
+	prompt_label.anchor_right = 1.0                  # 가로는 창 폭 전체, 세로는 바닥에서 100px 위
+	prompt_label.anchor_top = 1.0
+	prompt_label.anchor_bottom = 1.0
+	prompt_label.offset_top = -100.0
+	prompt_label.offset_bottom = -60.0
 	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt_label.add_theme_font_override("font", font)
 	prompt_label.add_theme_font_size_override("font_size", 26)
@@ -1257,8 +1343,7 @@ func _setup_ui() -> void:
 
 	# 우하단: 탄창
 	ammo_label = Label.new()
-	ammo_label.position = Vector2(VIEW_SIZE.x - 24 - 360, VIEW_SIZE.y - 58 - 60)   # 하단 힌트 줄 위
-	ammo_label.size = Vector2(360, 60)
+	_pin(ammo_label, Vector2(1, 1), Vector2(-24 - 360, -58 - 60), Vector2(360, 60))   # 하단 힌트 줄 위
 	ammo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	ammo_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	ammo_label.add_theme_font_override("font", font)
@@ -1270,8 +1355,7 @@ func _setup_ui() -> void:
 	# 센트리건 총열 과열 게이지 (탄창 라벨 위). 조종 중에만 보인다.
 	heat_bar_bg = ColorRect.new()
 	heat_bar_bg.color = Color(0.10, 0.10, 0.13, 0.75)
-	heat_bar_bg.position = Vector2(VIEW_SIZE.x - 24 - HEAT_BAR.x, VIEW_SIZE.y - 58 - 60 - HEAT_BAR.y - 6)
-	heat_bar_bg.size = HEAT_BAR
+	_pin(heat_bar_bg, Vector2(1, 1), Vector2(-24 - HEAT_BAR.x, -58 - 60 - HEAT_BAR.y - 6), HEAT_BAR)
 	heat_bar_bg.visible = false
 	layer.add_child(heat_bar_bg)
 	heat_bar_fill = ColorRect.new()
@@ -1285,6 +1369,19 @@ func _setup_ui() -> void:
 	fade.set_anchors_preset(Control.PRESET_FULL_RECT)
 	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(fade)
+
+
+## HUD 조각을 창의 한 모서리(anchor: 0/1)에 붙인다. pos 는 그 모서리 기준 오프셋, size 0 이면 내용만큼.
+## 캔버스가 창 비율을 따라 늘어나므로 절대 좌표 대신 이것으로 배치한다.
+static func _pin(c: Control, anchor: Vector2, pos: Vector2, size: Vector2) -> void:
+	c.anchor_left = anchor.x
+	c.anchor_right = anchor.x
+	c.anchor_top = anchor.y
+	c.anchor_bottom = anchor.y
+	c.offset_left = pos.x
+	c.offset_top = pos.y
+	c.offset_right = pos.x + size.x
+	c.offset_bottom = pos.y + size.y
 
 
 func _setup_input_map() -> void:

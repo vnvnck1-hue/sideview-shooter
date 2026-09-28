@@ -205,7 +205,8 @@ func _run() -> void:
 	# 셋 다 _on_turret_control 한 곳에서만 갈리므로, 어떤 경로로 풀리든 원래대로 돌아와야 한다.
 	_check(CrtPreset.get_preset(CrtPreset.DEFAULT)["id"] == "arcade", "기본 CRT 프리셋이 아케이드 모니터로 고정되어 있다")
 	_check(CrtPreset.get_preset(CrtPreset.LINKED)["id"] == "tv", "접속 중 CRT 프리셋은 가정용 TV 다")
-	_check(int(_main.ZOOM_PRESETS[_main.ZOOM_DEFAULT]["px"]) == 3, "기본 줌이 표준 ×3 으로 고정되어 있다")
+	_check(int(_main.ZOOM_PRESETS[_main.ZOOM_DEFAULT]["step"]) == 0 and _main._preset_px(_main.ZOOM_DEFAULT) >= _main.STANDARD_PX_MIN,
+		"기본 줌은 표준(캔버스 높이로 고른 ×%d)이다" % _main._preset_px(_main.ZOOM_DEFAULT))
 	_check(player.standby, "접속 중에는 플레이어가 대기 모드다")
 	# 자세를 **수치로** 본다. 방에 몬스터가 서 있으면 스크린샷으로는 몸이 가려 확인이 안 된다.
 	var idle_before: float = player._idle_w
@@ -217,7 +218,7 @@ func _run() -> void:
 	# 고개가 아래를 향하는가 — 바라보는 각의 sin 이 양수면 화면 아래쪽이다 (좌향·우향 모두 통한다)
 	_notes.append("  ---  고개 각 sin = %.2f (양수 = 아래)" % sin(player._head_angle))
 	_check(sin(player._head_angle) > 0.3, "고개를 아래로 떨군다")
-	var base_z: float = float(_main.ZOOM_PRESETS[_main.zoom_index]["px"]) / _main.ART_CELL
+	var base_z: float = float(_main._base_px()) / _main.ART_CELL
 	_main._apply_link_zoom(_main.LINK_ZOOM)
 	_check(_main._base_zoom() < base_z - 0.01,
 		"접속 중에는 화면이 물러나 있다 (%.3f → %.3f)" % [base_z, _main._base_zoom()])

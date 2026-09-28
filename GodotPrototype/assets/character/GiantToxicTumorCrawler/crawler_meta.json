@@ -29,6 +29,21 @@
       "fps": 8,
       "loop": false,
       "frames": 4
+    },
+    "death_inflate": {
+      "fps": 6.0,
+      "loop": false,
+      "frames": 6
+    },
+    "death_flyback": {
+      "fps": 7.5,
+      "loop": false,
+      "frames": 6
+    },
+    "death_agony": {
+      "fps": 3.75,
+      "loop": false,
+      "frames": 6
     }
   },
   "frames": {
@@ -210,6 +225,168 @@
         716,
         1046,
         1258
+      ]
+    },
+    "death_inflate_01": {
+      "feet_y": 1240,
+      "bbox": [
+        52,
+        714,
+        1032,
+        1218
+      ]
+    },
+    "death_inflate_02": {
+      "feet_y": 1240,
+      "bbox": [
+        80,
+        672,
+        1006,
+        1218
+      ]
+    },
+    "death_inflate_03": {
+      "feet_y": 1240,
+      "bbox": [
+        98,
+        598,
+        988,
+        1224
+      ]
+    },
+    "death_inflate_04": {
+      "feet_y": 1240,
+      "bbox": [
+        88,
+        516,
+        998,
+        1224
+      ]
+    },
+    "death_inflate_05": {
+      "feet_y": 1240,
+      "bbox": [
+        84,
+        450,
+        1002,
+        1232
+      ]
+    },
+    "death_inflate_06": {
+      "feet_y": 1240,
+      "bbox": [
+        52,
+        878,
+        1034,
+        1240
+      ]
+    },
+    "death_flyback_01": {
+      "feet_y": 1240,
+      "bbox": [
+        52,
+        584,
+        1032,
+        1220
+      ]
+    },
+    "death_flyback_02": {
+      "feet_y": 1240,
+      "bbox": [
+        98,
+        406,
+        986,
+        1200
+      ]
+    },
+    "death_flyback_03": {
+      "feet_y": 1240,
+      "bbox": [
+        70,
+        450,
+        1014,
+        1188
+      ]
+    },
+    "death_flyback_04": {
+      "feet_y": 1240,
+      "bbox": [
+        134,
+        578,
+        950,
+        1240
+      ]
+    },
+    "death_flyback_05": {
+      "feet_y": 1240,
+      "bbox": [
+        42,
+        766,
+        1044,
+        1218
+      ]
+    },
+    "death_flyback_06": {
+      "feet_y": 1240,
+      "bbox": [
+        34,
+        902,
+        1050,
+        1234
+      ]
+    },
+    "death_agony_01": {
+      "feet_y": 1240,
+      "bbox": [
+        110,
+        640,
+        974,
+        1220
+      ]
+    },
+    "death_agony_02": {
+      "feet_y": 1240,
+      "bbox": [
+        86,
+        362,
+        1000,
+        1190
+      ]
+    },
+    "death_agony_03": {
+      "feet_y": 1240,
+      "bbox": [
+        12,
+        424,
+        1072,
+        1220
+      ]
+    },
+    "death_agony_04": {
+      "feet_y": 1240,
+      "bbox": [
+        40,
+        520,
+        1044,
+        1220
+      ]
+    },
+    "death_agony_05": {
+      "feet_y": 1240,
+      "bbox": [
+        18,
+        726,
+        1066,
+        1232
+      ]
+    },
+    "death_agony_06": {
+      "feet_y": 1240,
+      "bbox": [
+        46,
+        874,
+        1038,
+        1240
       ]
     }
   }

@@ -16,8 +16,8 @@ extends "res://scripts/main.gd"
 ##
 ## 조작은 본편과 같고, 여기만:  [ ] 열린 구획 사이 건너뛰기 · W/↑ 로 구역 문 열기
 
-## 시작 줌은 본편과 같은 기본값(Main.ZOOM_DEFAULT, 표준 ×3)을 쓴다 (2026-09-23). 예전엔 넓이를 본다고
-## ×2 로 덮어써서 이 씬만 화면이 달랐다 — 넓게 보고 싶으면 F3 으로 바꾼다.
+## 시작 줌: 2026-09-23 에 본편과 같은 표준으로 맞췄다가, 2026-09-25 원경·방 키우기 시험부터 다시 **"넓게"**
+## (표준 −1)로 시작한다 — 이 씬은 공간이 얼마나 트여 보이는가를 보는 곳이다. F3 으로 표준·가깝게.
 const GATE_STOP_PAD := 40.0   # 닫힌 문 앞에서 플레이어가 멈추는 여유
 
 var space_label: Label
@@ -32,6 +32,7 @@ func _ready() -> void:
 	# 방 데이터는 super() 의 _load_room 보다 **먼저** 올라가야 한다
 	SpaceLabData.register()
 	AppFlow.start_room = SpaceLabData.ROOM_ID
+	zoom_index = 0          # 2026-09-25: 넓이·원경을 보는 씬이라 "넓게"로 시작한다 (F3 로 표준·가깝게)
 	super()
 	_spans = SpaceLabData.spans()
 	_build_gates()
@@ -45,7 +46,7 @@ func _ready() -> void:
 	space_label = _hud_line(layer, 58, Color(0.85, 0.9, 1.0))
 	wave_label = _hud_line(layer, 86, Color(1.0, 0.78, 0.55))
 
-	hint_label.text = "F1 로비    A/D 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기    W/↑ 센트리건·보행 기체 조종 · 구역 문 열기    R 재장전    [ ] 구획 건너뛰기    F3 줌    F11 전체화면"
+	hint_label.text = "F1 로비    A/D 이동    마우스 조준 · 좌클릭 사격    Space 구르기    Ctrl 앉기(+A/D 앉아 걷기)    W/↑ 센트리건·보행 기체 조종 · 구역 문 열기 · 없으면 점프    R 재장전    [ ] 구획 건너뛰기    F3 줌    F11 전체화면"
 
 
 func _hud_line(layer: CanvasLayer, y: float, color: Color) -> Label:
@@ -71,7 +72,8 @@ func _build_gates() -> void:
 		current_room.add_child(gate)
 		gate.setup(SpaceLabData.gate_x(i), current_room.floor_y,
 			Rect2(float(reveal[0]), rect.position.y, float(reveal[1]) - float(reveal[0]), rect.size.y),
-			SpaceLabData.next_room_name(i))
+			SpaceLabData.next_room_name(i),
+			RoomTiles.silhouette(current_room.heights, float(reveal[0]), float(reveal[1]), rect.end.y + RoomTheme.CELL))
 		gate.opened.connect(_on_gate_opened)
 		_gates.append(gate)
 	_sync_sections()

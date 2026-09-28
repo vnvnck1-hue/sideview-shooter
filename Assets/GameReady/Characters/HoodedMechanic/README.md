@@ -1,18 +1,19 @@
 # Hooded Mechanic
 
-> **2026-09-23 — 고화질 원화로 전면 교체 (현행).** 게임이 쓰는 플레이어 리소스는 이제
-> `Tools/build_hooded_mechanic_hq.py` 가 원화 한 장
-> (`Assets/Generated/PlayerConcepts/hooded_mechanic_hq_source_v1.webp`, 128² 네이티브 · 키 93 art px)에서
-> 파츠 리그(머리 / 팔+총 / 몸통 / 다리 3관절 IK)로 전부 다시 만든다.
-> - 셀 512² (네이티브 128² × 4), 피벗 바닥 중심. 전신 높이 372 월드 px (구 v1 은 260).
-> - 출력: `GodotPrototype/assets/character/{Split,Action,Frames}` + 검수물 `HQ/` (네이티브 원화·파츠·검수 시트).
-> - 이후 `python Tools/build_normal_maps.py character/Split`. 인게임 검수: `tools/player_pose_shot.gd`.
-> - 아래 v1 문서와 `build_hooded_mechanic_{animation,split,head_split,run}` · `action_frames` 스크립트는 **구 리소스용**이다.
->   다시 돌리면 새 리소스를 덮어쓰니 실행하지 않는다.
+> **2026-09-23 — 캐릭터 규격을 NPC 기준으로 확정. 게임은 v1 리소스(셀 320)를 쓴다 (현행).**
+> - 셀 320² (네이티브 80² × 4), 피벗 바닥 중심. 서 있는 키 262~267 월드 px로 NPC(252~272)와 같은 비율이다.
+> - 치수 단일 기준: `Docs/SCALE_CHARACTER_BASELINE.md`. 재측정: `python Tools/measure_character_scale.py --sheet`.
+> - 게임 리소스 `GodotPrototype/assets/character/{Split,Action,Frames}` 는 아래 v1 문서와
+>   `build_hooded_mechanic_{animation,split,head_split,run}` · `action_frames` 스크립트가 만든 것이다.
+>
+> **고화질판 (보류).** 같은 날 만든 고화질 원화 교체본(셀 512, 키 372)은 NPC보다 약 1.4배 커서 기준에서 제외했다.
+> 원화·파츠·검수 시트는 `HQ/`, 빌드 스크립트 `Tools/build_hooded_mechanic_hq.py` 로 보존한다.
+> 이 스크립트는 **실행하면 현행 리소스를 덮어쓰므로** 규격을 다시 정하기 전에는 돌리지 않는다.
+> 게임 반입본은 커밋 98b8feb 에 남아 있다.
 
 ---
 
-## (구) Hooded Mechanic Animation v1
+## Hooded Mechanic Animation v1 (현행 게임 리소스)
 
 붉은 후드 정비공 캐릭터의 러프 최소 키프레임 리소스다.
 

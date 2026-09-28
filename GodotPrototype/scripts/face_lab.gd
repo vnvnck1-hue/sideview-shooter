@@ -91,7 +91,7 @@ func _build_panel() -> void:
 	sb.set_corner_radius_all(6)
 	sb.set_content_margin_all(14)
 	_panel.add_theme_stylebox_override("panel", sb)
-	_panel.position = Vector2(VIEW_SIZE.x - FaceLabPanelWidth - 20, 124)   # 우상단 HUD(줌·그림자 프리셋) 아래
+	_pin(_panel, Vector2(1, 0), Vector2(-FaceLabPanelWidth - 20, 124), Vector2(FaceLabPanelWidth, 0))   # 우상단 HUD(줌·그림자 프리셋) 아래
 	_panel.custom_minimum_size = Vector2(FaceLabPanelWidth, 0)
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	(get_node("UI") as CanvasLayer).add_child(_panel)

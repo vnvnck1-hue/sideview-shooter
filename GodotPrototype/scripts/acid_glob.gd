@@ -7,8 +7,8 @@ extends Node2D
 const GRAVITY := 1900.0
 const FLIGHT_TIME := 0.55
 const MAX_SPEED := 1500.0
-const PLAYER_HALF_W := 84.0
-const PLAYER_HEIGHT := 360.0
+const PLAYER_HALF_W := 62.0
+const PLAYER_HEIGHT := 250.0
 const PUDDLE_LIFE := 4.5
 const CORE := Color(0.92, 1.0, 0.55)
 const BODY := Color(0.62, 0.82, 0.16)
@@ -74,7 +74,8 @@ func _process(delta: float) -> void:
 		# 플레이어 명중 (구르기 중이면 회피)
 		if target and is_instance_valid(target):
 			var rolling: bool = target.has_method("is_rolling") and target.is_rolling()
-			var rect := Rect2(target.position.x - PLAYER_HALF_W, target.position.y - PLAYER_HEIGHT,
+			var air: float = target.air_height() if target.has_method("air_height") else 0.0   # 점프·사다리
+			var rect := Rect2(target.position.x - PLAYER_HALF_W, target.position.y - air - PLAYER_HEIGHT,
 				PLAYER_HALF_W * 2.0, PLAYER_HEIGHT)
 			if not rolling and rect.has_point(_p):
 				_splat(true)

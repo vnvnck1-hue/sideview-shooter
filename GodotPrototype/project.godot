@@ -19,16 +19,18 @@ config/windows_native_icon="res://icon/icon.ico"
 
 [autoload]
 
+ViewFit="*res://scripts/view_fit.gd"
 CrtFx="*res://scripts/crt_overlay.gd"
 Audio="*res://scripts/audio_manager.gd"
 
 [display]
 
-window/size/viewport_width=2240
+window/size/viewport_width=1600
 window/size/viewport_height=900
+window/size/mode=2
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
-window/stretch/scale_mode="integer"
+window/stretch/aspect="expand"
+window/stretch/scale_mode="fractional"
 
 [dotnet]
 

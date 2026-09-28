@@ -543,8 +543,13 @@ func _build_hud() -> void:
 	layer.add_child(_info)
 
 	var keys := Label.new()
-	keys.position = Vector2(24, AppFlow.VIEW_SIZE.y - 72)
-	keys.size = Vector2(AppFlow.VIEW_SIZE.x - 48, 64)
+	keys.anchor_top = 1.0
+	keys.anchor_right = 1.0
+	keys.anchor_bottom = 1.0
+	keys.offset_left = 24.0
+	keys.offset_top = -72.0
+	keys.offset_right = -24.0
+	keys.offset_bottom = -8.0
 	keys.add_theme_font_override("font", font)
 	keys.add_theme_font_size_override("font_size", 18)
 	keys.add_theme_color_override("font_color", Color(0.68, 0.72, 0.82))

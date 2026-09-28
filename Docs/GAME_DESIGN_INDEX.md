@@ -11,7 +11,10 @@
 | NPC·대화 | [`DIALOGUE_SYSTEM.md`](DIALOGUE_SYSTEM.md) | 대화 데이터·표시·소리·조작 및 장면 연출 |
 | 장르·레퍼런스 조사 | [`GENRE_REFERENCE_RESEARCH.md`](GENRE_REFERENCE_RESEARCH.md) | 게임·영화·드라마·애니·소설 비교, 차용점·회피점, 우선 감상 순서 |
 | 공간 테스트 씬 | [`SPACE_TEST_SCENE.md`](SPACE_TEST_SCENE.md) | 넓은 공간의 체감, 트랜지션 없는 방 연결을 보는 랩(`SpaceLab.tscn`)의 구성과 근거 |
-| 캐릭터·배경 규격 정립 | [`SCALE_STANDARDIZATION_PLAN.md`](SCALE_STANDARDIZATION_PLAN.md) | **빠른 착수 필요 / 우선순위 높음 / 착수 대기.** 그레이박스로 치수 검증 후 타일·프랍 제작 규격 확정 |
+| 규격 테스트 씬 | [`SCALE_TEST_SCENE.md`](SCALE_TEST_SCENE.md) · 실측 [`SCALE_TEST_RESULTS.md`](SCALE_TEST_RESULTS.md) | 캐릭터 대비 문·통로·턱·상자·층고·프랍 후보 치수를 그레이박스로 비교하는 랩(`ScaleLab.tscn`)과 판정 결과 |
+| 공간감 테스트 씬 | [`DEPTH_TEST_SCENE.md`](DEPTH_TEST_SCENE.md) | 도킹 회랑·다층 격납고·환풍 덕트·수직 샤프트·전력 홀 캣워크를 이은 그레이박스(`DepthLab.tscn`) — 패럴렉스·명도 톤·깊이별 조명·점프/사다리 동선·크롤러/센트리건/버그봇·카메라 워킹 프리셋 |
+| 캐릭터·배경 규격 정립 | [`SCALE_STANDARDIZATION_PLAN.md`](SCALE_STANDARDIZATION_PLAN.md) | **우선순위 높음 / 진행 중(1단계 완료).** 그레이박스로 치수 검증 후 타일·프랍 제작 규격 확정 |
+| 캐릭터 기준표 | [`SCALE_CHARACTER_BASELINE.md`](SCALE_CHARACTER_BASELINE.md) | 규격 정립 1단계. 인물 규격(NPC 기준 셀 80×80·키 약 260) 확정, 플레이어 외형·판정·이동·사격·카메라 측정값 |
 | 초기 스토리 초안 | [`STORY_CONCEPT_DRAFT.docx`](STORY_CONCEPT_DRAFT.docx) | 보존용 원안. 현재 결정의 기준은 위 서사 문서 |
 
 단말기와 지도는 같은 화면을 공유하지만, 지도 생성·판독 규칙은 독립적으로 변경될 수 있으므로 합치지 않는다. 도입부 역시 전체 서사의 반복 요약이 아니라 시간별 플레이·구현 문서로 유지한다. 각 문서가 겹치는 곳은 핵심 원칙만 참조하고 상세 수치·상태는 해당 담당 문서에서 갱신한다.

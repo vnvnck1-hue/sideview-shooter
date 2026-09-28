@@ -46,7 +46,16 @@ var target: Node2D                      # Player (position.x 와 facing 사용)
 ## 원격 조종(단말기 → 센트리건)처럼 플레이어가 아닌 지점을 잡아 둘 때. NAN 이면 평소대로 target 을 따라간다.
 ## 마우스 리드는 그대로 살아 있어 포탑에서도 포인터 쪽을 조금 내다본다.
 var focus_x := NAN
-var base_y := 0.0                       # 방의 세로 중심
+var base_y := 0.0                       # 방의 세로 중심 (floor_y 가 없거나 focus_at 으로 한 점을 잡았을 때만 쓴다)
+## 바닥선 프레이밍 (2026-09-25). 방의 세로 중심을 화면 가운데에 두면 층고가 높은 방에서 바닥이
+## 화면 맨 아래(≈86~98%)로 밀려 캐릭터가 발끝에 붙어 선다. 그래서 평소에는 **바닥선을 화면 높이의
+## FLOOR_FRAC 지점**에 고정한다. 천장이 잘리는 높은 방만 FLOOR_FRAC_MAX 까지 바닥을 내려 천장을 양보받는다.
+## NAN 이면 예전처럼 base_y 를 세로 중심으로 쓴다 (규격 테스트 씬처럼 스스로 세로를 잡는 씬).
+const FLOOR_FRAC := 0.62
+const FLOOR_FRAC_MAX := 0.65
+const CEIL_MARGIN := 24.0               # 천장 위로 남겨 두는 어두운 여백 (월드 px)
+var floor_y := NAN                      # 바닥선 (월드 y)
+var room_top := NAN                     # 가장 높은 천장 (월드 y)
 var view_scale := 1.0                   # 창 px / 이 카메라 뷰포트 px (저해상도 SubViewport 면 2)
 var preset_index := DEFAULT_PRESET
 var preset: Dictionary = PRESETS[DEFAULT_PRESET]
@@ -86,7 +95,8 @@ func snap() -> void:
 	_lead = _desired_lead()
 	_shake = 0.0
 	offset = Vector2.ZERO
-	position = Vector2(_follow_x + _lead.x, base_y + _lead.y)
+	_apply_limits()
+	position = Vector2(_follow_x + _lead.x, framed_y() + _lead.y)
 	reset_smoothing()
 
 
@@ -102,6 +112,27 @@ func clear_focus(restore_base_y: float) -> void:
 	focus_x = NAN
 	base_y = restore_base_y
 	_apply_limits()
+
+
+## 바닥선 프레이밍. 방 전환마다 Main 이 넣는다.
+func set_floor(floor_line: float, ceiling: float) -> void:
+	floor_y = floor_line
+	room_top = ceiling
+	_apply_limits()
+
+
+## 카메라가 서는 세로 위치. z = 이 줌일 때의 값 (대화·단말기에서 돌아오는 트윈의 도착점을 미리 구할 때).
+## 한 점을 잡아 둔 동안(focus_at)은 그 점이 이긴다.
+func framed_y(z := -1.0) -> float:
+	if is_finite(focus_x) or not is_finite(floor_y):
+		return base_y
+	if z <= 0.0:
+		z = zoom.y
+	var vh := get_viewport_rect().size.y / z
+	var y := floor_y - (FLOOR_FRAC - 0.5) * vh
+	if is_finite(room_top):
+		y = minf(y, room_top - CEIL_MARGIN + vh * 0.5)      # 천장이 잘리면 카메라를 올린다
+	return maxf(y, floor_y - (FLOOR_FRAC_MAX - 0.5) * vh)   # 단, 바닥이 이 선보다 내려가지는 않게
 
 
 func add_shake(amount: float, cap := 10.0) -> void:
@@ -131,8 +162,9 @@ func _apply_limits() -> void:
 	limit_left = int(left)
 	limit_right = int(right)
 	var extra := float(preset["mouse_max_y"])
-	limit_top = int(base_y - vp.y * 0.5 - extra)
-	limit_bottom = int(base_y + vp.y * 0.5 + extra)
+	var cy := framed_y()
+	limit_top = int(cy - vp.y * 0.5 - extra)
+	limit_bottom = int(cy + vp.y * 0.5 + extra)
 
 
 func _process(delta: float) -> void:
@@ -142,7 +174,8 @@ func _process(delta: float) -> void:
 	var look_k := 1.0 - exp(-float(preset["look_speed"]) * delta)
 	_follow_x = lerpf(_follow_x, _follow_target_x(), follow_k)
 	_lead = _lead.lerp(_desired_lead(), look_k)
-	position = Vector2(_follow_x + _lead.x, base_y + _lead.y)
+	_apply_limits()                      # 줌·창 크기가 바뀌면 보이는 범위도 바뀐다 (싸다 — 매 프레임 다시 잡는다)
+	position = Vector2(_follow_x + _lead.x, framed_y() + _lead.y)
 
 	_shake = maxf(_shake - SHAKE_DECAY * delta * maxf(_shake, 0.5), 0.0)
 	offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _shake

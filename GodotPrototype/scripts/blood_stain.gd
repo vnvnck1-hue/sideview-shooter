@@ -14,12 +14,12 @@ extends Node2D
 ##   ③ 면 방향     — 바닥에 떨어진 것은 흘러내리지 않고 원근에 눌린 납작한 웅덩이로 그린다.
 ##   ④ 코어/미스트 — 굵은 코어(적음·흐름 있음)와 미세 비말(많음·아주 얇음) 두 집단으로 나눠 밀도 대비를 만든다.
 ##   ⑤ 3톤 방울    — 어두운 외곽 / 본체 / 윗면 하이라이트. 픽셀 격자(2px)는 그대로 지킨다.
-##   ⑥ 근경 방울   — 가끔 근경 층(z7)에 크고 어두운 방울 몇 개. 카메라 바로 앞에 튄 것이라 깊이 폭이 단번에 벌어진다.
+##   (⑥ 근경 방울 — 근경 층(z7)의 크고 어두운 방울은 2026-09-24 삭제. 화면 앞을 떠다니는 어두운 사각 덩어리로 보였다)
 ##
 ## 재질은 두 겹이다. 노드 자신(_draw)이 **두꺼운 코어·흐름**을 fluid 로 그리고,
 ## z -1 의 자식 Film 이 **얇은 막·미세 비말**을 fluid_film(곱연산)으로 먼저 그린다.
 
-enum Surface { WALL, PROP, FLOOR, FRONT }
+enum Surface { WALL, PROP, FLOOR }
 
 const LIFE := 28.0
 const FADE := 6.0
@@ -28,8 +28,6 @@ const FLOOR_Y := 486.0
 const WALL_TOP := 40.0
 const SPRAY_DRIP_TIME := 6.5     # 분사 덩어리가 흘러내리는 시간 (느리게 시작해 가속)
 const SPRAY_POP := 0.09          # 벽에 찍히는 순간 커 보이는 시간
-const FRONT_LIFE := 11.0         # 근경 방울은 오래 두면 화면을 가린다
-const FRONT_FADE := 3.5
 
 ## 체액 기본색 — 채도·밝기를 눌러 형광기 없이 '젖은 초록'으로.
 ## 젖은 재질로 바꾸면서 베이스를 더 어둡게 내렸다 (밝기는 스페큘러가 낸다).
@@ -41,14 +39,12 @@ const DEPTH := {
 	Surface.WALL:  {"size": 0.80, "value": 0.86, "sat": 0.78, "film": 0.78, "drip": 0.85, "spec": 0.55},
 	Surface.PROP:  {"size": 1.16, "value": 1.14, "sat": 1.00, "film": 1.05, "drip": 1.00, "spec": 1.00},
 	Surface.FLOOR: {"size": 1.04, "value": 0.95, "sat": 0.86, "film": 0.92, "drip": 0.00, "spec": 0.85},
-	Surface.FRONT: {"size": 2.70, "value": 0.34, "sat": 0.55, "film": 1.30, "drip": 1.40, "spec": 0.30},
 }
 
 const RAY_STEP := 7.0            # 착지면 탐색 간격 (px)
 const RAY_SKIP := 14.0           # 원점 근처(몬스터 몸 안)는 건너뛴다
 const FLOOR_BAND := 6.0          # 이 안쪽이면 바닥면으로 친다
 const MIST_PER_CORE := 2.2       # 코어 하나당 미세 비말 수
-const FRONT_CHANCE := 0.22       # 분사 한 번이 근경에 방울을 남길 확률
 
 
 ## 얇은 막·미세 비말 층 (곱연산). 부모 자국의 draw_film 이 그린다.
@@ -116,14 +112,7 @@ static func spray(room: Node, pos: Vector2, dir: Vector2, amount: int, length: f
 		var mdist := length * randf_range(0.25, 1.35)
 		seeds.append({"from": pos, "to": pos + d.rotated(mang) * mdist, "size": randf_range(2.0, 6.0),
 			"t0": (mdist / maxf(length, 1.0)) * randf_range(0.18, 0.30), "drip": 0.0, "slide": 0.0, "mist": true})
-	var made := _emit(room, seeds, true, pos)
-	# ⑥ 근경 방울 — 카메라 바로 앞을 스치는 층에 크고 어두운 몇 방울
-	var fg = room.get("foreground") if room else null
-	if fg != null and is_instance_valid(fg) and randf() < FRONT_CHANCE:
-		var front := _front_drops(fg, pos, d, length)
-		if front != null:
-			made.append(front)
-	return made
+	return _emit(room, seeds, true, pos)
 
 
 # ----------------------------------------------------------------------------- 착지면 판정 · 조립
@@ -230,33 +219,6 @@ static func _attach(room: Node, bs: BloodStain, surf: int, host) -> void:
 	layer.add_child(bs)
 
 
-## ⑥ 근경 방울 — 카메라 바로 앞 층에 크고 어두운 몇 방울
-static func _front_drops(layer: Node2D, pos: Vector2, d: Vector2, length: float) -> BloodStain:
-	var blobs: Array = []
-	for i in range(randi_range(2, 4)):
-		var q := pos + d.rotated(randf_range(-0.7, 0.7)) * length * randf_range(0.3, 1.1)
-		q += Vector2(randf_range(-120.0, 120.0), randf_range(-90.0, 40.0))
-		var sz := randf_range(7.0, 13.0) * float(DEPTH[Surface.FRONT]["size"])
-		var shade := randf_range(0.7, 1.0) * float(DEPTH[Surface.FRONT]["value"])
-		blobs.append({
-			"p": (q / 2.0).floor() * 2.0,
-			"size": (Vector2(sz, sz * randf_range(0.8, 1.15)) / 2.0).ceil() * 2.0,
-			"col": Color(FLUID.r * shade, FLUID.g * shade, FLUID.b * shade, randf_range(0.85, 1.0)),
-			"drip": randf_range(30.0, 90.0), "t0": randf_range(0.0, 0.12), "slide": randf_range(2.0, 10.0),
-			"flat": false, "mist": false, "near": 1.0,
-			"ar": randf_range(0.50, 0.76),
-			"lobe": Vector2(randf_range(-0.34, 0.34), randf_range(-0.30, 0.30)),
-		})
-	if blobs.is_empty():
-		return null
-	var bs := BloodStain.new()
-	bs._setup(Surface.FRONT, null, blobs, true)
-	bs.light_mask = 0                        # 근경 층 규칙 — 라이트를 받지 않는다 (앰비언트만)
-	bs.z_index = 1
-	layer.add_child(bs)
-	return bs
-
-
 # ----------------------------------------------------------------------------- 인스턴스
 
 func _setup(surf: int, host, blobs: Array, is_spray: bool) -> void:
@@ -264,9 +226,6 @@ func _setup(surf: int, host, blobs: Array, is_spray: bool) -> void:
 	_prof = DEPTH[surf]
 	_blobs = blobs
 	_spray = is_spray
-	if surf == Surface.FRONT:
-		_life = FRONT_LIFE
-		_fade = FRONT_FADE
 	var last := 0.0
 	for b in _blobs:
 		last = maxf(last, float(b["t0"]))

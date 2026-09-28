@@ -5,8 +5,11 @@ extends Control
 ##   [대화 UI 랩]  대사 표시 방식 5종을 실제 화면에서 1~5 로 바꿔 가며 비교한다 (scenes/DialogueLab.tscn)
 ##   [사족보행 랩] 인게임 기체의 보행·관절 수치를 조정한다. 원화 피벗 편집기도 여기서 연다.
 ##   [공간 테스트] 기본 타일로 만든 20,000px 한 줄에서 넓이·길이·트랜지션 없는 방 연결을 본다 (scenes/SpaceLab.tscn)
+##   [규격 테스트] 그레이박스로 문·통로·턱·상자·층고·프랍 후보 치수를 캐릭터와 비교한다 (scenes/ScaleLab.tscn)
+##   [공간감 테스트] 성격이 다른 다섯 공간을 이은 그레이박스에서 패럴렉스·명도·깊이별 조명·점프/사다리 동선·카메라 워킹을 본다 (scenes/DepthLab.tscn)
 ##   [갤러리 타일 테스트] 기존 Main 씬에서 서비스 갤러리 타일과 플레이어·몬스터를 함께 시험한다.
 ##   [조명·면 랩]  실제 게임 그대로 플레이하면서 방 안의 광원 수치와 프랍 면 맵을 고치고 저장한다 (scenes/FaceLab.tscn)
+##   [화면 모드]   창 모드(최대화) / 전체화면. 고른 값은 저장돼 다음 실행에도 유지된다 (autoload ViewFit). 게임 안에서는 F11
 ##   [CRT 모니터]  전역 CRT 후처리 프리셋 드롭다운 (scripts/crt_preset.gd · autoload CrtFx). 게임 안에서는 F4 / Shift+F4
 ##   [종료]
 ## 게임·뷰어 안에서는 F1 로 이 로비로 돌아온다.
@@ -76,15 +79,34 @@ func _ready() -> void:
 	var space := _button("◻   공간 테스트 — 이어진 대공간 %d px" % SpaceLabData.total_width(), "기본 배경 타일(workshop)로 세운 방 5개를 낮은 연결 통로로 이어 붙인 한 줄. 끝에서 끝까지 걸어도 페이드가 없다 — 문틀을 지나면 바로 옆방이다. 몬스터·센트리건·보행 기체·프랍·조명이 모두 들어 있다. [ ] 구획 건너뛰기 · F3 줌 · F1 로비")
 	space.pressed.connect(func(): AppFlow.start_space_lab(get_tree()))
 	box.add_child(space)
+
+	var scale_btn := _button("▤   규격 테스트 — 그레이박스 치수 비교", "문 높이 · 낮은 통로 · 턱과 계단 · 엄폐 상자 · 층고 · 배경 프랍 · 기존 아트 · 타일 연결부를 캐릭터로 직접 걸어 보며 비교한다. 후보마다 치수와 판정(서서 통과·구르기로만·불가)이 붙는다. [ ] 구역 · , . 후보 · G 세로 판정 · T 턱 한계 · N 충돌 끄기 · H 라벨 · F1 로비")
+	scale_btn.pressed.connect(func(): AppFlow.start_scale_lab(get_tree()))
+	box.add_child(scale_btn)
 	# 기존 run.bat → Lobby 흐름에서 바로 열 수 있게 고정 버튼으로 둔다.
 	# 긴 랩 목록의 하단은 작은 창에서 잘릴 수 있으므로 버튼을 별도 진입점으로 둔다.
 	var gallery := _button("▦   서비스 갤러리 타일 테스트", "기존 게임 씬에서 앞·뒤·반복 타일, 플레이어 이동·사격, 크롤러 AI를 시험한다. F1 로비")
-	gallery.position = Vector2(AppFlow.VIEW_SIZE.x - 730, 30)
-	gallery.size = Vector2(700, 62)
+	gallery.anchor_left = 1.0                  # 우상단 고정 (캔버스가 창 비율로 늘어난다)
+	gallery.anchor_right = 1.0
+	gallery.offset_left = -730.0
+	gallery.offset_top = 30.0
+	gallery.offset_right = -30.0
+	gallery.offset_bottom = 92.0
 	gallery.pressed.connect(func(): AppFlow.start_service_gallery_test(get_tree()))
 	add_child(gallery)
+	# 공간감 테스트도 같은 우상단 줄에 둔다 (가운데 목록은 900 높이 창에서 이미 꽉 찬다)
+	var depth_btn := _button("▥   공간감 테스트 — 이어진 다섯 공간", "도킹 관측 회랑(우주) · 다층 격납고 · 환풍 덕트 · 수직 샤프트 · 전력 홀 캣워크를 한 줄로 이은 그레이박스. 패럴렉스 레이어 · 깊이별 조명 · 점프/사다리 동선 · 크롤러·센트리건·버그봇 · 카메라 워킹 7종(C). [ ] 구역 · 1 2 3 속도 · L 레이어 · V 명도만 · F1 로비")
+	depth_btn.anchor_left = 1.0
+	depth_btn.anchor_right = 1.0
+	depth_btn.offset_left = -730.0
+	depth_btn.offset_top = 104.0
+	depth_btn.offset_right = -30.0
+	depth_btn.offset_bottom = 166.0
+	depth_btn.pressed.connect(func(): AppFlow.start_depth_lab(get_tree()))
+	add_child(depth_btn)
 
 	box.add_child(_spacer(6))
+	box.add_child(_display_row())
 	box.add_child(_crt_row())
 
 	box.add_child(_spacer(10))
@@ -137,6 +159,39 @@ func _button(text: String, tooltip: String) -> Button:
 	return b
 
 
+## "화면 모드  [창 모드 / 전체화면]" 한 줄. 바꾸면 즉시 적용되고 user://display.cfg 에 저장된다 (ViewFit).
+func _display_row() -> Control:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	var l := _label("▭   화면 모드", 24, Color(0.85, 0.83, 0.78))
+	l.custom_minimum_size = Vector2(230, 0)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(l)
+	var opt := _option()
+	opt.add_item("창 모드 (최대화)", 0)
+	opt.set_item_tooltip(0, "작업 표시줄이 보이는 최대화된 창. 창 테두리로 크기를 바꿀 수 있다")
+	opt.add_item("전체화면", 1)
+	opt.set_item_tooltip(1, "모니터 전체를 쓴다. 게임 안에서는 F11 로도 바꾼다")
+	opt.select(1 if ViewFit.fullscreen else 0)
+	opt.item_selected.connect(func(i: int): ViewFit.set_fullscreen(i == 1))
+	var follow := func(on: bool): opt.select(1 if on else 0)    # F11 로 바꿔도 드롭다운이 따라온다
+	ViewFit.mode_changed.connect(follow)
+	opt.tree_exiting.connect(func(): ViewFit.mode_changed.disconnect(follow))
+	row.add_child(opt)
+	return row
+
+
+func _option() -> OptionButton:
+	var opt := OptionButton.new()
+	opt.custom_minimum_size = Vector2(0, 50)
+	opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	opt.add_theme_font_override("font", _font)
+	opt.add_theme_font_size_override("font_size", 22)
+	opt.get_popup().add_theme_font_override("font", _font)
+	opt.get_popup().add_theme_font_size_override("font_size", 22)
+	return opt
+
+
 ## "CRT 모니터  [드롭다운]" 한 줄. 바꾸면 즉시 전역 오버레이(CrtFx)에 적용되고 저장된다.
 func _crt_row() -> Control:
 	var row := HBoxContainer.new()
@@ -145,13 +200,7 @@ func _crt_row() -> Control:
 	l.custom_minimum_size = Vector2(230, 0)
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	row.add_child(l)
-	var opt := OptionButton.new()
-	opt.custom_minimum_size = Vector2(0, 50)
-	opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	opt.add_theme_font_override("font", _font)
-	opt.add_theme_font_size_override("font_size", 22)
-	opt.get_popup().add_theme_font_override("font", _font)
-	opt.get_popup().add_theme_font_size_override("font_size", 22)
+	var opt := _option()
 	for i in CrtPreset.count():
 		var p: Dictionary = CrtPreset.get_preset(i)
 		opt.add_item("%d  %s" % [i + 1, p["name"]], i)

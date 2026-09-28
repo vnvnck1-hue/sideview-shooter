@@ -1,0 +1,29 @@
+{
+  "death_inflate": {
+    "frames": 6,
+    "fps": 6.0,
+    "loop": false,
+    "pivot": [
+      271.5,
+      620
+    ]
+  },
+  "death_flyback": {
+    "frames": 6,
+    "fps": 7.5,
+    "loop": false,
+    "pivot": [
+      271.5,
+      620
+    ]
+  },
+  "death_agony": {
+    "frames": 6,
+    "fps": 3.75,
+    "loop": false,
+    "pivot": [
+      271.5,
+      620
+    ]
+  }
+}

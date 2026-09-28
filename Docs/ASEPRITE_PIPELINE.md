@@ -43,7 +43,7 @@
 
 자산별 예외가 있으면 `CHARACTER_ART_GUIDE.md`, `TOXIC_TUMOR_CRAWLER_ANATOMY.md`, `SENTRY_TURRET_HEAD_STRUCTURE.md` 같은 전문 문서에 기록한다. 명시된 예외가 없는 값은 `ART_GUIDE.md`가 우선한다.
 
-## 현재 실행 경로 (v1.13)
+## 현재 실행 경로 (v1.14)
 
 새 작업은 `ART_GUIDE.md` §0의 원칙 → 위 제작 사이클/브리프 → 아래 자산별 실행 경로 순으로 진행한다. 단위 정의는 ART_GUIDE §0, 현재 선택·승인 상태는 [`ART_ASSET_STATUS.md`](ART_ASSET_STATUS.md)가 단일 출처다. 과거 실패 기록은 실행 기본값이 아니다.
 
@@ -51,9 +51,20 @@
 |---|---|---|---|
 | 승인된 세 프랍 재현 | Tolerance=12 / Snap=20 / Coherent=true / Passes=3 | 1.0 | `build_crisp_prop_trial.ps1` |
 | 의료실 선택본 재현 | Tolerance=4 / Snap=20 / Coherent=true / Passes=3 | 2.0 | `build_triage_room_two_x.ps1` |
-| 신규 원화 | 보존 브리프와 부분 비교 후 결정 | 자산별 비교·선택 | 범용 입력 실행기는 아직 미구현. 위 전용 스크립트를 임의 원화용 명령으로 안내하지 않음 |
+| 신규 원화 | 보존 브리프와 부분 비교 후 결정 | 자산별 비교·선택 | 후보 비교: `Tools/PixelPreview` 우클릭 미리보기 → 선택본 제작: `build_native_from_source.ps1` (아래 ‘빠른 픽셀 미리보기’) |
 
 캐릭터 8~16색은 별도의 디자인 목표이며, 위 프랍/방 정리 설정이 이를 구현하거나 보장하지 않는다. 제한 팔레트 캐릭터의 원화·변환 결과는 해당 목표로 따로 검수한다.
+
+### 빠른 픽셀 미리보기와 선택본 제작 (v1.14)
+
+보존 브리프 3단계의 해상도·설정 후보 비교용이다. 미리보기는 판단 보조이며 승인·반입이 아니다.
+
+- **엔진:** `Tools/PixelPreview/PixelPreviewEngine.cs`는 `preserve_crisp_prop.lua`와 `coarsen_crisp_prop.lua`를 반복 순서·동점 규칙·경계 단계의 팔레트 증가까지 그대로 옮긴 C# 포트다. Aseprite 없이 메모리에서 계산한다(프랍 약 0.1초, 1672×941 방 약 3초).
+- **동일성 보증:** `Tools/PixelPreview/test_parity.ps1`이 승인 세 프랍(`crisp-final-r1`), 의료실 준비본(`r2/prepared`)과 2.0 결과(`two-x-r1`)를 전 픽셀 재현하는지 검사한다. 두 Lua 중 하나를 고치면 같은 커밋에서 C#도 고치고 이 테스트를 다시 통과시킨다.
+- **사용:** `.png` 우클릭 → (Windows 11은 ‘더 많은 옵션 표시’) → **픽셀 미리보기 - 프랍**(12/20/true/3) 또는 **픽셀 미리보기 - 배경·방**(4/20/true/3). 하위 메뉴(SubCommands)는 이 위치에서 탐색기가 무시하므로 두 항목을 나란히 둔다. 피치 1/2/3/4 후보가 원본과 같은 표시 크기로 나란히 열리고, 카드를 누르면 원본과 연동 확대 비교, Space로 원본 전환이 된다. 설치 `Tools/PixelPreview/install_context_menu.ps1`, 제거 `uninstall_context_menu.ps1`(현재 사용자 HKCU만). 명령줄: `pixel_preview.ps1 <png...> [-Pitches 1,1.5,2] [-Tolerance 4] [-Snap 20] [-Passes 3] [-NoCoherent]`.
+- **저장 위치:** 미리보기는 `%LOCALAPPDATA%\SideviewPixelPreview\runs\`에만 쓴다. 원본 옆이나 저장소에는 쓰지 않는다.
+- **선택본 제작:** 뷰어의 ‘명령 복사’ 또는 실행 폴더의 `make-pitch-*.cmd`가 `Tools/Aseprite/build_native_from_source.ps1`을 부른다. preserve → (피치 > 1이면) coarsen → 각 단계 재열기/PNG 일치 검사 → **미리보기 엔진 결과와 전 픽셀 일치 검사** → `verification.json`(`userApproval: pending`, `gameImported: false`). 출력은 `Assets/Generated/NativeFromSource/<이름>/<RunName>/` staging에만 둔다. Aseprite 체험판은 저장·스크립트가 막혀 있어 실행되지 않는다(정식판 필요).
+- 기존 자산별 진입점(`build_crisp_prop_trial.ps1`, `build_triage_room_two_x.ps1`)은 승인 결과 재현용으로 그대로 둔다.
 
 ### 의료실 2.0의 처리와 재현
 

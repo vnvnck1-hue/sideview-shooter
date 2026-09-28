@@ -47,7 +47,7 @@ const BULB_EMISSION := 1.7                    # 전구 픽셀 최종 밝기 목�
 ## 사격 계열 붉은 팔레트 — 총구·궤적·탄착·피격 플래시가 모두 이 톤을 공유한다
 const RED_EMISSIVE := Color(4.5, 1.7, 1.25, 1.0)        # 흰 심이 살아 있는 붉은 발광
 const RED_EMISSIVE_SOFT := Color(3.0, 1.0, 0.75, 1.0)
-const GUN_LIGHT := Color(1.0, 0.36, 0.26)               # 총구 라이트
+const GUN_LIGHT := Color(1.0, 0.20, 0.10)               # 총구 라이트 — 2026-09-24 짙은 적색으로 (0.36,0.26 → 0.20,0.10): 세기를 올려도 주황·흰색으로 뜨지 않고 주변이 붉게 물든다
 const IMPACT_LIGHT := Color(1.0, 0.30, 0.20)            # 탄착 라이트
 const TRACER := Color(1.0, 0.30, 0.18)                  # 궤적 본체
 const TRACER_CORE := Color(1.0, 0.86, 0.80)             # 궤적 심

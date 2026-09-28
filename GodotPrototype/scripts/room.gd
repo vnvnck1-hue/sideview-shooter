@@ -17,6 +17,8 @@ signal player_hit(point: Vector2, dir: float)
 signal monster_roared(pos: Vector2, power: float)
 ## 거대종이 바닥을 내려찍었다 (Main 이 카메라를 크게 울린다)
 signal monster_slammed(pos: Vector2)
+## 몬스터가 죽으며 체액이 터졌다 (Main 이 카메라를 울려 타격감을 더한다)
+signal monster_died(pos: Vector2, power: float)
 signal wave_started(index: int, count: int)   # 웨이브 스폰이 한 무리를 내보내기 시작했다
 
 var room_id: String
@@ -41,6 +43,7 @@ var sentries: Array = []
 var walkers: Array = []          # 사족보행 기체(WalkerUnit). 센트리건과 같은 규칙으로 산다      # SentryTurret (바닥 격납형 센트리건 — Main 이 조종을 잡는다)
 var terminals: Array = []     # AccessTerminal (플레이어가 W/↑ 로 접속하는 대형 단말기)
 var npcs: Array = []          # Npc (플레이어가 W/↑ 로 말을 거는 생존자)
+var ladders: Array = []       # Ladder (W/↑ 로 오르는 벽 사다리)
 var player: Node2D            # Main 이 넣어준다 (전선 밀치기)
 var prop_shadows: Node2D      # 프랍 그림자 층 (PropShadow — 프랍 레이어 맨 뒤)
 var room_tiles: RoomTiles     # 테마 타일맵 (RoomTiles.build — 실행 중 생성)
@@ -103,6 +106,8 @@ func build(id: String) -> void:
 	add_child(tiles)
 	room_tiles = RoomTiles.new()
 	room_tiles.name = "RoomTiles"
+	var vista: bool = data.get("vista", false)      # 방 너머 원경 (VistaBackdrop) — 지금은 공간 테스트 씬만
+	room_tiles.open_under = vista
 	room_tiles.build(data["theme"], heights, id)
 	room_tiles.apply_lit_material()
 	tiles.add_child(room_tiles)
@@ -168,6 +173,13 @@ func build(id: String) -> void:
 	add_child(_npc_layer)
 	for p in data.get("props", []):
 		_add_prop(props, p)
+	# 벽 사다리 — 바닥에서 그 열 천장까지. 프랍과 같은 층(캐릭터 뒤)
+	for lx in data.get("ladders", []):
+		var ladder := Ladder.new()
+		ladder.name = "Ladder"
+		ladder.setup(float(lx), floor_y, ceiling_at(float(lx)) + RoomSolid.CEILING_BAND)
+		props.add_child(ladder)
+		ladders.append(ladder)
 
 	# 5. 공기층: 볼류메트릭 빛 기둥 + 환경 연출 + 부유 먼지 — 프랍 앞, 캐릭터 뒤
 	var air := Node2D.new()
@@ -269,7 +281,18 @@ func build(id: String) -> void:
 	foreground = ForegroundLayer.new()
 	foreground.name = "Foreground"
 	foreground.z_index = DepthLayers.Z_FOREGROUND
-	add_child(foreground)
+	if vista:
+		# 원경이 보이는 방에서는 방 밖 어둠이 근경을 가려 주지 않는다 — 방 실루엣으로 잘라낸다
+		var clip := Polygon2D.new()
+		clip.name = "ForegroundClip"
+		clip.polygon = RoomTiles.silhouette(heights, 0.0, float(width), room_rect.end.y)
+		clip.clip_children = CanvasItem.CLIP_CHILDREN_ONLY
+		clip.z_index = DepthLayers.Z_FOREGROUND
+		foreground.z_index = 0
+		add_child(clip)
+		clip.add_child(foreground)
+	else:
+		add_child(foreground)
 	var cols: Array = []
 	for c in range(heights.size()):
 		cols.append(ceiling_at(c * RoomTheme.CELL + RoomTheme.CELL * 0.5))
@@ -281,7 +304,15 @@ func build(id: String) -> void:
 	wall_shadow.name = "WallShadow"
 	wall_shadow.z_index = DepthLayers.Z_FOREGROUND + 1
 	add_child(wall_shadow)
-	wall_shadow.build(solid, heights)
+	wall_shadow.build(solid, heights, vista)
+	if vista:
+		var backdrop := VistaBackdrop.new()
+		backdrop.name = "Vista"
+		add_child(backdrop)
+		backdrop.setup(float(width), floor_y, id)
+	# 8b. 바닥 아래 하부층 — 벽 바깥 어둠보다 위 (RoomTiles.UNDER_ROWS 주석)
+	room_tiles.under.z_index = DepthLayers.Z_FOREGROUND + 2
+	add_child(room_tiles.under)
 	if data.get("visual_pack", "") == "service_gallery":
 		GalleryPlaytest.decorate(self)
 
@@ -641,6 +672,7 @@ func _add_crawler(x: float, facing: int, giant := false) -> Crawler:
 	c.spat.connect(_on_monster_spat)
 	c.roared.connect(monster_roared.emit)
 	c.slammed.connect(monster_slammed.emit)
+	c.died.connect(monster_died.emit)
 	_monster_layer.add_child(c)
 	monsters.append(c)
 	return c
@@ -947,6 +979,14 @@ func terminal_near(px: float) -> AccessTerminal:
 	for t in terminals:
 		if is_instance_valid(t) and t.can_interact(px):
 			return t
+	return null
+
+
+## 플레이어가 잡을 수 있는 거리의 사다리 (없으면 null)
+func ladder_near(px: float) -> Ladder:
+	for l in ladders:
+		if is_instance_valid(l) and absf(l.position.x - px) <= Ladder.GRAB_RANGE:
+			return l
 	return null
 
 

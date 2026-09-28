@@ -26,7 +26,7 @@ extends Node2D
 ##       멀면 독액 부채꼴 산탄(SPRAY), 가까우면 몸을 세웠다 내리꽂는 내려찍기(SLAM). 벽·천장은 타지 않는다.
 ##       자세한 설계 의도는 아래 "거대종" 상수 블록 주석에 있다.
 
-signal died(pos: Vector2)
+signal died(pos: Vector2, power: float)
 signal spat(glob: Node2D)
 ## power: 덩치 배율 (일반 1.0 · 거대종 GIANT_SIZE). Main 이 카메라 흔들림 크기·사거리에 쓴다.
 signal roared(pos: Vector2, power: float)
@@ -106,11 +106,23 @@ const HIT_FLASH_RADIUS := 200.0       # 탄착점 주변만 붉게 (텍스처 px
 const HIT_FLASH_PEAK := 0.55
 const CORPSE_TIME := 7.0
 const CORPSE_FADE := 1.2
+const DEATH_CLIPS := ["death", "death_inflate", "death_flyback", "death_agony"]
+# Optional authoring/test override. Empty selects a random death at the lethal hit.
+@export_enum("Random", "Original", "Inflate", "Flyback", "Agony") var death_style := 0
+var death_clip := "death"
+var _death_t := 0.0
+var _death_dir := 1.0
+var _death_power := 1.0
+var _death_fx_done := false
+var _death_velocity := Vector2.ZERO
+var _death_leak_t := 0.0
 
 const ACID_HOT := Color(0.96, 1.0, 0.62)
 const ACID_COLD := Color(0.55, 0.72, 0.12)
 const BLOOD_HOT := Color(0.62, 0.92, 0.30)     # 체액 (초록)
 const BLOOD_COLD := Color(0.22, 0.45, 0.08)
+const GORE_WET := Color(0.60, 0.70, 0.40, 1.0)  # 사망 비산(GoreBurst) — 채도 낮은 탁한 올리브, 발광 없음
+const GORE_DRY := Color(0.34, 0.40, 0.21, 1.0)
 const BLOOD_GLOW := 0.45                        # 체액 방울 발광 배율 (독액 1.0 대비 둔하게 — 형광기 제거)
 
 # 스케일 스프링 (발 밑 축). 값은 배율 — (1,1) 로 돌아온다
@@ -348,6 +360,7 @@ func _load_meta() -> void:
 func _build_frames() -> SpriteFrames:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
+	var death_resource: SpriteFrames = load(_asset_dir() + "death_variants.tres")
 	var clips: Dictionary = _meta.get("clips", {
 		"walk": {"fps": 8, "loop": true, "frames": 4}, "jump": {"fps": 8, "loop": false, "frames": 4},
 		"death": {"fps": 10, "loop": false, "frames": 4}, "attack": {"fps": 10, "loop": false, "frames": 4},
@@ -359,7 +372,11 @@ func _build_frames() -> SpriteFrames:
 		sf.set_animation_speed(clip_name, float(cfg["fps"]))
 		sf.set_animation_loop(clip_name, bool(cfg["loop"]))
 		for i in range(1, int(cfg["frames"]) + 1):
-			sf.add_frame(clip_name, Lighting.textured("%s%s/%s_%02d.png" % [_asset_dir(), clip_name, clip_name, i]))
+			var path := "%s%s/%s_%02d.png" % [_asset_dir(), clip_name, clip_name, i]
+			# The authored SpriteFrames resource owns the clip; wrap with the existing normal-map lighting.
+			if death_resource.has_animation(clip_name):
+				path = death_resource.get_frame_texture(clip_name, i - 1).resource_path
+			sf.add_frame(clip_name, Lighting.textured(path))
 	return sf
 
 
@@ -1314,18 +1331,19 @@ func hit(point: Vector2, dir: float, power := 1.0) -> void:
 	# 스케일 펀치: 탄이 온 쪽이 눌리듯 옆으로 퍼진다 (위력이 크면 더 깊게)
 	_punch(Vector2.ONE.lerp(HIT_PUNCH, power))
 	# 독액 방울: 탄 진행 방향 뒤쪽 원뿔로 튄다 + 체액이 탄 방향으로 벽에 튄다
+	# (2026-09-24 피격 체액 절반 — 대신 죽을 때 GoreBurst 로 몰아서 크게 터진다)
 	var sb := _burst_node()
-	sb.burst(point, int(9 * power), Vector2(-signf(dir), -0.6), 0.9, Vector2(140, 420) * power, ACID_HOT, ACID_COLD,
+	sb.burst(point, maxi(int(4.5 * power), 1), Vector2(-signf(dir), -0.6), 0.9, Vector2(140, 420) * power, ACID_HOT, ACID_COLD,
 		Vector2(0.3, 0.7), 2000.0, 4.5 * (0.7 + 0.3 * power) * size, false)
-	sb.burst(point, int(7 * power), Vector2(signf(dir), -0.3), 0.7, Vector2(200, 520) * power, BLOOD_HOT, BLOOD_COLD,
+	sb.burst(point, maxi(int(3.5 * power), 1), Vector2(signf(dir), -0.3), 0.7, Vector2(200, 520) * power, BLOOD_HOT, BLOOD_COLD,
 		Vector2(0.25, 0.6), 2200.0, 3.5 * (0.7 + 0.3 * power) * size, false, BLOOD_GLOW)
 	# 큰 위력에는 살아 있어도 살점이 뜯겨 날아간다
 	if power >= HIT_CHUNK_POWER:
 		_spawn_chunks(point, dir, int(power), power)
 	if room and room.has_method("add_stain"):
-		room.add_stain(point + Vector2(signf(dir) * 30.0, 0.0), Vector2(signf(dir), -0.15), int(6 * power), 40.0 * power * size)
-		# 가끔(35%, 위력에 비례) 체액이 탄 방향 벽면으로 부채꼴로 흩뿌려진다 — 덩어리가 순차적으로 찍히고 흘러내림
-		if randf() < 0.35 * power and room.has_method("add_spray"):
+		room.add_stain(point + Vector2(signf(dir) * 30.0, 0.0), Vector2(signf(dir), -0.15), maxi(int(3 * power), 1), 40.0 * power * size)
+		# 가끔(17.5%, 위력에 비례) 체액이 탄 방향 벽면으로 부채꼴로 흩뿌려진다 — 덩어리가 순차적으로 찍히고 흘러내림
+		if randf() < 0.175 * power and room.has_method("add_spray"):
 			room.add_spray(point, Vector2(signf(dir), randf_range(-0.7, 0.1)), int(14 * power), 160.0 * power * size, 0.9)
 	if hp <= 0:
 		_die(dir, power)
@@ -1337,8 +1355,18 @@ func hit(point: Vector2, dir: float, power := 1.0) -> void:
 
 
 func _die(dir: float, power := 1.0) -> void:
+	if state == State.DEAD:
+		return
+	death_clip = DEATH_CLIPS[death_style - 1] if death_style > 0 else DEATH_CLIPS[randi_range(0, 3)]
+	_death_t = 0.0
+	_death_dir = signf(dir) if not is_zero_approx(dir) else float(-facing)
+	_death_power = clampf(power, 0.5, 2.5)
+	_death_fx_done = false
+	_death_leak_t = 0.0
+	_spawn_t = -1.0
+	modulate.a = 1.0
 	# 벽·천장에서 죽으면 시체가 떨어진다 (죽음 클립은 바닥 자세뿐이라 바닥 스프라이트로 돌려놓는다)
-	_dead_falling = _off_floor() and position.y < floor_y
+	_dead_falling = position.y < floor_y
 	if not is_zero_approx(_sprite.rotation):
 		var f := _pose_facing()                       # 돌아 있던 자세에서 바닥 기준 방향을 되찾는다
 		if absf(f.x) > 0.3:
@@ -1357,18 +1385,34 @@ func _die(dir: float, power := 1.0) -> void:
 		_knock_rate = _knock / KNOCK_TIME
 	_corpse_t = 0.0
 	_sprite.speed_scale = 1.0
-	_sprite.play("death")
+	_sprite.play(death_clip)
 	_apply_frame_offset()
 	_punch(Vector2.ONE.lerp(DEATH_PUNCH, power))
 	var sb := _burst_node()
 	var c := hit_center()
 	# 위력이 클수록 크게. 육편이 많이 튀는데 소리가 같으면 그림만 화려해진다.
 	Audio.play_at("crawler_death", c, lerpf(-2.5, 1.5, clampf(power, 0.0, 1.0)), voice_pitch)
+	if death_clip != "death":
+		_knock = 0.0
+		_squash = Vector2.ONE
+		_squash_vel = Vector2.ZERO
+		_bob = Vector2.ONE
+		if death_clip == "death_flyback":
+			_dead_falling = false
+			_death_velocity = Vector2(_death_dir * 700.0 * sqrt(_death_power) / sqrt(size), -560.0)
+			sb.burst(c, 14, Vector2(_death_dir, -0.2), 0.25, Vector2(240, 540), GORE_WET, GORE_DRY,
+				Vector2(0.2, 0.45), 1400.0, 3.5 * size, false, 0.25)
+		# All variants become non-interactive immediately; their VFX arrive at the pose event.
+		died.emit(position, power)
+		return
 	# 독액 + 초록 체액이 사방으로 분출 (체액은 더 많이·굵게·오래)
 	sb.burst(c, int(22 * power), Vector2(-signf(dir) * 0.4, -1.0), 1.1, Vector2(160, 560) * power, ACID_HOT, ACID_COLD,
 		Vector2(0.45, 1.1), 2000.0, 5.0 * (0.7 + 0.3 * power) * size, true)
 	sb.burst(c, int(34 * power), Vector2(signf(dir) * 0.3, -0.8), PI, Vector2(220, 760) * power, BLOOD_HOT, BLOOD_COLD,
 		Vector2(0.5, 1.3), 2300.0, 6.0 * (0.7 + 0.3 * power) * size, false, BLOOD_GLOW)
+	# 체액 비산: 몸 중심에서 몸 반길이의 2.2배 반경 (위력이 크면 조금 더). 발광 없는 탁한 색이라 주변 조명을 그대로 받는다
+	GoreBurst.spawn(get_parent(), c, dir, _body_half_len() * 2.2 * sqrt(maxf(power, 0.5)), floor_y,
+		GORE_WET, GORE_DRY)
 	# 육편: 현재 프레임 텍스처를 조각내 사방으로 날린다
 	_spawn_chunks(c, dir, chunk_count, power)
 	# 벽에 큰 체액 자국 (탄 방향으로 길게) + 바닥 쪽 작은 자국
@@ -1378,7 +1422,7 @@ func _die(dir: float, power := 1.0) -> void:
 		# 죽을 때는 대개(75%) 넓게 분사 — 탄 방향으로 위쪽 부채꼴, 멀리까지
 		if randf() < 0.75 * power and room.has_method("add_spray"):
 			room.add_spray(c, Vector2(signf(dir), -0.35), int(26 * power), 280.0 * power * size, 1.3)
-	died.emit(position)
+	died.emit(position, power)
 
 
 ## 현재 프레임의 내용 영역을 CHUNK_CELL 격자로 나눠 그중 count 조각을 ChunkDebris 로 날린다 (power 만큼 더 멀리)
@@ -1421,6 +1465,40 @@ func _spawn_chunks(center: Vector2, dir: float, count := CHUNK_COUNT, power := 1
 
 
 func _process_dead(delta: float) -> void:
+	_death_t += delta
+	if death_clip == "death_flyback" and not _death_fx_done:
+		_death_velocity.y += FALL_GRAVITY * delta
+		position += _death_velocity * delta
+		position.x = clampf(position.x, min_x, max_x)
+		if position.y >= floor_y and _death_velocity.y > 0.0:
+			position.y = floor_y
+			_death_fx_done = true
+			_sprite.set_frame_and_progress(4, 0.0)
+			_apply_frame_offset()
+			_punch(LAND_SQUASH)
+			_land_dust()
+			_death_variant_burst(0.65, Vector2(_death_dir, -0.12), 0.35)
+		else:
+			# Hold the tumbling pose until an actual floor impact, even when killed on a wall.
+			if _sprite.frame >= 4:
+				_sprite.set_frame_and_progress(3, 0.0)
+	elif death_clip == "death_inflate" and _sprite.frame >= 4 and not _death_fx_done:
+		_death_fx_done = true
+		_death_variant_burst(1.65, Vector2.UP, PI)
+	elif death_clip == "death_agony":
+		if _sprite.frame < 4:
+			_sprite.position.x = sin(_death_t * 65.0) * 3.5 * size
+			_sprite.scale *= Vector2(1.0 + sin(_death_t * 43.0) * 0.035, 1.0 - sin(_death_t * 43.0) * 0.025)
+			_death_leak_t -= delta
+			if _death_leak_t <= 0.0:
+				_death_leak_t = 0.16
+				_burst_node().burst(hit_center(), 3, Vector2(0, 1), 0.3, Vector2(25, 80), GORE_WET, GORE_DRY,
+					Vector2(0.35, 0.65), 1600.0, 3.0 * size, false, 0.25)
+		else:
+			_sprite.position.x = 0.0
+			if not _death_fx_done:
+				_death_fx_done = true
+				_death_variant_burst(0.3, Vector2.DOWN, 0.6)
 	if _dead_falling:
 		_fall_vel += FALL_GRAVITY * delta
 		position.y += _fall_vel * delta
@@ -1437,6 +1515,22 @@ func _process_dead(delta: float) -> void:
 		if _sparks and is_instance_valid(_sparks):
 			_sparks.persistent = false
 		queue_free()
+
+
+func _death_variant_burst(strength: float, direction: Vector2, spread: float) -> void:
+	var c := hit_center()
+	var power := _death_power * strength
+	_burst_node().burst(c, maxi(4, int(42 * power)), direction, spread, Vector2(140, 620) * strength,
+		GORE_WET, GORE_DRY, Vector2(0.35, 1.0), 2200.0, 5.0 * size, false, 0.25)
+	if death_clip == "death_inflate":
+		GoreBurst.spawn(get_parent(), c, 0.0, _body_half_len() * 2.8, floor_y, GORE_WET, GORE_DRY)
+		_spawn_chunks(c, _death_dir, chunk_count + 5, power)
+	elif death_clip == "death_flyback":
+		_spawn_chunks(c, _death_dir, 3 if not is_giant else 6, power)
+	if room and room.has_method("add_stain"):
+		room.add_stain(Vector2(position.x, floor_y - 6.0), Vector2(_death_dir, 0), maxi(3, int(18 * power)), 90.0 * size * strength)
+	if death_clip == "death_inflate" and room and room.has_method("add_spray"):
+		room.add_spray(c, Vector2(_death_dir, -0.6), 32, 360.0 * size, 1.3)
 
 
 func _on_animation_finished() -> void:

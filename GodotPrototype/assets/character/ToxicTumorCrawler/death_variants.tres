@@ -1,0 +1,25 @@
+[gd_resource type="SpriteFrames" load_steps=19 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_inflate/death_inflate_01.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_inflate/death_inflate_02.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_inflate/death_inflate_03.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_inflate/death_inflate_04.png" id="4"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_inflate/death_inflate_05.png" id="5"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_inflate/death_inflate_06.png" id="6"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_flyback/death_flyback_01.png" id="7"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_flyback/death_flyback_02.png" id="8"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_flyback/death_flyback_03.png" id="9"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_flyback/death_flyback_04.png" id="10"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_flyback/death_flyback_05.png" id="11"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_flyback/death_flyback_06.png" id="12"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_agony/death_agony_01.png" id="13"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_agony/death_agony_02.png" id="14"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_agony/death_agony_03.png" id="15"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_agony/death_agony_04.png" id="16"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_agony/death_agony_05.png" id="17"]
+[ext_resource type="Texture2D" path="res://assets/character/ToxicTumorCrawler/death_agony/death_agony_06.png" id="18"]
+
+[resource]
+animations = [{"frames": [{"duration": 1.0, "texture": ExtResource("1")}, {"duration": 1.0, "texture": ExtResource("2")}, {"duration": 1.0, "texture": ExtResource("3")}, {"duration": 1.0, "texture": ExtResource("4")}, {"duration": 1.0, "texture": ExtResource("5")}, {"duration": 1.0, "texture": ExtResource("6")}], "loop": false, "name": &"death_inflate", "speed": 6.0},
+{"frames": [{"duration": 1.0, "texture": ExtResource("7")}, {"duration": 1.0, "texture": ExtResource("8")}, {"duration": 1.0, "texture": ExtResource("9")}, {"duration": 1.0, "texture": ExtResource("10")}, {"duration": 1.0, "texture": ExtResource("11")}, {"duration": 1.0, "texture": ExtResource("12")}], "loop": false, "name": &"death_flyback", "speed": 7.5},
+{"frames": [{"duration": 1.0, "texture": ExtResource("13")}, {"duration": 1.0, "texture": ExtResource("14")}, {"duration": 1.0, "texture": ExtResource("15")}, {"duration": 1.0, "texture": ExtResource("16")}, {"duration": 1.0, "texture": ExtResource("17")}, {"duration": 1.0, "texture": ExtResource("18")}], "loop": false, "name": &"death_agony", "speed": 3.75}]

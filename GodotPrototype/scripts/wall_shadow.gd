@@ -23,7 +23,8 @@ const FADE_BOTTOM := 66.0        # 바닥 띠 78 — 밟는 띠 윗선(바닥선
 const EXP := 2.0                 # 감쇠 지수 — 클수록 어둠이 가장자리에 붙는다
 
 
-func build(solid: RoomSolid, heights: Array) -> void:
+## open = 방 너머 원경(VistaBackdrop)을 쓰는 방. 실루엣 **밖은 비워 두고**(원경이 보인다) 안쪽 가장자리 그라데이션만 남긴다.
+func build(solid: RoomSolid, heights: Array, open := false) -> void:
 	var lay := RoomTiles.layout(heights)
 	var origin := Vector2(-PAD, float(lay["ceiling_y"]) - PAD)
 	var size := Vector2(float(lay["width"]) + PAD * 2.0, float(lay["bottom_y"]) - float(lay["ceiling_y"]) + PAD * 2.0)
@@ -31,12 +32,14 @@ func build(solid: RoomSolid, heights: Array) -> void:
 	var sprite := Sprite2D.new()
 	sprite.name = "Gradient"
 	sprite.centered = false
-	sprite.texture = _bake(solid, heights, origin, size)
+	sprite.texture = _bake(solid, heights, origin, size, open)
 	sprite.position = origin
 	sprite.scale = Vector2(TEXEL, TEXEL)
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR    # 16px 텍셀을 부드럽게 편다
 	sprite.material = _unlit()
 	add_child(sprite)
+	if open:
+		return
 
 	# 구운 범위 바깥(카메라가 보여주는 방 밖 여백)은 그냥 검정
 	for r in [
@@ -62,7 +65,7 @@ static func _unlit() -> CanvasItemMaterial:
 
 
 ## 방 모양 → 알파 텍스처. 텍셀 행마다 그 높이에서 막힌 열을 훑어 좌우 거리까지 한 번에 구한다.
-static func _bake(solid: RoomSolid, heights: Array, origin: Vector2, size: Vector2) -> ImageTexture:
+static func _bake(solid: RoomSolid, heights: Array, origin: Vector2, size: Vector2, open := false) -> ImageTexture:
 	var w := int(round(size.x / TEXEL))
 	var h := int(round(size.y / TEXEL))
 	var cols := heights.size()
@@ -100,7 +103,7 @@ static func _bake(solid: RoomSolid, heights: Array, origin: Vector2, size: Vecto
 
 		for i in range(w):
 			var x := origin.x + (float(i) + 0.5) * TEXEL
-			var a := 1.0
+			var a := 0.0 if open else 1.0
 			var col := int(floor(x / RoomSolid.CELL))
 			if col >= 0 and col < cols and run_x1[col] > run_x0[col]:
 				a = maxf(

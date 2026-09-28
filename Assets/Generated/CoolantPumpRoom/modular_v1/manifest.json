@@ -1,0 +1,25 @@
+{
+  "name": "coolant_pump_room_modular_v1",
+  "source": "Source/concept_v1.png",
+  "background": {
+    "atlas": "Background/background_repeat_2x6_128.png",
+    "atlasSize": [256, 768],
+    "cellSize": [128, 128],
+    "grid": [2, 6],
+    "horizontalRepeatColumns": [0, 1],
+    "walkSurfaceYApprox": 608,
+    "horizontalEdgeMatch": true,
+    "wallFill": "Background/wall_fill_repeat_128.png"
+  },
+  "props": [
+    {"id":"pump","file":"Props/pump.png","size":[974,350],"pivot":"bottom_center","role":"fixed_or_interactive_machine"},
+    {"id":"tank","file":"Props/tank.png","size":[175,414],"pivot":"bottom_center","role":"background_equipment"},
+    {"id":"console","file":"Props/console.png","size":[349,244],"pivot":"bottom_center","role":"interactive_candidate"},
+    {"id":"door","file":"Props/door.png","size":[254,314],"pivot":"bottom_center","role":"closed_front_door"},
+    {"id":"valve_manifold","file":"Props/valve_manifold.png","size":[164,224],"pivot":"bottom_center","role":"wall_equipment"},
+    {"id":"ceiling_lamp","file":"Props/ceiling_lamp.png","size":[184,79],"pivot":"top_center","role":"fixture_art_only"}
+  ],
+  "preview": ["Preview/assembled_example.png", "Preview/recombined_example.png", "Preview/background_repeat_8x.png"],
+  "generation": "source-guided image edits followed by deterministic alpha crop, nearest-neighbor scaling and lossless tile slicing",
+  "status": "PNG assembly and tile seam verified; engine render and gameplay scale pending"
+}

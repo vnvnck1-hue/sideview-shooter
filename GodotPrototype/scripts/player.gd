@@ -10,7 +10,11 @@ extends Node2D
 ##            Arm       Sprite2D  — 팔+총 (어깨가 원점)
 ##            Muzzle    Marker2D  — 총구
 ##            Flash     Sprite2D  — 총구 화염
-## 상태 우선순위: Roll > Crouch > Run/Walk > Idle.
+##          ActionVisual AnimatedSprite2D — 전신 클립(구르기 · 점프 · 사다리). 켜지면 위 분리 파츠를 가린다
+##          ReloadLegs / ReloadUpper Sprite2D — 재장전 합성: 재장전 원화의 허리 위 + 지금 걷는 다리
+## 상태 우선순위: Roll > Climb > Jump > Crouch > Run/Walk > Idle.
+## 점프·사다리는 **발 위치(position)를 바닥에 둔 채** 그림만 _air 만큼 들어 올린다 — 바닥선을 position.y 로 읽는
+## 탄피·탄흔·규격 테스트 씬(발 높이를 직접 씀)이 그대로 돈다. 공중 높이가 필요한 판정은 air_height() 를 더한다.
 ## 이동/사격 배타: Shift = 질주(RUN_SPEED). 질주 중엔 총을 쏠 수 없고, 사격 입력이 들어오면
 ## 질주가 즉시 풀려 걷기(WALK_SPEED)로 감속한다 — FIRE_MAX_SPEED 아래로 떨어져야 첫 발이 나간다.
 ## 버튼을 누르고 있으면 FIRE_COOLDOWN 간격으로 연사.
@@ -23,20 +27,22 @@ signal ammo_changed(ammo: int, mag: int, reloading: bool)
 signal shell_ejected(pos: Vector2, dir: int)
 signal request_front_door()
 
-const FRAME_SIZE := 512             # 128² 네이티브 셀 × 4 (2026-09-23 고화질 원화 교체, Tools/build_hooded_mechanic_hq.py)
+const FRAME_SIZE := 320             # 80² 네이티브 셀 × 4 — NPC 와 같은 규격 (2026-09-23 기준 확정, Docs/SCALE_CHARACTER_BASELINE.md)
 const SPLIT_DIR := "res://assets/character/Split/"
 const ACTION_DIR := "res://assets/character/Action/"
 const ACTION_FRAME_COUNT := 6
+const MOVE_DIR := "res://assets/character/Frames/"   # 전신 이동 클립 (점프 · 측면 사다리) — Assets/GameReady/Characters/HoodedMechanic/MOVEMENT_CLIPS.md
+const MOVE_CLIPS := {"jump": 4, "climb": 4}
 const CLIPS := {
 	"idle":   {"fps": 1.0, "loop": true,  "frames": 1},
 	"walk":   {"fps": 16.0, "loop": true,  "frames": 4},
 	"run":    {"fps": 18.0, "loop": true,  "frames": 4},
 	"crouch": {"fps": 12.0, "loop": false, "frames": 4},
 }
-const BODY_CENTER_Y := 212.0        # 발 밑 기준 몸 중심 높이 (split_meta.body_center_y — 전신 372px 의 57%)
-const ROLL_CENTER := Vector2(10.0, 154.0)   # 웅크린 프레임(crouch_04) 내용물 중심 (발 밑 기준, 오른쪽 방향)
-const DEFAULT_SHOULDER := Vector2(4, -188)
-const EJECT_LOCAL := Vector2(72, -24)     # 어깨 기준 탄피 배출구 (팔 로컬)
+const BODY_CENTER_Y := 150.0        # 발 밑 기준 몸 중심 높이
+const ROLL_CENTER := Vector2(10.0, 103.0)   # 웅크린 프레임(crouch_04) 내용물 중심 (발 밑 기준, 오른쪽 방향)
+const DEFAULT_SHOULDER := Vector2(39, -142)
+const EJECT_LOCAL := Vector2(46, -14)     # 어깨 기준 탄피 배출구 (팔 로컬)
 
 const WALK_SPEED := 380.0           # 기본 이동 = 걷기. 이 속도에서만 사격할 수 있다
 const RUN_SPEED := 620.0            # Shift 질주. 사격 불가
@@ -48,6 +54,26 @@ const WALK_THRESHOLD := 30.0
 const ACCEL := 5200.0               # 출발 가속 (px/s^2) - 약 0.16초에 최고속
 const DECEL := 3600.0               # 정지 감속 - 약 0.23초에 멈춤, 살짝 미끄러짐
 const TURN_DECEL := 7000.0          # 반대 방향으로 꺾을 때는 더 빨리 감속
+
+# 앉아 걷기 — 웅크린 채(crouch_04) 천천히 움직인다. 전용 클립이 없어 몸을 걸음마다 톡톡 들썩이고 좌우로 흔든다.
+const CROUCH_SPEED := 150.0         # 걷기의 약 40%
+const CROUCH_STRIDE := 58.0         # 한 걸음 거리 (px) — 걸음마다 한 번 들썩이고 발소리
+const CROUCH_BOB := 5.0             # 들썩임 높이 (px, 1px 격자)
+const CROUCH_WADDLE := 4.0          # 걸음마다 상체가 좌우로 실리는 양 (px)
+
+# 점프 (W/↑ — 옆에 상호작용할 것이 없을 때). 원화 4장: 도약 준비 · 상승 · 정점 · 착지
+const JUMP_SPEED := 1180.0          # 이륙 속도 (px/s) → 정점 ≈ v²/2g ≈ 200px, 체공 ≈ 0.69초
+const JUMP_GRAVITY := 3450.0
+const JUMP_ANTICIP := 0.07          # 도약 준비 (jump_01, 땅에 붙어 있음)
+const JUMP_LAND := 0.13             # 착지 자세 유지 (jump_04)
+const JUMP_APEX_BAND := 330.0       # 상승 속도가 이 아래로 떨어지면 정점 자세(jump_03)
+const AIR_ACCEL := 2600.0           # 공중 좌우 조작 (지상 가속의 절반)
+
+# 사다리 (측면). 원화는 오른쪽을 보고 손이 몸 중심보다 앞(+x)에 있다 — 사다리 축에 손이 오도록 몸을 뒤로 뺀다
+const CLIMB_SPEED := 260.0          # px/s. 8fps 원화 기준 한 장당 32.5px ≈ 가로대 한 칸
+const CLIMB_STEP := CLIMB_SPEED / 8.0
+const CLIMB_HAND_X := 38.0          # 몸 중심 → 사다리 축 (바라보는 쪽)
+const CLIMB_SNAP := 14.0            # 사다리 축으로 붙는 속도
 
 # 아이들 모션 (Idle / Crouch) — 발을 바닥에 붙인 채 상체만 절차적으로 흔든다.
 # idle 클립은 **한 장짜리 정지 프레임**이라 움직임은 전부 여기서 만들어진다. 레트로 게임의 과장된
@@ -113,6 +139,7 @@ const FIRE_COOLDOWN := 0.09         # 초. 누르고 있으면 이 간격으로 
 const MAG_SIZE := 14                # 장탄수
 const RELOAD_TIME := 1.15           # 재장전 시간 (초)
 const FLASH_TIME := 0.03
+const MUZZLE_LIGHT_FADE := 0.1       # 총구 라이트가 식는 시간 — 화염(FLASH_TIME)보다 길게 남아 방을 붉게 물들인다
 
 # 산탄 — 연사 열(_heat, 0..1)이 오르면 탄착점이 더 흔들린다
 const SPREAD_BASE := 0.012          # 첫 발 산탄각 (rad)
@@ -138,7 +165,7 @@ const AIM_SMOOTH := 80.0            # 팔 회전 보간 속도 (클수록 즉각
 # 머리 — 목을 축으로 조준 방향을 바라본다 (팔보다 느리고 각도 제한)
 const HEAD_MAX_ANGLE := 0.42        # 최대 기울기 (rad, ≈24°)
 const HEAD_SMOOTH := 26.0
-const DEFAULT_NECK := Vector2(8, -232)
+const DEFAULT_NECK := Vector2(15, -148)
 
 # 구르기 (Space) — 속도 = ROLL_PEAK × 가속(smoothstep 0~42%: 느리고 부드럽게 진입) × 감속(1 − 0.85·k^2.2). 이동 거리 ≈ 430px
 const ROLL_TIME := 0.30
@@ -151,7 +178,14 @@ const ROLL_EXIT_SPEED := 0.85       # 구르기가 끝날 때 남는 관성 (SPE
 const ROLL_SLIDE_TIME := 0.4        # 그 뒤 이 시간 동안은 약한 감속으로 미끄러진다
 const ROLL_SLIDE_DECEL := 1500.0
 
-enum State { IDLE, WALK, RUN, CROUCH, UNCROUCH, ROLL }
+# 재장전 합성 — 재장전 원화(Action/reload)의 허리 위만 잘라 지금 몸 클립의 다리 위에 얹는다.
+# 서 있을 때는 원화 그대로(다리 포함), 걷기·달리기에서는 그 클립 다리가 계속 걷는다.
+# 앉은 자세는 서 있는 상체를 얹으면 허벅지를 덮어 실루엣이 무너진다 — 앉은 몸·머리를 그대로 두고
+# 팔만 절차적으로 내려 흔든다(_update_arm 의 reloading 분기).
+const RELOAD_CUT := 232             # 재장전 원화의 허리선 (셀 y) — 이 위가 상체
+const RELOAD_LEG_CUT := 228         # 몸 클립에서 다리를 자르는 선 — 상체와 4px 겹쳐 틈이 안 보이게
+
+enum State { IDLE, WALK, RUN, CROUCH, UNCROUCH, ROLL, JUMP, CLIMB }
 
 var state: State = State.IDLE
 var facing := 1                     # 1 = 오른쪽, -1 = 왼쪽 (조준 방향이 결정)
@@ -164,6 +198,9 @@ var input_enabled := true
 ## input_enabled 만으로는 부족하다. 그건 "조작이 안 먹는다" 일 뿐이고, 몸은 여전히 숨 쉬며
 ## 마우스를 따라 고개를 돌린다 — 그러면 누가 기체를 모는지 화면에서 읽히지 않는다.
 var standby := false
+## 머리 위가 낮아 설 수 없는 곳에서 웅크린 자세를 강제한다 (규격 테스트 씬의 세로 판정 — ScaleLab).
+## 웅크린 동안은 CROUCH_SPEED 로 천천히만 걷는다. 본편은 쓰지 않는다.
+var force_crouch := false
 var min_x := 0.0
 var max_x := 10000.0
 var aim_target := Vector2.ZERO      # 월드 좌표. Main 이 매 프레임 마우스 위치를 넣어준다
@@ -210,8 +247,24 @@ var arm: Sprite2D
 var muzzle: Marker2D
 var flash: Sprite2D
 var muzzle_light: PointLight2D
+var _muzzle_light_t := 0.0
 var action_visual: AnimatedSprite2D
 var _action_clip := ""
+var reload_upper: Sprite2D
+var reload_legs: Sprite2D
+var _reload_frames: Array = []      # Action/reload 텍스처 6장
+var _move_frames := {}              # "jump"/"climb" → [텍스처]
+var _air := 0.0                     # 발이 바닥에서 떠 있는 높이 (px, 위가 +)
+var _vy := 0.0                      # 세로 속도 (위가 +)
+var _jump_phase := 0                # 0 도약 준비 · 1 공중 · 2 착지
+var _jump_t := 0.0
+var _climb_x := 0.0                 # 잡고 있는 사다리 축 x
+var _climb_max := 0.0               # 오를 수 있는 최대 높이
+var _climb_dist := 0.0              # 오르내린 누적 거리 (프레임 선택)
+var _climb_frame := 0
+var _cw_phase := 0.0                # 앉아 걷기 걸음 위상 (걸음 단위)
+var _cw_w := 0.0                    # 앉아 걷기 가중치 0..1
+var _cw_bob := 0.0                  # 이번 프레임 들썩임 (px, 위가 +)
 
 
 func _ready() -> void:
@@ -249,8 +302,8 @@ func _ready() -> void:
 	add_child(arm_pivot)
 
 	var meta_arm: Dictionary = _meta.get("arm_gun", {})
-	var sh: Array = meta_arm.get("shoulder_local", [0, 28])
-	var mz: Array = meta_arm.get("muzzle_local", [148, 24])
+	var sh: Array = meta_arm.get("shoulder_local", [0, 40])
+	var mz: Array = meta_arm.get("muzzle_local", [83, 22])
 
 	arm = Sprite2D.new()
 	arm.name = "Arm"
@@ -278,14 +331,14 @@ func _ready() -> void:
 	muzzle_light = PointLight2D.new()
 	muzzle_light.name = "MuzzleLight"
 	muzzle_light.texture = Lighting.radial_texture()
-	muzzle_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("muzzle_hold", "radius", 563.0))
+	muzzle_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("muzzle_hold", "radius", 1000.0))
 	muzzle_light.color = Lighting.GUN_LIGHT
-	muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 1.8)
+	muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 4.5)
 	muzzle_light.height = LightTuning.value("muzzle_hold", "height", Lighting.FLASH_HEIGHT)
 	muzzle_light.position = muzzle.position
 	muzzle_light.enabled = false
 	arm_pivot.add_child(muzzle_light)
-	Lighting.register_dynamic(muzzle_light, 1.6, "shot")     # 프랍 그림자가 총구 화염을 따라 확 뻗는다
+	Lighting.register_dynamic(muzzle_light, 0.64, "shot")    # 프랍 그림자가 총구 화염을 따라 확 뻗는다 (세기 1.8→4.5 만큼 가중치를 낮춰 그림자 세기는 그대로)
 
 	# 전신 액션 클립: 기존 분리형 몸통·머리·팔을 가리는 오버레이로만
 	# 재장전/구르기 동안 사용한다. 판정·이동 로직은 기존 값을 유지한다.
@@ -299,7 +352,28 @@ func _ready() -> void:
 	action_visual.visible = false
 	add_child(action_visual)
 
+	# 재장전 합성 — 다리(몸 클립의 허리 아래)를 먼저, 상체(재장전 원화의 허리 위)를 그 위에
+	for i in range(1, ACTION_FRAME_COUNT + 1):
+		var rp := "%sreload/reload_%02d.png" % [ACTION_DIR, i]
+		if ResourceLoader.exists(rp):
+			_reload_frames.append(Lighting.textured(rp))
+	reload_legs = _make_reload_sprite("ReloadLegs")
+	reload_upper = _make_reload_sprite("ReloadUpper")
+	reload_upper.region_rect = Rect2(0, 0, FRAME_SIZE, RELOAD_CUT)
+
 	_update_arm(0.0, true)
+
+
+func _make_reload_sprite(node_name: String) -> Sprite2D:
+	var s := Sprite2D.new()
+	s.name = node_name
+	s.centered = false
+	s.region_enabled = true
+	s.offset = Vector2(-FRAME_SIZE * 0.5, -FRAME_SIZE)
+	s.material = Lighting.character_material()
+	s.visible = false
+	add_child(s)
+	return s
 
 
 func _load_meta() -> void:
@@ -355,6 +429,20 @@ func _build_action_frames() -> SpriteFrames:
 				sf.add_frame(clip_name, Lighting.textured(path))
 			else:
 				push_warning("액션 프레임을 찾을 수 없음: %s" % path)
+	# 점프·사다리는 재생하지 않고 프레임을 직접 고른다 (세로 속도 · 오른 거리에 묶음)
+	for clip_name in MOVE_CLIPS.keys():
+		sf.add_animation(clip_name)
+		sf.set_animation_loop(clip_name, false)
+		var texs: Array = []
+		for i in range(1, int(MOVE_CLIPS[clip_name]) + 1):
+			var path := "%s%s/%s_%02d.png" % [MOVE_DIR, clip_name, clip_name, i]
+			if ResourceLoader.exists(path):
+				var t := Lighting.textured(path)
+				sf.add_frame(clip_name, t)
+				texs.append(t)
+			else:
+				push_warning("이동 프레임을 찾을 수 없음: %s" % path)
+		_move_frames[clip_name] = texs
 	return sf
 
 
@@ -366,7 +454,8 @@ func _show_action_clip(clip_name: String, frame_index := 0, should_play := true)
 	_action_clip = clip_name
 	action_visual.flip_h = facing < 0
 	action_visual.animation = clip_name
-	action_visual.frame = clampi(frame_index, 0, ACTION_FRAME_COUNT - 1)
+	action_visual.frame = clampi(frame_index, 0, action_visual.sprite_frames.get_frame_count(clip_name) - 1)
+	action_visual.position = Vector2(0, -_air)
 	action_visual.visible = true
 	if should_play:
 		action_visual.play()
@@ -388,12 +477,40 @@ func _hide_action_clip() -> void:
 	arm_pivot.visible = true
 
 
-func _resume_reload_action() -> void:
-	if not reloading:
+## 재장전 합성 그림을 지금 상태에 맞춘다. 전신 클립(구르기·점프·사다리)이 떠 있으면 그쪽이 이긴다.
+##   서 있음(IDLE)     → 재장전 원화 한 장 그대로 (원화의 선 자세 다리)
+##   걷기 · 달리기     → 원화의 허리 위 + 몸 클립의 허리 아래 (다리가 계속 걷는다)
+##   앉기 · 앉아 걷기  → 합성하지 않는다 (분리 파츠 + 팔 절차 재장전)
+func _sync_reload_visual() -> void:
+	var standing := state == State.IDLE or state == State.WALK or state == State.RUN
+	var on := reloading and standing and _reload_frames.size() > 0 and not action_visual.visible
+	reload_upper.visible = on
+	reload_legs.visible = on
+	if not action_visual.visible:
+		body.visible = not on
+	if not on:
 		return
 	var progress := clampf(_reload_t / RELOAD_TIME, 0.0, 0.999)
-	var frame_index := mini(int(progress * ACTION_FRAME_COUNT), ACTION_FRAME_COUNT - 1)
-	_show_action_clip("reload", frame_index, true)
+	var fi := mini(int(progress * _reload_frames.size()), _reload_frames.size() - 1)
+	var tex: Texture2D = _reload_frames[fi]
+	var flip := facing < 0
+	reload_upper.texture = tex
+	reload_upper.flip_h = flip
+	reload_legs.flip_h = flip
+	if state == State.IDLE:
+		# 원화 통째로: 상체 + 같은 장의 다리
+		reload_legs.texture = tex
+		reload_legs.region_rect = Rect2(0, RELOAD_CUT, FRAME_SIZE, FRAME_SIZE - RELOAD_CUT)
+		reload_legs.offset = Vector2(-FRAME_SIZE * 0.5, -FRAME_SIZE + RELOAD_CUT)
+	else:
+		var cut := RELOAD_LEG_CUT
+		reload_legs.texture = body.sprite_frames.get_frame_texture(body.animation, body.frame)
+		reload_legs.region_rect = Rect2(0, cut, FRAME_SIZE, FRAME_SIZE - cut)
+		reload_legs.offset = Vector2(-FRAME_SIZE * 0.5, -FRAME_SIZE + cut)
+
+
+func _resume_reload_action() -> void:
+	_sync_reload_visual()
 
 
 static func recoil_preset() -> Dictionary:
@@ -474,8 +591,6 @@ func _update_reload(delta: float) -> void:
 		reloading = false
 		ammo = MAG_SIZE
 		ammo_changed.emit(ammo, MAG_SIZE, false)
-		if state != State.ROLL:
-			_hide_action_clip()
 
 
 func start_reload() -> void:
@@ -486,7 +601,6 @@ func start_reload() -> void:
 	Audio.play_at("cloth", global_position, -3.0)
 	_body_rc.y -= 6.0          # 탄창 빼는 몸짓 — 살짝 앞으로 숙임
 	ammo_changed.emit(ammo, MAG_SIZE, true)
-	_show_action_clip("reload")
 
 
 func _process(delta: float) -> void:
@@ -500,6 +614,12 @@ func _process(delta: float) -> void:
 		_flash_t -= delta
 		if _flash_t <= 0.0:
 			flash.visible = false
+	# 총구 라이트는 화염보다 오래 — MUZZLE_LIGHT_FADE 초에 걸쳐 식으며 주변을 붉게 물들인다
+	if muzzle_light.enabled:
+		_muzzle_light_t -= delta
+		var mk := clampf(_muzzle_light_t / MUZZLE_LIGHT_FADE, 0.0, 1.0)
+		muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 4.5) * mk * mk
+		if _muzzle_light_t <= 0.0:
 			muzzle_light.enabled = false
 
 	var axis := 0.0
@@ -508,18 +628,29 @@ func _process(delta: float) -> void:
 	var shoot_pressed := false
 	if input_enabled:
 		axis = Input.get_axis("move_left", "move_right")
-		crouch_held = Input.is_action_pressed("crouch")
+		crouch_held = Input.is_action_pressed("crouch") or force_crouch
 		run_held = Input.is_action_pressed("run")
 		shoot_pressed = Input.is_action_pressed("shoot")      # 홀드 = 연사
-		if Input.is_action_just_pressed("roll") and state != State.ROLL:
+		if Input.is_action_just_pressed("roll") and _can_roll():
 			_start_roll(int(signf(axis)) if absf(axis) > 0.1 else facing)
-		if Input.is_action_just_pressed("interact") and state != State.ROLL:
+		# 사다리 위에서는 W/↑ 가 오르기다. 공중에서는 Main 이 사다리 잡기만 받는다
+		if Input.is_action_just_pressed("interact") and state != State.ROLL and state != State.CLIMB:
 			request_front_door.emit()
 
 	if state == State.ROLL:
 		_process_roll(delta)
+		_sync_reload_visual()
 		_update_arm(delta)
 		_update_head(delta)
+		return
+	if state == State.CLIMB:
+		_process_climb(delta, axis)
+		_sync_reload_visual()
+		return
+	if state == State.JUMP:
+		_process_jump(delta, axis, run_held and _run_lock <= 0.0)
+		_update_idle(delta)
+		_sync_reload_visual()
 		return
 
 	# 조준 방향이 바라보는 방향을 결정 (구르기 중 제외)
@@ -542,9 +673,11 @@ func _process(delta: float) -> void:
 		_run_lock = RUN_FIRE_LOCK
 	var running := run_held and _run_lock <= 0.0
 
-	# 이동 - 가속/감속 이징 (숙인 동안은 감속만)
+	# 이동 - 가속/감속 이징. 앉은 동안은 CROUCH_SPEED 로 천천히 (일어서는 중엔 감속만)
 	var target_speed := RUN_SPEED if running else WALK_SPEED
-	var target_v := axis * target_speed if (state != State.CROUCH and state != State.UNCROUCH) else 0.0
+	if state == State.CROUCH:
+		target_speed = CROUCH_SPEED
+	var target_v := axis * target_speed if state != State.UNCROUCH else 0.0
 	var rate := ACCEL
 	_slide_t = maxf(_slide_t - delta, 0.0)
 	if absf(target_v) < 1.0:
@@ -572,6 +705,7 @@ func _process(delta: float) -> void:
 			body.speed_scale = -k if backwards else k
 		else:
 			body.speed_scale = 1.0
+	_update_crouch_walk(delta)
 
 	_update_idle(delta)
 
@@ -584,8 +718,175 @@ func _process(delta: float) -> void:
 		else:
 			start_reload()
 
+	_sync_reload_visual()
 	_update_arm(delta)
 	_update_head(delta)
+
+
+## 앉아 걷기: 걸은 거리로 걸음 위상을 돌려 걸음마다 몸을 한 번 톡 들어 올리고(1px 격자) 좌우로 싣는다.
+## 멈추면 가중치가 빠르게 빠져 아이들 모션(앉은 숨쉬기)으로 넘어간다.
+func _update_crouch_walk(delta: float) -> void:
+	var walking := state == State.CROUCH and absf(velocity_x) > WALK_THRESHOLD
+	_cw_w = move_toward(_cw_w, 1.0 if walking else 0.0, delta * (10.0 if walking else 8.0))
+	if walking:
+		var prev := _cw_phase
+		_cw_phase += absf(velocity_x) * delta / CROUCH_STRIDE
+		if floorf(_cw_phase) != floorf(prev):
+			Audio.play_at("footstep", global_position, -11.0)
+	elif _cw_w <= 0.0:
+		_cw_phase = 0.0
+	# 위상 0.5 에서 정점 — 걸음 한 번에 한 번 튀어 오른다 (sin² 을 2단 계단화)
+	var s := sin(PI * fposmod(_cw_phase, 1.0))
+	_cw_bob = roundf(s * s * 2.0) * 0.5 * CROUCH_BOB * _cw_w
+	_cw_bob = roundf(_cw_bob)
+
+
+## 앉아 걷기 들썩임을 발 고정 세로 스케일로 — 웅크린 실루엣 꼭대기(바닥 위 ≈135px)가 _cw_bob 만큼 오른다
+func _cw_scale() -> float:
+	return 1.0 + _cw_bob / 135.0
+
+
+## 앉아 걷기 좌우 실림 (px, 걸음마다 좌우 교대)
+func _cw_waddle_x() -> float:
+	return roundf(sin(PI * _cw_phase) * CROUCH_WADDLE * _cw_w)
+
+
+func _can_roll() -> bool:
+	return state != State.ROLL and state != State.JUMP and state != State.CLIMB
+
+
+## ── 점프 ─────────────────────────────────────────────────────────────
+func can_jump() -> bool:
+	return input_enabled and (state == State.IDLE or state == State.WALK or state == State.RUN)
+
+
+func jump() -> void:
+	if not can_jump():
+		return
+	state = State.JUMP
+	_jump_phase = 0
+	_jump_t = 0.0
+	_air = 0.0
+	_vy = 0.0
+	body.speed_scale = 1.0
+	Audio.play_at("cloth", global_position, -1.0)
+	_show_action_clip("jump", 0, false)
+
+
+func _process_jump(delta: float, axis: float, running: bool) -> void:
+	_jump_t += delta
+	facing = 1 if aim_target.x >= position.x else -1
+	body.flip_h = facing < 0
+	var frame := 0
+	match _jump_phase:
+		0:
+			# 도약 준비 — 발이 붙어 있어 살짝 제동
+			velocity_x = move_toward(velocity_x, 0.0, DECEL * 0.4 * delta)
+			if _jump_t >= JUMP_ANTICIP:
+				_jump_phase = 1
+				_jump_t = 0.0
+				_vy = JUMP_SPEED
+		1:
+			var target_v := axis * (RUN_SPEED if running else WALK_SPEED)
+			velocity_x = move_toward(velocity_x, target_v, AIR_ACCEL * delta)
+			_vy -= JUMP_GRAVITY * delta
+			_air += _vy * delta
+			frame = 1 if _vy > JUMP_APEX_BAND else 2
+			if _air <= 0.0 and _vy < 0.0:
+				_land()
+				frame = 3
+		2:
+			frame = 3
+			velocity_x = move_toward(velocity_x, axis * WALK_SPEED * 0.5, DECEL * delta)
+			if _jump_t >= JUMP_LAND:
+				_end_air()
+				return
+	if absf(velocity_x) > 0.5:
+		position.x = clampf(position.x + velocity_x * delta, min_x, max_x)
+	_show_action_clip("jump", frame, false)
+
+
+func _land() -> void:
+	_air = 0.0
+	_vy = 0.0
+	_jump_phase = 2
+	_jump_t = 0.0
+	Audio.play_at("land", global_position, -2.0)
+	_body_rc.y -= 4.0
+
+
+## 공중·사다리에서 땅으로 돌아와 평소 상태로
+func _end_air() -> void:
+	_air = 0.0
+	_vy = 0.0
+	state = State.IDLE
+	body.play("idle")
+	body.speed_scale = 1.0
+	_hide_action_clip()
+	_update_arm(0.0, true)
+	_update_head(0.0, true)
+
+
+## 공중에 떠서 떨어지기 시작한다 (사다리에서 손을 놓았을 때)
+func _start_fall() -> void:
+	state = State.JUMP
+	_jump_phase = 1
+	_jump_t = 0.0
+	_vy = 0.0
+	_show_action_clip("jump", 2, false)
+
+
+## ── 사다리 ───────────────────────────────────────────────────────────
+## ladder_x: 사다리 축 월드 x · max_h: 발이 올라갈 수 있는 최대 높이(바닥 위 px)
+## 공중(점프 중)에서도 잡을 수 있다 — 그때는 지금 높이에서 매달린다.
+func start_climb(ladder_x: float, max_h: float) -> void:
+	if state == State.ROLL or state == State.CLIMB or not input_enabled:
+		return
+	state = State.CLIMB
+	_climb_x = ladder_x
+	_climb_max = maxf(max_h, 0.0)
+	_air = clampf(_air, 0.0, _climb_max)
+	_vy = 0.0
+	_climb_dist = 0.0
+	_climb_frame = 0
+	velocity_x = 0.0
+	# 사다리가 몸 어느 쪽에 있든 사다리를 마주 본다 (원화는 오른쪽을 보는 측면 자세)
+	facing = 1 if ladder_x >= position.x else -1
+	body.flip_h = facing < 0
+	Audio.play_at("cloth", global_position, -2.0)
+	_show_action_clip("climb", 0, false)
+
+
+func _process_climb(delta: float, axis: float) -> void:
+	var up := Input.is_action_pressed("interact") if input_enabled else false
+	var down := Input.is_action_pressed("crouch") if input_enabled else false
+	# 몸을 사다리 축 뒤로 붙인다 (손이 축에 오도록)
+	var want_x := _climb_x - facing * CLIMB_HAND_X
+	position.x = clampf(lerpf(position.x, want_x, minf(1.0, CLIMB_SNAP * delta)), min_x, max_x)
+	var dir := (1.0 if up else 0.0) - (1.0 if down else 0.0)
+	var dh := dir * CLIMB_SPEED * delta
+	var prev := _air
+	_air = clampf(_air + dh, 0.0, _climb_max)
+	_climb_dist += _air - prev
+	var f := int(floorf(_climb_dist / CLIMB_STEP))
+	var n: int = maxi(1, (_move_frames.get("climb", []) as Array).size())
+	var frame := posmod(f, n)
+	if frame != _climb_frame:
+		_climb_frame = frame
+		if frame == 0 or frame == 2:
+			Audio.play_at("footstep", global_position, -12.0)
+	# 바닥에서 아래를 누르면 내려선다 · 좌우를 누르면 손을 놓는다 (높으면 떨어진다)
+	if _air <= 0.0 and down:
+		_end_air()
+		return
+	if absf(axis) > 0.5:
+		velocity_x = axis * WALK_SPEED * 0.4
+		if _air > 0.0:
+			_start_fall()
+		else:
+			_end_air()
+		return
+	_show_action_clip("climb", _climb_frame, false)
 
 
 ## 머리 위치·회전 갱신. 몸 프레임에 맞는 머리 텍스처를 고르고 목 앵커에 붙인 뒤,
@@ -594,6 +895,9 @@ func _update_head(delta: float, snap := false) -> void:
 	if action_visual != null and action_visual.visible:
 		head.visible = false
 		action_visual.flip_h = facing < 0
+		return
+	if reload_upper != null and reload_upper.visible:
+		head.visible = false
 		return
 	var key := "%s_%02d" % [body.animation, body.frame + 1]
 	var tex: Texture2D = _head_tex.get(key)
@@ -640,7 +944,7 @@ func _update_idle(delta: float) -> void:
 	var p := idle_preset()
 	# 대기 모드에서는 아이들을 끈다. 플래그로 즉시 0 을 넣지 않고 active 만 내려 두면
 	# _idle_w 가 IDLE_BLEND_OUT 로 부드럽게 빠진다 — 숨이 잦아들듯 멈춘다.
-	var active := (state == State.IDLE or state == State.CROUCH) and not standby
+	var active := (state == State.IDLE or (state == State.CROUCH and _cw_w < 0.5)) and not standby
 	_idle_w = move_toward(_idle_w, 1.0 if active else 0.0,
 		delta * (IDLE_BLEND_IN if active else IDLE_BLEND_OUT))
 	if active:
@@ -692,8 +996,8 @@ func _update_idle(delta: float) -> void:
 	# 반동: 발은 고정(마찰)하고 상체만 뒤로 밀린다 — 전단(skew) + 발 위치 보정, 여기에 눌림(scale.y)
 	var rp := recoil_preset()
 	var body_k := _body_rc.x
-	var lean := -facing * float(rp["body_px"]) * body_k + idle_lean   # 머리 높이에서의 X 이동량
-	var sy := _breath.y * (1.0 - float(rp.get("body_squat", 0.0)) * absf(body_k))
+	var lean := -facing * float(rp["body_px"]) * body_k + idle_lean + _cw_waddle_x()   # 머리 높이에서의 X 이동량
+	var sy := _breath.y * (1.0 - float(rp.get("body_squat", 0.0)) * absf(body_k)) * _cw_scale()
 	body_pivot.scale = Vector2(_breath.x, sy)
 	# skew: 로컬 y 에 비례해 x 가 -sin(skew)·y 만큼 밀린다. 머리(y=-C) 는 +sin·C, 발(y=+C) 은 -sin·C 로 반대 →
 	# 반씩 나눠 skew 로 만들고 나머지 반은 위치로 보정하면 발 0 · 머리 lean
@@ -709,6 +1013,8 @@ func _fire() -> void:
 	_flash_t = FLASH_TIME
 	flash.visible = true
 	muzzle_light.enabled = true
+	muzzle_light.energy = LightTuning.value("muzzle_hold", "energy", 4.5)
+	_muzzle_light_t = MUZZLE_LIGHT_FADE
 	flash.rotation = randf_range(-0.3, 0.3)
 	flash.scale = Vector2.ONE * randf_range(0.85, 1.25)
 	# 반동 임펄스: 팔은 즉시 속도 임펄스(뒤로 확 → 앞으로 되튐), 머리·몸통은 지연 뒤 (절차적 연쇄)
@@ -740,6 +1046,9 @@ func _update_arm(delta: float, snap := false) -> void:
 		arm_pivot.visible = false
 		action_visual.flip_h = facing < 0
 		return
+	if reload_upper != null and reload_upper.visible:
+		arm_pivot.visible = false
+		return
 	if state == State.ROLL:
 		arm_pivot.visible = false
 		return
@@ -749,6 +1058,9 @@ func _update_arm(delta: float, snap := false) -> void:
 	var shoulder: Vector2 = _shoulders.get(key, DEFAULT_SHOULDER)
 	shoulder.x *= facing
 	arm_pivot.position = shoulder * _breath + _idle_arm_off   # 아이들 스케일에 맞춰 어깨도 따라가고, 들썩임이 더해진다
+	# 앉아 걷기: 몸통과 같은 눌림·실림을 어깨 높이만큼 받는다 (발 고정 스케일·전단이라 높이에 비례)
+	var h := -shoulder.y
+	arm_pivot.position += Vector2(_cw_waddle_x() * h / (2.0 * BODY_CENTER_Y), -h * (_cw_scale() - 1.0))
 
 	var to_target := aim_target - arm_pivot.global_position
 	var target_angle := to_target.angle()
@@ -859,7 +1171,7 @@ func set_bounds(left: float, right: float) -> void:
 func face(dir: int) -> void:
 	facing = dir
 	body.flip_h = facing < 0
-	aim_target = position + Vector2(400 * dir, -188)
+	aim_target = position + Vector2(400 * dir, -140)
 	if arm_pivot:
 		_update_arm(0.0, true)
 	if head_pivot:
@@ -870,8 +1182,38 @@ func is_rolling() -> bool:
 	return state == State.ROLL
 
 
+## 구르기 진행률 0..1 (구르는 중이 아니면 -1). 규격 테스트 씬이 구르기 중 판정 높이를 고를 때 쓴다.
+func roll_progress() -> float:
+	return clampf(_roll_t / ROLL_TIME, 0.0, 1.0) if state == State.ROLL else -1.0
+
+
+## 웅크린 자세인가 (앉는 중·일어서는 중 포함)
+func is_crouching() -> bool:
+	return state == State.CROUCH or state == State.UNCROUCH
+
+
 ## 외부 충격(몬스터 독액)으로 밀린다. 구르기 중엔 무시(회피).
 func knockback(vx: float) -> void:
-	if state == State.ROLL:
+	if state == State.ROLL or state == State.CLIMB:
 		return
 	velocity_x = vx
+
+
+## 발이 바닥에서 떠 있는 높이 (점프·사다리, px). 몸 판정은 position.y - air_height() 를 발로 본다.
+func air_height() -> float:
+	return _air
+
+
+## 점프 중이거나 사다리에 매달려 있다
+func is_airborne() -> bool:
+	return state == State.JUMP or state == State.CLIMB
+
+
+func is_climbing() -> bool:
+	return state == State.CLIMB
+
+
+## 방을 옮기는 등 위치를 바깥에서 새로 잡을 때 — 공중·사다리 상태를 끊고 바닥에 세운다
+func settle() -> void:
+	if state == State.JUMP or state == State.CLIMB:
+		_end_air()

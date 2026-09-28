@@ -14,6 +14,7 @@ extends Node2D
 const LIFE := 0.075              # 화염이 보이는 시간 (초)
 const STAR_LIFE := 0.045         # 십자 빛살은 더 짧게
 const SMOKE_EVERY := 0.22        # 연속 사격 중 연기가 다시 피는 최소 간격
+const LIGHT_FADE := 0.12         # 총구 라이트가 최고 세기에서 꺼지기까지 (초)
 
 var length := 200.0              # 화염 길이 (월드 px — 카메라 zoom 0.625 라 화면에서는 5/8)
 var width := 104.0               # 화염 최대 폭
@@ -27,6 +28,7 @@ var _petals: Array = []          # {ang, len, w}
 var _len := 0.0
 var _w := 0.0
 var _light: PointLight2D
+var _light_peak := 1.0           # 이번 발의 최고 세기 — 세기와 상관없이 LIGHT_FADE 초에 걸쳐 식는다
 var _smoke: CPUParticles2D
 var _floor_y := 100000.0
 
@@ -42,13 +44,13 @@ func setup(size := 1.0, floor_line := 100000.0) -> void:
 	_light = PointLight2D.new()
 	_light.name = "BlastLight"
 	_light.texture = Lighting.radial_texture()
-	_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("muzzle", "radius", 420.0) * size)
+	_light.texture_scale = Lighting.scale_for_radius(LightTuning.value("muzzle", "radius", 900.0) * size)
 	_light.color = Lighting.GUN_LIGHT
 	_light.height = LightTuning.value("muzzle", "height", Lighting.FLASH_HEIGHT)
 	_light.position = Vector2(length * 0.4, 0)
 	_light.enabled = false
 	add_child(_light)
-	Lighting.register_dynamic(_light, 1.6, "shot")
+	Lighting.register_dynamic(_light, 0.83, "shot")   # 그림자 가중치는 세기에 곱해진다 — 세기 2.6→5.0 만큼 낮춰 그림자 세기는 그대로
 
 	_smoke = CPUParticles2D.new()
 	_smoke.name = "Smoke"
@@ -95,7 +97,8 @@ func fire(power := 1.0, world_dir := Vector2.ZERO) -> void:
 			"w": _w * randf_range(0.2, 0.4),
 		})
 	_light.enabled = true
-	_light.energy = LightTuning.value("muzzle", "energy", 2.6) * power * energy_scale
+	_light.energy = LightTuning.value("muzzle", "energy", 5.0) * power * energy_scale
+	_light_peak = _light.energy
 	if _smoke_cd <= 0.0:
 		_smoke_cd = SMOKE_EVERY
 		_smoke.restart()
@@ -115,7 +118,7 @@ func _process(delta: float) -> void:
 		_t += delta
 		queue_redraw()
 	if _light.enabled:
-		_light.energy = maxf(_light.energy - delta * 26.0, 0.0)
+		_light.energy = maxf(_light.energy - delta * _light_peak / LIGHT_FADE, 0.0)
 		if _light.energy <= 0.05:
 			_light.enabled = false
 

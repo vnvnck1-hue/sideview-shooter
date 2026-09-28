@@ -44,8 +44,9 @@ func _ready() -> void:
 	font.font_names = PackedStringArray(["Malgun Gothic", "맑은 고딕", "Segoe UI", "Noto Sans CJK KR"])
 	_toast = Label.new()
 	_toast.name = "CrtToast"
-	_toast.position = Vector2(0, 150)
-	_toast.size = Vector2(AppFlow.VIEW_SIZE.x, 90)
+	_toast.anchor_right = 1.0                  # 창 폭 전체 (캔버스가 창 비율로 늘어난다)
+	_toast.offset_top = 150.0
+	_toast.offset_bottom = 240.0
 	_toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE

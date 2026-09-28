@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>픽셀 미리보기</title>
+<style>
+:root{--bg:#1c1d23;--panel:#262830;--line:#393c47;--text:#e8e6df;--dim:#9a9ca6;--accent:#f0c36a;--ok:#7fd49b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 "Segoe UI","Malgun Gothic",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:baseline;padding:14px 18px;border-bottom:1px solid var(--line)}
+h1{font-size:17px;margin:0}
+.meta{color:var(--dim);font-size:12.5px}
+.bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.bar label{color:var(--dim);font-size:12.5px;display:flex;gap:6px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{background:transparent;color:var(--text);border:0;padding:4px 10px;cursor:pointer;font:inherit;font-size:12.5px}
+.seg button.on{background:var(--accent);color:#1c1d23}
+.hint{color:var(--dim);font-size:12px;margin-left:auto}
+main{padding:16px 18px 40px}
+.grid{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;cursor:pointer}
+.card:hover{border-color:#5a5e6c}
+.card.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.card h2{font-size:13px;margin:0 0 2px;display:flex;justify-content:space-between;gap:12px}
+.card .stats{color:var(--dim);font-size:12px;margin-bottom:8px}
+.frame{overflow:hidden;border-radius:4px}
+.frame img{display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.bg-dark .frame{background:#2f3140}.bg-light .frame{background:#d9d6cc}
+.bg-check .frame{background:repeating-conic-gradient(#3a3c48 0 25%,#2c2e38 0 50%) 0 0/16px 16px}
+#detail{scroll-margin-top:56px;margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:none}
+#detail.open{display:block}
+#detail h3{margin:0 0 8px;font-size:14px}
+.panes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pane{position:relative;height:62vh;min-height:320px;border-radius:4px;overflow:hidden;cursor:grab;background:#2f3140}
+.pane canvas{position:absolute;inset:0;width:100%;height:100%}
+.pane .tag{position:absolute;left:8px;top:6px;font-size:12px;background:rgba(0,0,0,.55);padding:2px 7px;border-radius:4px;pointer-events:none}
+.make{margin-top:12px;display:grid;gap:6px}
+.cmd{display:flex;gap:8px;align-items:stretch}
+.cmd code{flex:1;background:#15161b;border:1px solid var(--line);border-radius:6px;padding:7px 9px;font:12px Consolas,monospace;overflow-x:auto;white-space:nowrap}
+.cmd button{background:var(--accent);color:#1c1d23;border:0;border-radius:6px;padding:0 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.note{color:var(--dim);font-size:12px}
+@media (max-width:760px){.panes{grid-template-columns:1fr}.pane{height:44vh}}
+</style>
+</head>
+<body class="bg-check">
+<header>
+ <h1 id="title"></h1>
+ <span class="meta" id="meta"></span>
+</header>
+<div class="bar">
+ <label>표시 배율
+  <span class="seg" id="zoom"></span>
+ </label>
+ <label>배경
+  <span class="seg" id="bg"><button data-v="bg-check" class="on">체크</button><button data-v="bg-dark">어둡게</button><button data-v="bg-light">밝게</button></span>
+ </label>
+ <span class="hint">카드를 누르면 원본과 나란히 확대 비교 · 휠 확대 · 드래그 이동 · Space 누르는 동안 원본으로 전환</span>
+</div>
+<main>
+ <div class="grid" id="grid"></div>
+ <section id="detail">
+  <h3 id="dtitle"></h3>
+  <div class="panes">
+   <div class="pane" id="paneA"><canvas></canvas><span class="tag">원본</span></div>
+   <div class="pane" id="paneB"><canvas></canvas><span class="tag" id="tagB"></span></div>
+  </div>
+  <div class="make">
+   <div class="note">이 후보로 최종 제작 (Aseprite 원본 + 검증, <code>Assets/Generated/NativeFromSource</code> 에만 저장 · 게임 반입 없음)</div>
+   <div class="cmd"><code id="cmdMake"></code><button data-copy="cmdMake">명령 복사</button></div>
+   <div class="cmd"><code id="cmdAsk"></code><button data-copy="cmdAsk">Claude 요청 복사</button></div>
+   <div class="note" id="cmdFile"></div>
+  </div>
+ </section>
+</main>
+<script>
+const DATA=/*__DATA__*/null;
+const M=DATA.manifest;
+const $=s=>document.querySelector(s);
+const fmt=n=>n.toLocaleString('ko-KR');
+$('#title').textContent=M.name+' · 픽셀 미리보기';
+document.title=M.name+' · 픽셀 미리보기';
+const s=M.settings;
+$('#meta').textContent=`원본 ${M.sourceWidth}×${M.sourceHeight} · ${fmt(M.sourceColours)}색 · Tolerance ${s.tolerance} / Snap ${s.snap} / Coherent ${s.coherent} / Passes ${s.passes} · 처리 ${(M.totalMs/1000).toFixed(1)}초`;
+
+// Every card is drawn at the same on-screen size as the source at the chosen zoom:
+// a pitch-p candidate is shown at p× so objects line up across cards.
+function computeFit(){
+ const n=M.candidates.length+1,avail=Math.max(480,document.documentElement.clientWidth||window.innerWidth||1000)-36;
+ const cols=Math.max(1,Math.min(n,Math.floor(avail/240)));
+ const maxW=(avail-(cols-1)*14)/cols-22,maxH=window.innerHeight*0.6;
+ let z=Math.min(maxW/M.sourceWidth,maxH/M.sourceHeight);
+ if(z>=1)z=Math.floor(z);
+ return Math.max(0.1,Math.min(6,z));
+}
+// null = fit to window (recomputed on resize), otherwise a fixed factor.
+const zooms=[['맞춤',null],['1×',1],['2×',2],['3×',3]];
+let zoomMode=null,zoom=1;
+const zoomSeg=$('#zoom');
+zooms.forEach(([label,v],i)=>{const b=document.createElement('button');b.textContent=label;if(i===0)b.className='on';
+ b.onclick=()=>{zoomMode=v;[...zoomSeg.children].forEach(x=>x.classList.toggle('on',x===b));layout();};zoomSeg.appendChild(b);});
+$('#bg').onclick=e=>{const v=e.target.dataset.v;if(!v)return;document.body.className=v;[...$('#bg').children].forEach(x=>x.classList.toggle('on',x===e.target));};
+
+const items=[{key:'source',label:'원본',file:M.sourceFile,pitch:1,pad:0,w:M.sourceWidth,h:M.sourceHeight,stats:`${M.sourceWidth}×${M.sourceHeight} · ${fmt(M.sourceColours)}색`}]
+ .concat(M.candidates.map(c=>({key:'p'+c.pitch,label:'피치 '+c.pitch,file:c.file,pitch:c.pitch,pad:1,w:c.width,h:c.height,c,
+  stats:`네이티브 ${c.width}×${c.height} · ${fmt(c.colours)}색 · ${c.ms} ms`})));
+const grid=$('#grid');
+items.forEach(it=>{
+ const card=document.createElement('div');card.className='card';card.dataset.key=it.key;
+ card.innerHTML=`<h2><span>${it.label}</span></h2><div class="stats">${it.stats}</div><div class="frame"><img alt=""></div>`;
+ const img=card.querySelector('img');img.src=it.file;it.img=img;it.card=card;
+ if(it.key!=='source')card.onclick=()=>select(it);
+ grid.appendChild(card);
+});
+function layout(){
+ zoom=zoomMode===null?computeFit():zoomMode;
+ items.forEach(it=>{
+  const scale=it.pitch*zoom;
+  const frame=it.card.querySelector('.frame');
+  frame.style.width=Math.round(M.sourceWidth*zoom)+'px';frame.style.height=Math.round(M.sourceHeight*zoom)+'px';
+  it.img.style.width=Math.round(it.w*scale)+'px';it.img.style.height=Math.round(it.h*scale)+'px';
+  it.img.style.margin=`${-Math.round(it.pad*scale)}px 0 0 ${-Math.round(it.pad*scale)}px`;
+ });
+}
+layout();
+
+// Linked pan/zoom panes. View = source-pixel coordinates of the pane centre + screen px per source px.
+const view={x:M.sourceWidth/2,y:M.sourceHeight/2,k:1};
+const panes=[{el:$('#paneA'),it:items[0]},{el:$('#paneB'),it:null}];
+let current=null,flip=false;
+function fitView(){const r=panes[0].el.getBoundingClientRect();view.k=Math.min(r.width/M.sourceWidth,r.height/M.sourceHeight)*.95;view.x=M.sourceWidth/2;view.y=M.sourceHeight/2;}
+function draw(){
+ panes.forEach((p,i)=>{
+  const it=(i===1&&flip)?items[0]:p.it;if(!it)return;
+  const cv=p.el.querySelector('canvas');const r=p.el.getBoundingClientRect();const dpr=window.devicePixelRatio||1;
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+  const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,r.width,r.height);
+  const sc=view.k*it.pitch;
+  const ox=r.width/2-view.x*view.k-it.pad*sc,oy=r.height/2-view.y*view.k-it.pad*sc;
+  if(it.img.complete)g.drawImage(it.img,ox,oy,it.w*sc,it.h*sc);
+ });
+ $('#tagB').textContent=flip?'원본 (Space)':(current?current.label:'');
+}
+function select(it){
+ current=it;panes[1].it=it;
+ items.forEach(x=>x.card.classList.toggle('sel',x===it));
+ const d=$('#detail');const first=!d.classList.contains('open');d.classList.add('open');
+ $('#dtitle').textContent=`${it.label} — ${it.stats}`;
+ $('#cmdMake').textContent=DATA.make[String(it.pitch)];
+ $('#cmdAsk').textContent=`${M.name} 를 피치 ${it.pitch} (Tolerance ${s.tolerance} / Snap ${s.snap} / Coherent ${s.coherent} / Passes ${s.passes}) 로 최종 제작해줘. 원본: ${M.source}`;
+ $('#cmdFile').textContent='더블클릭 실행 파일: '+DATA.cmdFiles[String(it.pitch)];
+ if(first){fitView();d.scrollIntoView({behavior:'smooth',block:'start'});}
+ draw();
+}
+panes.forEach(p=>{
+ let drag=null;
+ p.el.addEventListener('wheel',e=>{e.preventDefault();const r=p.el.getBoundingClientRect();
+  const mx=e.clientX-r.left-r.width/2,my=e.clientY-r.top-r.height/2;
+  const wx=view.x+mx/view.k,wy=view.y+my/view.k;const f=e.deltaY<0?1.25:0.8;
+  view.k=Math.max(.05,Math.min(64,view.k*f));view.x=wx-mx/view.k;view.y=wy-my/view.k;draw();},{passive:false});
+ p.el.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};p.el.setPointerCapture(e.pointerId);p.el.style.cursor='grabbing';});
+ p.el.addEventListener('pointermove',e=>{if(!drag)return;view.x-=(e.clientX-drag.x)/view.k;view.y-=(e.clientY-drag.y)/view.k;drag={x:e.clientX,y:e.clientY};draw();});
+ p.el.addEventListener('pointerup',()=>{drag=null;p.el.style.cursor='grab';});
+});
+window.addEventListener('keydown',e=>{if(e.code==='Space'&&current&&!flip){e.preventDefault();flip=true;draw();}});
+window.addEventListener('keyup',e=>{if(e.code==='Space'&&flip){flip=false;draw();}});
+window.addEventListener('resize',()=>{if(zoomMode===null)layout();if(current)draw();});
+items.forEach(it=>it.img.addEventListener('load',()=>{if(current)draw();}));
+document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{
+ const t=$('#'+b.dataset.copy).textContent;
+ const done=()=>{const o=b.textContent;b.textContent='복사됨';setTimeout(()=>b.textContent=o,1200);};
+ if(navigator.clipboard)navigator.clipboard.writeText(t).then(done,()=>fallback(t,done));else fallback(t,done);
+});
+function fallback(t,done){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');done();}catch(e){}a.remove();}
+</script>
+</body>
+</html>

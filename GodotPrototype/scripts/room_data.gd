@@ -24,6 +24,8 @@ extends RefCounted
 ##                            "roam": px 를 주면 배치점 기준 ±px 를 어슬렁거린다 (걷는 클립이 있는 인물만. 구간은 방 벽 안쪽으로 잘린다).
 ##                            그 구간에는 프랍·단말기·센트리건을 두지 않는다 — 통과해 걸어가는 것처럼 보인다.
 ##                            몬스터가 도는 방에는 두지 않는다 (대화 중에는 플레이어가 움직이지 못한다).
+##   ladders                  [x, ...] 벽 사다리 축 x — 바닥에서 그 열 천장 띠 아래(점검 해치)까지 (Ladder). W/↑ 로 잡아 오르내린다.
+##                            축 양옆 90px 에는 단말기·센트리건 같은 W/↑ 대상을 두지 않는다 (같은 키라 먼저 잡힌다).
 ##   lamps                    [x, ...] 천장 펜던트 램프(LampLight — 총으로 깨짐, 빛 기둥, 바닥 풀). 그 열의 천장 띠 아래에 매달린다.
 ##   fixtures                 장식 조명 [{"file": power_relay Lighting 이름, "x", "cy"|"fy", "radius", "color"(선택)}] — PointLight2D + 스프라이트.
 ##                            ceiling_lamp · dangling_lamp · fluorescent_lamp · wall_lamp · floor_work_light · indicator_beacon
@@ -137,6 +139,7 @@ const ROOMS := {
 			{"type": "sentry", "id": "sentry_workshop", "name": "작업실 방어포", "x": 1230},
 			{"tex": "workshop_armchair_game_scale", "x": 1500},
 		],
+		"ladders": [520],
 		"lamps": [420, 900, 1380],
 		"fixtures": [
 			{"file": "wall_lamp", "x": 110, "cy": 150, "radius": 180},

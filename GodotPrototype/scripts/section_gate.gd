@@ -36,7 +36,8 @@ var _opening := false
 
 
 ## curtain: 이 문이 가리는 구역의 월드 사각형 (문 x 부터 그 구역 끝까지, 천장 위 ~ 바닥 타일 아래)
-func setup(x: float, floor_y: float, curtain: Rect2, name_of_section: String) -> void:
+## shape: 주면 사각형 대신 이 다각형으로 가린다 — 방 너머 원경이 있는 방은 방 실루엣만 가려야 원경이 잘리지 않는다.
+func setup(x: float, floor_y: float, curtain: Rect2, name_of_section: String, shape := PackedVector2Array()) -> void:
 	gate_x = x
 	section_name = name_of_section
 	position = Vector2.ZERO
@@ -46,7 +47,7 @@ func setup(x: float, floor_y: float, curtain: Rect2, name_of_section: String) ->
 	_curtain = Polygon2D.new()
 	_curtain.name = "Curtain"
 	_curtain.color = Color(0, 0, 0, 1)
-	_curtain.polygon = PackedVector2Array([
+	_curtain.polygon = shape if shape.size() >= 3 else PackedVector2Array([
 		curtain.position, Vector2(curtain.end.x, curtain.position.y),
 		curtain.end, Vector2(curtain.position.x, curtain.end.y),
 	])

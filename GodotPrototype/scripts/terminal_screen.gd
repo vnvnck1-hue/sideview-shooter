@@ -26,7 +26,9 @@ signal close_requested()                     ## 루트 메뉴에서 ESC — 접�
 enum State { CLOSED, BOOT, MENU, LOGS, LOG, REWIRE, SAVE, MAP, GRID, REMOTE }
 
 const LAYER := 12
-const SCREEN := Vector2(AppFlow.VIEW_SIZE)   # 디자인 캔버스 (창 좌표계)
+## 디자인 캔버스 (창 좌표계). 실제 캔버스는 창 비율로 더 커질 수 있다 — 그때는 이 판을 가운데로 옮기고(_fit)
+## 바탕판(_plate)만 창 전체를 덮는다. 글줄 길이·목록 줄 수(MAX_ROWS)가 이 크기를 기준으로 짜여 있어서다.
+const SCREEN := Vector2(AppFlow.VIEW_SIZE)
 const MARGIN := Vector2(112.0, 74.0)        # 화면 위아래 여백. 가로 여백은 PANEL_W 가 대신 정한다
 ## 본문 폭은 캔버스가 넓어져도 1376 으로 묶고 가운데 정렬한다 — 2240 을 꽉 채우면 글줄이 너무 길어 읽기 나쁘다.
 const PANEL_W := 1376.0
@@ -101,9 +103,10 @@ func _ready() -> void:
 	_plate = ColorRect.new()
 	_plate.name = "Plate"
 	_plate.color = Color(0.015, 0.03, 0.02, 0.0)
-	_plate.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_plate)
+	get_viewport().size_changed.connect(_fit)
+	_fit()
 
 	# 지도는 본문(_body) 의 캡션 두 줄 아래에 얹는다 — 글자는 _body 가, 그림은 StationMap 이 그린다
 	_map = StationMap.new()
@@ -147,6 +150,14 @@ func _make_rule(y: float) -> ColorRect:
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(c)
 	return c
+
+
+## 디자인 캔버스(SCREEN)를 실제 캔버스 가운데에 두고, 바탕판은 창 전체를 덮게 늘린다
+func _fit() -> void:
+	var vp := get_viewport().get_visible_rect().size
+	offset = ((vp - SCREEN) * 0.5).floor()
+	_plate.position = -offset
+	_plate.size = vp
 
 
 # ── 열기 / 닫기 ──────────────────────────────────────────────────────────────
