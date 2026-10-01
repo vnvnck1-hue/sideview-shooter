@@ -1,0 +1,25 @@
+{
+    "blender":  "5.2.2 LTS",
+    "mesh_objects":  1137,
+    "vertices_base":  76195,
+    "collections":  [
+                        "01 | thorax and upper service armor",
+                        "02 | head carapace and mint optic lenses",
+                        "03 | left fore leg",
+                        "04 | left rear leg",
+                        "03 | right fore leg",
+                        "04 | right rear leg",
+                        "05 | left three finger manipulator",
+                        "05 | right three finger manipulator",
+                        "06 | central rotary tool and precision probes",
+                        "07 | port shielded welding tool",
+                        "07 | starboard circular saw arm",
+                        "08 | rear service pack and cooling",
+                        "09 | open tool trays and service tools",
+                        "10 | hinged diagnostic terminal",
+                        "11 | packed concept and turnaround references"
+                    ],
+    "status":  "finalized_at_user_request",
+    "rear_design":  "inferred from single concept",
+    "revision":  6
+}

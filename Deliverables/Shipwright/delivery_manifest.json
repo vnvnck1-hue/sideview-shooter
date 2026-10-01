@@ -1,0 +1,47 @@
+{
+    "asset":  "Shipwright",
+    "status":  "finalized_at_user_request",
+    "source":  "references/original_concept.png",
+    "concept_turnaround":  "references/concept_turnaround.png",
+    "native_model":  "shipwright.blend",
+    "exchange_model":  "shipwright.glb",
+    "model_turnaround":  "renders/model_turnaround.png",
+    "hero":  "renders/hero.png",
+    "verification":  [
+                         "Native Blender file reopened",
+                         "Three optic lenses and four support legs checked",
+                         "Zero degenerate evaluated mesh triangles",
+                         "GLB successfully reimported with embedded texture",
+                         "All three orthographic render views visually inspected"
+                     ],
+    "limitations":  [
+                        "Exact identity to the illustration is not established; panel contours, limb proportions and fine construction differ.",
+                        "Rear and obscured surfaces are inferred from the single supplied concept.",
+                        "Physical size is an assumed modeling scale; no dimensions were supplied."
+                    ],
+    "image_generation":  {
+                             "prompt":  "references/turnaround_prompt.txt",
+                             "mode":  "built-in image_gen"
+                         },
+    "hashes":  {
+                   "Shipwright_final_v6.zip":  "46D4D96106B5A8AC9C4F434B2A11C7B6D762444CEDB45442885C93421187CA83",
+                   "export_audit.json":  "5191F1E606FEAA69E273500D7C971869708CA7DF9EF8778CDFDBE6BCE1B02FB6",
+                   "geometry_audit.json":  "2C50A85AA3155AECC283DF266FC814E24ACC870291784142B4E7E801BA5A25BA",
+                   "renders\\front.png":  "47F7F8D8B97C15C54D23808013045BE5F855C4B5F25067834F217D1115A62C92",
+                   "references\\original_concept.png":  "AD1BBD6D1504A7C91BCAFE58A743AACC9605F4D2DC158E8BB401752E694CD73C",
+                   "renders\\right.png":  "F1B4C05AA1FA669C87AEA1C64EF69D7D40C59D86F019340A597E437B3586FAFF",
+                   "renders\\model_turnaround.png":  "DEE2A650D0BAC65214AE76D9A63FDCDF6330859CA2008E846AD907D955FB5666",
+                   "renders\\detail.png":  "FDA00101E5C7C232BC956DCA908163C611441525BAA774326CE908A42AC698C2",
+                   "renders\\hero.png":  "31AAD91937C9D9745C6A12EA9EA7B12840BAF7CD6636F72EC9750EBAAAC3050B",
+                   "shipwright.blend":  "A7A02C3E063DC7FC3D2396BADF507DD52E3DC4DD5F357F2D41150DBBA12BE5E7",
+                   "fidelity_review.json":  "E49B30E1734BA8E175B29A42C63BC24F5F2920675C4FEE9E5CB43D75907F0C8E",
+                   "renders\\back.png":  "2DFF1E02D62E0F92468345AFA26695FF7519C8A5C134AC89EB2962B2C7EAE880",
+                   "shipwright.glb":  "04A6443B0A733168CE0EAB86F846255D77200CCF8BD25B61C5E2601AE756BA5A",
+                   "references\\concept_turnaround.png":  "E7DDE96E0A88F264417F88AD6C961B68F55BF24980E2EDAF4C0FEF9418B60348"
+               },
+    "revision":  6,
+    "fidelity_review":  "fidelity_review.json",
+    "face_landmark_comparison":  "Historical revision 5 comparison only: face_landmark_comparison.json",
+    "final_package":  "Shipwright_final_v6.zip",
+    "final_delivery_directory":  "final_delivery"
+}

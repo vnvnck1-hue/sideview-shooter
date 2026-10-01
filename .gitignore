@@ -27,3 +27,12 @@ Docs/_audition/
 # 구매 BGM 원본 (Helton Yan — Sci-Fi Horror). 540MB · stems.rar 118MB 로 GitHub 100MB 제한을 넘는다.
 # 저장소 밖에 보관하고, 게임에 물릴 변환본만 GodotPrototype/assets/audio/ 아래로 들인다.
 Assets/Helton Yan Sci-Fi Horror/
+
+# Blender local configuration and intermediate modeling outputs
+Tools/Blender/config.json
+Deliverables/BlenderSetup/*.log
+Deliverables/BlenderSetup/*.blend[0-9]*
+Deliverables/Shipwright/*.log
+Deliverables/Shipwright/*.blend[0-9]*
+Deliverables/Shipwright/revisions/
+Deliverables/Shipwright/final_delivery/

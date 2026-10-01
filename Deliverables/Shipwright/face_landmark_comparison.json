@@ -1,0 +1,60 @@
+{
+  "scope": "Approximate three-landmark comparison only; not an identity score.",
+  "source_centers_pixels": {
+    "center_lens": [
+      459,
+      559
+    ],
+    "near_lens": [
+      636,
+      530
+    ],
+    "camera": [
+      509,
+      454
+    ]
+  },
+  "source_ratios": {
+    "camera_to_center_over_eye_spacing": 0.6484001496905627
+  },
+  "models": {
+    "v4": {
+      "centers_normalized": {
+        "center_lens": [
+          0.3352184146642685,
+          0.5985974818468094
+        ],
+        "near_lens": [
+          0.520227700471878,
+          0.5578468888998032
+        ],
+        "camera": [
+          0.4477854073047638,
+          0.4115603268146515
+        ]
+      },
+      "ratios": {
+        "camera_to_center_over_eye_spacing": 1.1523113374426077
+      }
+    },
+    "v5": {
+      "centers_normalized": {
+        "center_lens": [
+          0.35319408774375916,
+          0.5754382759332657
+        ],
+        "near_lens": [
+          0.543161153793335,
+          0.5439556539058685
+        ],
+        "camera": [
+          0.4067869484424591,
+          0.4605516195297241
+        ]
+      },
+      "ratios": {
+        "camera_to_center_over_eye_spacing": 0.6583568745951954
+      }
+    }
+  }
+}

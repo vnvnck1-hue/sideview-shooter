@@ -1,0 +1,35 @@
+{
+    "revision":  6,
+    "full_goal_complete":  false,
+    "source_of_truth":  "references/original_concept.png",
+    "generated_turnaround_role":  "Interpretive modeling reference; it is not independent evidence for occluded geometry.",
+    "changes_verified_in_hero_render":  [
+                                            "Lower telescopic antenna closer to the source silhouette",
+                                            "Smooth crowned forehead and shoulder armor instead of sharply folded strips",
+                                            "Shorter molded forearms and three-digit mechanical grippers",
+                                            "Low-profile forehead module with a lateral metal rotor",
+                                            "Folded two-facet welding shield with visible cyan indicator",
+                                            "Chamfered tool-bin lids and added hinge hardware",
+                                            "Flat steel knee bearing covers with flush spindles",
+                                            "Conforming forehead rail trim and recessed vents",
+                                            "Silver shoulder armor inserts",
+                                            "Lower support-leg knees and downward upper links",
+                                            "Broader, shorter face assembly about its fixed neck attachment",
+                                            "Shoulder silver panels conform to the sampled blue fairing surface",
+                                            "Side optics face outward at 72 degrees and have opaque rear seats",
+                                            "Forehead camera moved forward along the access saddle",
+                                            "Added dark ventral gimbal shroud and arm-root connections",
+                                            "Lengthened segmented grippers with different left and right curling poses",
+                                            "Reduced optical dome dimensions while preserving lens center placement"
+                                        ],
+    "remaining_visible_mismatches":  [
+                                         "The supplied illustration is not exactly reproduced; body contours, some proportions and small mechanical details still differ.",
+                                         "Far-side optic visibility, material shading and fine edge treatment differ from the source.",
+                                         "Rear and concealed geometry remain inferred from the one supplied view."
+                                     ],
+    "inherent_reference_limit":  "Only one illustrated view was provided. Rear and concealed geometry are inferred, and exact identity of those surfaces cannot be verified from that image.",
+    "validation_scope":  "Successful file reload, GLB import and mesh checks prove usable files, not visual identity.",
+    "reference_availability_confirmed":  "User confirmed that only the single concept image is available.",
+    "face_landmark_evidence":  "face_landmark_comparison.json describes revision 5, before the final optical dome size change; it is not final-version identity evidence.",
+    "disposition":  "Finalized at user request; no further modeling authorized by the stop request."
+}

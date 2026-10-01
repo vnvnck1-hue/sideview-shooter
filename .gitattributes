@@ -19,6 +19,8 @@
 *.png binary
 *.jpg binary
 *.zip binary
+*.blend binary
+*.glb binary
 *.wav binary
 *.ogg binary
 *.ttf binary

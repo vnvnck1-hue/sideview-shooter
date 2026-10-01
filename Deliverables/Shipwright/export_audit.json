@@ -1,0 +1,19 @@
+{
+  "glb_header_valid": true,
+  "imported_successfully": true,
+  "mesh_objects": 1167,
+  "triangles": 349064,
+  "embedded_images": 1,
+  "bounds_min": [
+    -2.9393532276153564,
+    -3.0199999809265137,
+    -0.023124344646930695
+  ],
+  "bounds_max": [
+    2.9393532276153564,
+    2.1449999809265137,
+    4.948456764221191
+  ],
+  "studio_excluded": true,
+  "file_bytes": 10381388
+}

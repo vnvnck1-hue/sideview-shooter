@@ -1,0 +1,11 @@
+{
+  "blender_version": "5.2.2 LTS",
+  "model_parts": 4,
+  "verified": [
+    "modeling",
+    "materials",
+    "blend_save",
+    "glb_export",
+    "cpu_render"
+  ]
+}
